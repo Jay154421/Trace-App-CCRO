@@ -5,6 +5,7 @@ const { handleValidationErrors, childCreate, childUpdate, idParam } = require('.
 const { body } = require('express-validator');
 
 router.get('/', ctrl.list);
+router.get('/:id/attachments/:filename', idParam, ctrl.getChecklistAttachment);
 router.get('/:id', idParam, handleValidationErrors, ctrl.get);
 router.post('/', childCreate, handleValidationErrors, ctrl.create);
 router.put('/:id', childUpdate, handleValidationErrors, ctrl.update);

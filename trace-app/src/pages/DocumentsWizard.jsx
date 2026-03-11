@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { childrenApi } from '../services/api';
+import { apiUrl } from '../config/api';
 
 function buildChecklist(requirements, existing = []) {
   const byKey = new Map(existing.map((e) => [`${e.category}:${e.label}`, e]));
@@ -12,6 +13,8 @@ function buildChecklist(requirements, existing = []) {
     required: true,
     checked: byKey.get(`${r.category}:${r.label}`)?.checked ?? 0,
     notes: byKey.get(`${r.category}:${r.label}`)?.notes ?? '',
+    attachment: byKey.get(`${r.category}:${r.label}`)?.attachment ?? null,
+    attachmentFile: null,
   }));
 }
 
@@ -51,23 +54,59 @@ export function DocumentsWizard() {
     });
   };
 
-  const save = () => {
+  const updateAttachment = (index, file) => {
+    setChecklist((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], attachmentFile: file || null };
+      return next;
+    });
+  };
+
+  const save = async () => {
+    if (!id) {
+      toast.error('Missing applicant ID.');
+      return;
+    }
     setSaving(true);
-    const items = checklist.map((c) => ({
-      category: c.category,
-      label: c.label,
-      required: c.required,
-      checked: !!c.checked,
-      notes: c.notes,
-    }));
+    const items = await Promise.all(
+      checklist.map(async (c) => {
+        const item = {
+          category: c.category || 'general',
+          label: c.label || '',
+          required: Boolean(c.required),
+          checked: !!c.checked,
+          notes: c.notes ?? '',
+        };
+        if (c.attachmentFile) {
+          item.attachmentBase64 = await fileToBase64(c.attachmentFile);
+          item.attachmentFilename = c.attachmentFile.name;
+        } else if (c.attachment) {
+          item.attachment = c.attachment;
+        }
+        return item;
+      })
+    );
     childrenApi
       .updateChecklist(id, items)
       .then(() => {
         toast.success('Checklist saved.');
       })
-      .catch((err) => toast.error(err.message || 'Failed to save.'))
+      .catch((err) => toast.error(err?.message || 'Failed to save checklist.'))
       .finally(() => setSaving(false));
   };
+
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result;
+        const base64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
 
   if (loading) return <p className="text-slate-500">Loading…</p>;
   if (error) return <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">{error.message}</div>;
@@ -79,7 +118,9 @@ export function DocumentsWizard() {
   ].filter((s) => s.items.length > 0);
 
   const currentStep = steps[step];
-  const progress = checklist.filter((c) => c.checked).length / checklist.length;
+  const progress = checklist.length
+    ? checklist.filter((c) => c.checked).length / checklist.length
+    : 0;
 
   return (
     <div>
@@ -143,6 +184,27 @@ export function DocumentsWizard() {
                       onChange={(e) => updateNotes(globalIndex, e.target.value)}
                       className="mt-1 block w-full rounded border border-slate-300 px-2 py-1 text-sm"
                     />
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <label className="inline-flex items-center gap-1 rounded border border-slate-300 bg-slate-50 px-2 py-1.5 text-sm text-slate-700 hover:bg-slate-100 cursor-pointer">
+                        <span className="sr-only">Attach file for {item.label}</span>
+                        <input
+                          type="file"
+                          className="sr-only"
+                          onChange={(e) => updateAttachment(globalIndex, e.target.files?.[0] || null)}
+                        />
+                        {item.attachmentFile ? item.attachmentFile.name : 'Attach file'}
+                      </label>
+                      {item.attachment && !item.attachmentFile && (
+                        <a
+                          href={apiUrl(`/children/${id}/attachments/${encodeURIComponent(item.attachment)}`)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-sky-600 hover:underline"
+                        >
+                          View attachment
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
               </li>

@@ -68,6 +68,14 @@ async function init() {
     CREATE INDEX IF NOT EXISTS idx_documents_child ON documents(child_id);
     CREATE INDEX IF NOT EXISTS idx_checklist_child ON checklist_items(child_id);
   `);
+  try {
+    db.exec(`ALTER TABLE checklist_items ADD COLUMN attachment TEXT`);
+  } catch (e) {
+    if (!/duplicate column name/i.test(e.message)) throw e;
+  }
+  ensureDataDir();
+  const attachmentsDir = path.join(path.dirname(dbPath), 'attachments');
+  if (!fs.existsSync(attachmentsDir)) fs.mkdirSync(attachmentsDir, { recursive: true });
   saveDb();
 }
 
