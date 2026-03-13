@@ -8,7 +8,7 @@ const nav = [
 export function Sidebar() {
   return (
     <aside
-      className="w-56 bg-slate-800 text-white flex flex-col shrink-0"
+      className="w-56 bg-slate-800 text-white flex flex-col shrink-0 print:hidden"
       role="navigation"
       aria-label="Main navigation"
     >

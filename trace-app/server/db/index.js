@@ -73,6 +73,18 @@ async function init() {
   } catch (e) {
     if (!/duplicate column name/i.test(e.message)) throw e;
   }
+  for (const col of ['registrant_deceased', 'hilot_deceased', 'parent_foreigner']) {
+    try {
+      db.exec(`ALTER TABLE children ADD COLUMN ${col} INTEGER DEFAULT 0`);
+    } catch (e) {
+      if (!/duplicate column name/i.test(e.message)) throw e;
+    }
+  }
+  try {
+    db.exec(`ALTER TABLE children ADD COLUMN certificate_of_live_birth TEXT`);
+  } catch (e) {
+    if (!/duplicate column name/i.test(e.message)) throw e;
+  }
   ensureDataDir();
   const attachmentsDir = path.join(path.dirname(dbPath), 'attachments');
   if (!fs.existsSync(attachmentsDir)) fs.mkdirSync(attachmentsDir, { recursive: true });

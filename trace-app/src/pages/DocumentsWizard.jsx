@@ -4,18 +4,34 @@ import toast from 'react-hot-toast';
 import { childrenApi } from '../services/api';
 import { apiUrl } from '../config/api';
 
+function parseAttachments(attachment) {
+  if (!attachment) return [];
+  if (typeof attachment === 'string' && attachment.startsWith('[')) {
+    try {
+      return JSON.parse(attachment);
+    } catch {
+      return [attachment];
+    }
+  }
+  return [attachment];
+}
+
 function buildChecklist(requirements, existing = []) {
   const byKey = new Map(existing.map((e) => [`${e.category}:${e.label}`, e]));
-  return requirements.all.map((r) => ({
-    category: r.category,
-    label: r.label,
-    id: r.id,
-    required: true,
-    checked: byKey.get(`${r.category}:${r.label}`)?.checked ?? 0,
-    notes: byKey.get(`${r.category}:${r.label}`)?.notes ?? '',
-    attachment: byKey.get(`${r.category}:${r.label}`)?.attachment ?? null,
-    attachmentFile: null,
-  }));
+  return requirements.all.map((r) => {
+    const existingItem = byKey.get(`${r.category}:${r.label}`);
+    const attachmentList = parseAttachments(existingItem?.attachment);
+    return {
+      category: r.category,
+      label: r.label,
+      id: r.id,
+      required: true,
+      checked: existingItem?.checked ?? 0,
+      notes: existingItem?.notes ?? '',
+      attachmentFilenames: attachmentList,
+      attachmentFiles: [],
+    };
+  });
 }
 
 export function DocumentsWizard() {
@@ -54,10 +70,27 @@ export function DocumentsWizard() {
     });
   };
 
-  const updateAttachment = (index, file) => {
+  const addAttachmentFiles = (index, files) => {
+    const fileList = files ? Array.from(files) : [];
+    if (fileList.length === 0) return;
     setChecklist((prev) => {
       const next = [...prev];
-      next[index] = { ...next[index], attachmentFile: file || null };
+      next[index] = {
+        ...next[index],
+        attachmentFiles: [...(next[index].attachmentFiles || []), ...fileList],
+      };
+      return next;
+    });
+  };
+
+  const removeAttachmentFile = (index, fileIndex) => {
+    setChecklist((prev) => {
+      const next = [...prev];
+      const current = next[index].attachmentFiles || [];
+      next[index] = {
+        ...next[index],
+        attachmentFiles: current.filter((_, i) => i !== fileIndex),
+      };
       return next;
     });
   };
@@ -76,12 +109,16 @@ export function DocumentsWizard() {
           required: Boolean(c.required),
           checked: !!c.checked,
           notes: c.notes ?? '',
+          attachmentFilenames: c.attachmentFilenames || [],
         };
-        if (c.attachmentFile) {
-          item.attachmentBase64 = await fileToBase64(c.attachmentFile);
-          item.attachmentFilename = c.attachmentFile.name;
-        } else if (c.attachment) {
-          item.attachment = c.attachment;
+        const newFiles = c.attachmentFiles || [];
+        if (newFiles.length > 0) {
+          item.attachments = await Promise.all(
+            newFiles.map(async (file) => ({
+              attachmentBase64: await fileToBase64(file),
+              attachmentFilename: file.name,
+            }))
+          );
         }
         return item;
       })
@@ -115,6 +152,7 @@ export function DocumentsWizard() {
   const steps = [
     { name: 'General documents', items: checklist.filter((c) => c.category === 'general') },
     { name: 'Age-specific requirements', items: checklist.filter((c) => c.category === 'age_specific') },
+    { name: 'Conditional documents', items: checklist.filter((c) => c.category === 'conditional') },
   ].filter((s) => s.items.length > 0);
 
   const currentStep = steps[step];
@@ -125,9 +163,10 @@ export function DocumentsWizard() {
   return (
     <div>
       <div className="mb-6">
-        <Link to={`/children/${id}`} className="text-sm text-slate-500 hover:text-slate-700">
-          ← Back to applicant
-        </Link>
+        <div className="flex flex-wrap items-center gap-3">
+          <Link to={`/children/${id}`} className="text-sm text-slate-500 hover:text-slate-700">← Back to applicant</Link>
+          <Link to={`/children/${id}/certificate-of-live-birth`} className="text-sm text-sky-600 hover:text-sky-700 font-medium">Certificate of Live Birth</Link>
+        </div>
         <h1 className="text-2xl font-semibold text-slate-800 mt-2">
           Document checklist: {child.first_name} {child.last_name}
         </h1>
@@ -186,24 +225,42 @@ export function DocumentsWizard() {
                     />
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       <label className="inline-flex items-center gap-1 rounded border border-slate-300 bg-slate-50 px-2 py-1.5 text-sm text-slate-700 hover:bg-slate-100 cursor-pointer">
-                        <span className="sr-only">Attach file for {item.label}</span>
+                        <span className="sr-only">Attach files for {item.label}</span>
                         <input
                           type="file"
                           className="sr-only"
-                          onChange={(e) => updateAttachment(globalIndex, e.target.files?.[0] || null)}
+                          multiple
+                          onChange={(e) => {
+                            addAttachmentFiles(globalIndex, e.target.files);
+                            e.target.value = '';
+                          }}
                         />
-                        {item.attachmentFile ? item.attachmentFile.name : 'Attach file'}
+                        Attach file(s)
                       </label>
-                      {item.attachment && !item.attachmentFile && (
+                      {(item.attachmentFiles || []).map((file, fi) => (
+                        <span key={fi} className="inline-flex items-center gap-1 rounded bg-slate-100 px-2 py-1 text-sm">
+                          {file.name}
+                          <button
+                            type="button"
+                            onClick={() => removeAttachmentFile(globalIndex, fi)}
+                            className="text-slate-500 hover:text-red-600"
+                            aria-label={`Remove ${file.name}`}
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                      {(item.attachmentFilenames || []).map((filename, fi) => (
                         <a
-                          href={apiUrl(`/children/${id}/attachments/${encodeURIComponent(item.attachment)}`)}
+                          key={fi}
+                          href={apiUrl(`/children/${id}/attachments/${encodeURIComponent(filename)}`)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-sm text-sky-600 hover:underline"
                         >
-                          View attachment
+                          View {filename}
                         </a>
-                      )}
+                      ))}
                     </div>
                   </div>
                 </div>

@@ -18,4 +18,6 @@ export const childrenApi = {
   update: (id, body) => request(`/children/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
   remove: (id) => request(`/children/${id}`, { method: 'DELETE' }),
   updateChecklist: (id, items) => request(`/children/${id}/checklist`, { method: 'PUT', body: JSON.stringify({ items }) }),
+  updateCertificateOfLiveBirth: (id, data) =>
+    request(`/children/${id}/certificate-of-live-birth`, { method: 'PUT', body: JSON.stringify(data) }),
 };

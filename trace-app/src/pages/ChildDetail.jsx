@@ -41,8 +41,14 @@ export function ChildDetail() {
         </h1>
         <div className="flex gap-2">
           <Link
-            to={`/children/${id}/documents`}
+            to={`/children/${id}/certificate-of-live-birth`}
             className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700"
+          >
+            Certificate of Live Birth
+          </Link>
+          <Link
+            to={`/children/${id}/documents`}
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
             Document checklist
           </Link>
@@ -87,6 +93,16 @@ export function ChildDetail() {
             <dt className="text-sm text-slate-500">Age group (requirements)</dt>
             <dd className="font-medium text-slate-800">{child.age_group?.replace(/_/g, ' ') || '—'}</dd>
           </div>
+          {(child.registrant_deceased || child.hilot_deceased || child.parent_foreigner) && (
+            <div className="sm:col-span-2">
+              <dt className="text-sm text-slate-500 mb-1">Conditional requirements</dt>
+              <dd className="text-sm text-slate-700">
+                {child.registrant_deceased && <span className="block">Death cert. (registrant)</span>}
+                {child.hilot_deceased && child.age <= 5 && <span className="block">Death cert. (HILOT)</span>}
+                {child.parent_foreigner && <span className="block">Passport or BI cert. (foreign parent)</span>}
+              </dd>
+            </div>
+          )}
         </dl>
       </section>
 

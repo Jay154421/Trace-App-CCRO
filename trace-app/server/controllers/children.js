@@ -24,7 +24,7 @@ function get(req, res) {
   const id = Number(req.params.id);
   const row = childModel.findById(id);
   if (!row) return res.status(404).json({ error: 'Not found' });
-  const reqs = requirementsModel.getRequirementsForAgeGroup(row.age_group);
+  const reqs = requirementsModel.getRequirementsForChild(row);
   const db = getDb();
   const checklist = db.prepare('SELECT * FROM checklist_items WHERE child_id = ? ORDER BY category, id').all(id);
   res.json({ ...row, requirements: reqs, checklist });
@@ -66,18 +66,29 @@ function updateChecklist(req, res) {
     db.prepare('DELETE FROM checklist_items WHERE child_id = ?').run(childId);
     const insertSql = 'INSERT INTO checklist_items (child_id, category, label, required, checked, notes, attachment) VALUES (?, ?, ?, ?, ?, ?, ?)';
     for (const it of items) {
-      let attachmentPath = null;
+      const existingFilenames = Array.isArray(it.attachmentFilenames)
+        ? it.attachmentFilenames.filter((f) => typeof f === 'string' && /^[a-zA-Z0-9._-]+$/.test(f))
+        : typeof it.attachment === 'string' && /^[a-zA-Z0-9._-]+$/.test(it.attachment)
+          ? [it.attachment]
+          : [];
+      const newFiles = Array.isArray(it.attachments) ? it.attachments : [];
       if (it.attachmentBase64 && it.attachmentFilename) {
-        const base = `${childId}_${safeAttachmentFilename(it.category || 'general')}_${safeAttachmentFilename(it.label || 'doc')}`;
-        const ext = path.extname(it.attachmentFilename) || '';
-        const filename = `${base}_${Date.now()}${ext}`;
-        const filePath = path.join(ATTACHMENTS_DIR, filename);
-        const buf = Buffer.from(it.attachmentBase64, 'base64');
-        fs.writeFileSync(filePath, buf);
-        attachmentPath = filename;
-      } else if (typeof it.attachment === 'string' && /^[a-zA-Z0-9._-]+$/.test(it.attachment)) {
-        attachmentPath = it.attachment;
+        newFiles.push({ attachmentBase64: it.attachmentBase64, attachmentFilename: it.attachmentFilename });
       }
+      const base = `${childId}_${safeAttachmentFilename(it.category || 'general')}_${safeAttachmentFilename(it.label || 'doc')}`;
+      const savedFilenames = [];
+      for (let i = 0; i < newFiles.length; i++) {
+        const f = newFiles[i];
+        if (!f.attachmentBase64 || !f.attachmentFilename) continue;
+        const ext = path.extname(f.attachmentFilename) || '';
+        const filename = `${base}_${Date.now()}_${i}${ext}`;
+        const filePath = path.join(ATTACHMENTS_DIR, filename);
+        const buf = Buffer.from(f.attachmentBase64, 'base64');
+        fs.writeFileSync(filePath, buf);
+        savedFilenames.push(filename);
+      }
+      const allFilenames = [...existingFilenames, ...savedFilenames];
+      const attachmentPath = allFilenames.length === 0 ? null : allFilenames.length === 1 ? allFilenames[0] : JSON.stringify(allFilenames);
       db.prepare(insertSql).run(
         childId,
         it.category || 'general',
@@ -95,6 +106,18 @@ function updateChecklist(req, res) {
   }
 }
 
+function parseAttachmentColumn(attachment) {
+  if (!attachment) return [];
+  if (typeof attachment === 'string' && attachment.startsWith('[')) {
+    try {
+      return JSON.parse(attachment);
+    } catch {
+      return [attachment];
+    }
+  }
+  return [attachment];
+}
+
 function getChecklistAttachment(req, res) {
   const childId = Number(req.params.id);
   const filename = req.params.filename;
@@ -102,11 +125,25 @@ function getChecklistAttachment(req, res) {
   const child = childModel.findById(childId);
   if (!child) return res.status(404).json({ error: 'Not found' });
   const db = getDb();
-  const row = db.prepare('SELECT 1 FROM checklist_items WHERE child_id = ? AND attachment = ?').get(childId, filename);
-  if (!row) return res.status(404).json({ error: 'Attachment not found' });
+  const rows = db.prepare('SELECT attachment FROM checklist_items WHERE child_id = ?').all(childId);
+  const hasFile = rows.some((row) => {
+    const list = parseAttachmentColumn(row.attachment);
+    return list.includes(filename);
+  });
+  if (!hasFile) return res.status(404).json({ error: 'Attachment not found' });
   const filePath = path.join(ATTACHMENTS_DIR, filename);
   if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'File not found' });
   res.sendFile(path.resolve(filePath));
 }
 
-module.exports = { list, get, create, update, remove, updateChecklist, getChecklistAttachment };
+function updateCertificateOfLiveBirth(req, res) {
+  const id = Number(req.params.id);
+  const child = childModel.findById(id);
+  if (!child) return res.status(404).json({ error: 'Not found' });
+  const data = req.body && typeof req.body === 'object' ? req.body : {};
+  const ok = childModel.updateCertificateOfLiveBirth(id, data);
+  if (!ok) return res.status(500).json({ error: 'Failed to save certificate' });
+  res.json({ ok: true });
+}
+
+module.exports = { list, get, create, update, remove, updateChecklist, getChecklistAttachment, updateCertificateOfLiveBirth };

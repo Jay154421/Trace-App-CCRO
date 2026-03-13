@@ -10,6 +10,9 @@ const empty = {
   date_of_birth: '',
   place_of_birth: '',
   contact_no: '',
+  registrant_deceased: false,
+  hilot_deceased: false,
+  parent_foreigner: false,
 };
 
 export function ChildForm() {
@@ -32,6 +35,9 @@ export function ChildForm() {
           date_of_birth: data.date_of_birth ?? '',
           place_of_birth: data.place_of_birth ?? '',
           contact_no: data.contact_no ?? '',
+          registrant_deceased: Boolean(data.registrant_deceased),
+          hilot_deceased: Boolean(data.hilot_deceased),
+          parent_foreigner: Boolean(data.parent_foreigner),
         });
       })
       .catch((err) => setLoadError(err));
@@ -49,6 +55,9 @@ export function ChildForm() {
       date_of_birth: form.date_of_birth,
       place_of_birth: form.place_of_birth.trim() || undefined,
       contact_no: form.contact_no.trim() || undefined,
+      registrant_deceased: form.registrant_deceased,
+      hilot_deceased: form.hilot_deceased,
+      parent_foreigner: form.parent_foreigner,
     };
     (isEdit ? childrenApi.update(id, payload) : childrenApi.create(payload))
       .then((res) => {
@@ -144,6 +153,40 @@ export function ChildForm() {
             className="mt-1 block w-full max-w-xs rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
           />
         </label>
+
+        <fieldset className="rounded-lg border border-slate-200 p-4">
+          <legend className="text-sm font-medium text-slate-700">Conditional document requirements</legend>
+          <p className="text-xs text-slate-500 mt-1 mb-3">Check if these apply; the document checklist will include the corresponding attachments.</p>
+          <div className="space-y-2">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={form.registrant_deceased}
+                onChange={(e) => update('registrant_deceased', e.target.checked)}
+                className="rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+              />
+              <span className="text-sm text-slate-700">Registrant is deceased (attach death certificate)</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={form.hilot_deceased}
+                onChange={(e) => update('hilot_deceased', e.target.checked)}
+                className="rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+              />
+              <span className="text-sm text-slate-700">HILOT is deceased, 5 y.o. & below (attach death certificate)</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={form.parent_foreigner}
+                onChange={(e) => update('parent_foreigner', e.target.checked)}
+                className="rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+              />
+              <span className="text-sm text-slate-700">One parent is foreigner (attach passport or Bureau of Immigration cert.)</span>
+            </label>
+          </div>
+        </fieldset>
 
         <div className="flex gap-3 pt-2">
           <button

@@ -56,6 +56,12 @@ const AGE_60_PLUS = [
   { id: 'parents_docs', label: 'Parent\'s birth/ID/death certificate (if deceased)' },
 ];
 
+const CONDITIONAL_DOCS = {
+  death_cert_registrant: { id: 'death_cert_registrant', label: 'Death certificate (registrant)' },
+  death_cert_hilot: { id: 'death_cert_hilot', label: 'Death certificate (HILOT)' },
+  foreign_parent_id: { id: 'foreign_parent_id', label: 'Passport or Bureau of Immigration cert. (foreign parent)' },
+};
+
 function getRequirementsForAgeGroup(ageGroup) {
   const allGeneral = GENERAL_DOCS.map(d => ({ ...d, category: 'general' }));
   let ageSpecific = [];
@@ -73,4 +79,25 @@ function getRequirementsForAgeGroup(ageGroup) {
   };
 }
 
-module.exports = { getRequirementsForAgeGroup, GENERAL_DOCS, AGE_1M_TO_6, AGE_7_TO_17, AGE_18_TO_59, AGE_60_PLUS };
+function getRequirementsForChild(child) {
+  const base = getRequirementsForAgeGroup(child.age_group || '1m1d_to_6');
+  const conditional = [];
+  if (child.registrant_deceased) {
+    conditional.push({ ...CONDITIONAL_DOCS.death_cert_registrant, category: 'conditional' });
+  }
+  const age = typeof child.age === 'number' ? child.age : (child.date_of_birth ? require('./child').calculateAge(child.date_of_birth) : 0);
+  if (child.hilot_deceased && age <= 5) {
+    conditional.push({ ...CONDITIONAL_DOCS.death_cert_hilot, category: 'conditional' });
+  }
+  if (child.parent_foreigner) {
+    conditional.push({ ...CONDITIONAL_DOCS.foreign_parent_id, category: 'conditional' });
+  }
+  const all = [...base.all, ...conditional];
+  return {
+    ...base,
+    conditional,
+    all,
+  };
+}
+
+module.exports = { getRequirementsForAgeGroup, getRequirementsForChild, GENERAL_DOCS, AGE_1M_TO_6, AGE_7_TO_17, AGE_18_TO_59, AGE_60_PLUS };

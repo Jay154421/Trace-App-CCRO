@@ -28,7 +28,33 @@ function findById(id) {
   const row = db.prepare('SELECT * FROM children WHERE id = ?').get(id);
   db.close();
   if (!row) return null;
-  return { ...row, age: calculateAge(row.date_of_birth), age_group: row.age_group || getAgeGroup(calculateAge(row.date_of_birth)) };
+  let certificate_of_live_birth = {};
+  if (row.certificate_of_live_birth) {
+    try {
+      certificate_of_live_birth = JSON.parse(row.certificate_of_live_birth);
+    } catch (e) {
+      certificate_of_live_birth = {};
+    }
+  }
+  return {
+    ...row,
+    certificate_of_live_birth,
+    age: calculateAge(row.date_of_birth),
+    age_group: row.age_group || getAgeGroup(calculateAge(row.date_of_birth)),
+  };
+}
+
+function updateCertificateOfLiveBirth(id, data) {
+  const db = getDb();
+  const existing = db.prepare('SELECT id FROM children WHERE id = ?').get(id);
+  if (!existing) {
+    db.close();
+    return false;
+  }
+  const json = JSON.stringify(data || {});
+  db.prepare('UPDATE children SET certificate_of_live_birth = ?, updated_at = datetime(\'now\') WHERE id = ?').run(json, id);
+  db.close();
+  return true;
 }
 
 function create(data) {
@@ -36,8 +62,8 @@ function create(data) {
   const age_group = getAgeGroup(age);
   const db = getDb();
   const stmt = db.prepare(`
-    INSERT INTO children (first_name, middle_name, last_name, date_of_birth, place_of_birth, contact_no, age_group)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO children (first_name, middle_name, last_name, date_of_birth, place_of_birth, contact_no, age_group, registrant_deceased, hilot_deceased, parent_foreigner)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const result = stmt.run(
     data.first_name,
@@ -46,7 +72,10 @@ function create(data) {
     data.date_of_birth,
     data.place_of_birth || null,
     data.contact_no || null,
-    age_group
+    age_group,
+    data.registrant_deceased ? 1 : 0,
+    data.hilot_deceased ? 1 : 0,
+    data.parent_foreigner ? 1 : 0
   );
   db.close();
   return result.lastInsertRowid;
@@ -58,11 +87,15 @@ function update(id, data) {
   const db = getDb();
   const existing = db.prepare('SELECT * FROM children WHERE id = ?').get(id);
   if (!existing) { db.close(); return false; }
+  const registrantDeceased = data.registrant_deceased !== undefined ? (data.registrant_deceased ? 1 : 0) : (existing.registrant_deceased ? 1 : 0);
+  const hilotDeceased = data.hilot_deceased !== undefined ? (data.hilot_deceased ? 1 : 0) : (existing.hilot_deceased ? 1 : 0);
+  const parentForeigner = data.parent_foreigner !== undefined ? (data.parent_foreigner ? 1 : 0) : (existing.parent_foreigner ? 1 : 0);
   const stmt = db.prepare(`
     UPDATE children SET
       first_name = ?, middle_name = ?, last_name = ?,
       date_of_birth = ?, place_of_birth = ?, contact_no = ?,
       age_group = COALESCE(?, age_group),
+      registrant_deceased = ?, hilot_deceased = ?, parent_foreigner = ?,
       updated_at = datetime('now')
     WHERE id = ?
   `);
@@ -74,6 +107,9 @@ function update(id, data) {
     data.place_of_birth !== undefined ? data.place_of_birth : existing.place_of_birth,
     data.contact_no !== undefined ? data.contact_no : existing.contact_no,
     age_group,
+    registrantDeceased,
+    hilotDeceased,
+    parentForeigner,
     id
   );
   db.close();
@@ -91,4 +127,4 @@ function remove(id) {
   return result.changes > 0;
 }
 
-module.exports = { all, findById, create, update, remove, getAgeGroup, calculateAge };
+module.exports = { all, findById, create, update, remove, getAgeGroup, calculateAge, updateCertificateOfLiveBirth };
