@@ -1,15 +1,25 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '../hooks/useQuery';
 import { childrenApi } from '../services/api';
+import { AddApplicantModal } from '../components/AddApplicantModal';
 
 export function Dashboard() {
-  const { data, loading, error } = useQuery(childrenApi.list);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [listKey, setListKey] = useState(0);
+  const { data, loading, error } = useQuery(childrenApi.list, [listKey]);
   const list = Array.isArray(data) ? data : [];
 
   return (
     <div>
       <h1 className="text-2xl font-semibold text-slate-800 mb-2">Dashboard</h1>
       <p className="text-slate-600 mb-6">Overview of applicants and document requirements.</p>
+
+      <AddApplicantModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onAdded={() => setListKey((k) => k + 1)}
+      />
 
       {error && (
         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800" role="alert">
@@ -34,12 +44,13 @@ export function Dashboard() {
           <h2 id="stats-cta" className="text-sm font-medium text-slate-500 uppercase tracking-wide">
             Quick action
           </h2>
-          <Link
-            to="/children/new"
+          <button
+            type="button"
+            onClick={() => setModalOpen(true)}
             className="mt-2 inline-flex items-center rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
           >
             Add applicant
-          </Link>
+          </button>
         </section>
       </div>
 

@@ -19,8 +19,23 @@ function calculateAge(dob) {
 function all() {
   const db = getDb();
   const rows = db.prepare('SELECT * FROM children ORDER BY updated_at DESC').all();
+  const progressRows = db.prepare(
+    'SELECT child_id, COUNT(*) AS total, SUM(checked) AS checked FROM checklist_items GROUP BY child_id'
+  ).all();
   db.close();
-  return rows.map(r => ({ ...r, age: calculateAge(r.date_of_birth), age_group: r.age_group || getAgeGroup(calculateAge(r.date_of_birth)) }));
+  const progressByChild = Object.fromEntries(
+    progressRows.map((p) => [p.child_id, { checklist_total: p.total, checklist_checked: p.checked ?? 0 }])
+  );
+  return rows.map((r) => {
+    const progress = progressByChild[r.id] || { checklist_total: 0, checklist_checked: 0 };
+    return {
+      ...r,
+      age: calculateAge(r.date_of_birth),
+      age_group: r.age_group || getAgeGroup(calculateAge(r.date_of_birth)),
+      checklist_total: progress.checklist_total,
+      checklist_checked: progress.checklist_checked,
+    };
+  });
 }
 
 function findById(id) {

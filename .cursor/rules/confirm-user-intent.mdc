@@ -1,0 +1,32 @@
+---
+description: AI must offer confirmation of what the user meant before acting
+alwaysApply: true
+---
+
+# Confirm User Intent
+
+Before executing non-trivial changes or when intent could be ambiguous, the AI must give the user a clear way to confirm that the understood intent is correct.
+
+**When to confirm:**
+- Request is vague, has multiple interpretations, or involves destructive/irreversible actions
+- Scope is large (e.g. "refactor X", "fix all Y") and the exact meaning is unclear
+- User refers to "this", "that", or something implied rather than named
+
+**How to confirm:**
+- State in one sentence what you understood the user wants (the "confirmation of what the user meant").
+- Offer a clear yes/no or choice: e.g. "Did you mean X? Reply yes to proceed, or say what you’d like instead."
+- Keep the confirmation short; avoid long plans unless the user asked for a plan.
+
+**Examples:**
+
+```
+User: "Make it work with the new API."
+AI: "I understood: update the trace-app to use the new API endpoints instead of the old ones. Should I go ahead with that?"
+```
+
+```
+User: "Clean that up."
+AI: "By 'clean that up' I mean: remove unused imports and dead code in ChildList.jsx. Confirm if that’s what you want, or specify what to clean."
+```
+
+**Exception:** For obvious, single-interpretation requests (e.g. "fix the typo on line 5"), you may proceed without asking for confirmation.

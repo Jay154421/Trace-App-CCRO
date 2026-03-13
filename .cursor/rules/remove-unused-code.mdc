@@ -1,0 +1,44 @@
+---
+description: Remove unused code, imports, variables, and dead code when editing files
+alwaysApply: true
+---
+
+# Remove Unused Code
+
+When editing or refactoring, proactively remove all unused code. Do not leave dead code behind.
+
+**Remove:**
+- Unused imports (including default and named imports that are never referenced)
+- Unused variables, constants, and parameters
+- Unused functions, components, or classes
+- Commented-out code blocks (unless they document a deliberate non-implementation)
+- Unreachable code after early returns or throws
+- Unused type/interface definitions that are not exported for use elsewhere
+
+**Before changing a file:** quickly scan for the above; if you introduce or notice unused code, remove it in the same edit.
+
+**Examples:**
+
+```javascript
+// ❌ BAD – unused import and variable
+import { useState, useEffect } from 'react';
+const [count, setCount] = useState(0);
+const unusedHelper = () => {};
+useEffect(() => {}, []);
+
+// ✅ GOOD – only what is used
+import { useState, useEffect } from 'react';
+const [count, setCount] = useState(0);
+useEffect(() => {}, []);
+```
+
+```javascript
+// ❌ BAD – commented-out dead code
+// const oldApi = fetch('/legacy');
+doNewThing();
+
+// ✅ GOOD
+doNewThing();
+```
+
+**Exception:** Do not remove code that is only referenced from other files (e.g. exported APIs, shared components). When in doubt, search the codebase for references before deleting.
