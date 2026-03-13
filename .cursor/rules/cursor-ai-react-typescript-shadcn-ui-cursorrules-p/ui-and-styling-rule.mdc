@@ -1,3 +1,6 @@
 ---
 alwaysApply: true
 ---
+- Utilize Tailwind CSS utility classes for styling components.
+- Follow Shadcn UI component guidelines and best practices.
+- Ensure UI is responsive and accessible.

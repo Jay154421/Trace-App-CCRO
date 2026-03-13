@@ -93,7 +93,7 @@ export function ChildForm() {
               required
               value={form.first_name}
               onChange={(e) => update('first_name', e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
               autoComplete="given-name"
               aria-required="true"
             />
@@ -104,7 +104,7 @@ export function ChildForm() {
               type="text"
               value={form.middle_name}
               onChange={(e) => update('middle_name', e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
               autoComplete="additional-name"
             />
           </label>
@@ -115,7 +115,7 @@ export function ChildForm() {
               required
               value={form.last_name}
               onChange={(e) => update('last_name', e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
               autoComplete="family-name"
               aria-required="true"
             />
@@ -129,7 +129,7 @@ export function ChildForm() {
             required
             value={form.date_of_birth}
             onChange={(e) => update('date_of_birth', e.target.value)}
-            className="mt-1 block w-full max-w-xs rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+            className="mt-1 block w-full max-w-xs rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
             aria-required="true"
           />
         </label>
@@ -140,7 +140,7 @@ export function ChildForm() {
             type="text"
             value={form.place_of_birth}
             onChange={(e) => update('place_of_birth', e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+            className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
           />
         </label>
 
@@ -150,7 +150,7 @@ export function ChildForm() {
             type="text"
             value={form.contact_no}
             onChange={(e) => update('contact_no', e.target.value)}
-            className="mt-1 block w-full max-w-xs rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+            className="mt-1 block w-full max-w-xs rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
           />
         </label>
 
@@ -163,25 +163,16 @@ export function ChildForm() {
                 type="checkbox"
                 checked={form.registrant_deceased}
                 onChange={(e) => update('registrant_deceased', e.target.checked)}
-                className="rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
               />
               <span className="text-sm text-slate-700">Registrant is deceased (attach death certificate)</span>
             </label>
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
-                checked={form.hilot_deceased}
-                onChange={(e) => update('hilot_deceased', e.target.checked)}
-                className="rounded border-slate-300 text-sky-600 focus:ring-sky-500"
-              />
-              <span className="text-sm text-slate-700">HILOT is deceased, 5 y.o. & below (attach death certificate)</span>
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
                 checked={form.parent_foreigner}
                 onChange={(e) => update('parent_foreigner', e.target.checked)}
-                className="rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
               />
               <span className="text-sm text-slate-700">One parent is foreigner (attach passport or Bureau of Immigration cert.)</span>
             </label>
@@ -192,7 +183,7 @@ export function ChildForm() {
           <button
             type="submit"
             disabled={loading}
-            className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 disabled:opacity-50"
+            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 disabled:opacity-50"
           >
             {loading ? 'Saving…' : isEdit ? 'Update' : 'Add applicant'}
           </button>

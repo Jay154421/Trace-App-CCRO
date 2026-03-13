@@ -165,7 +165,7 @@ export function DocumentsWizard() {
       <div className="mb-6">
         <div className="flex flex-wrap items-center gap-3">
           <Link to={`/children/${id}`} className="text-sm text-slate-500 hover:text-slate-700">← Back to applicant</Link>
-          <Link to={`/children/${id}/certificate-of-live-birth`} className="text-sm text-sky-600 hover:text-sky-700 font-medium">Certificate of Live Birth</Link>
+          <Link to={`/children/${id}/certificate-of-live-birth`} className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">Certificate of Live Birth</Link>
         </div>
         <h1 className="text-2xl font-semibold text-slate-800 mt-2">
           Document checklist: {child.first_name} {child.last_name}
@@ -176,7 +176,7 @@ export function DocumentsWizard() {
       </div>
 
       <div className="mb-4 h-2 w-full rounded-full bg-slate-200 overflow-hidden" role="progressbar" aria-valuenow={Math.round(progress * 100)} aria-valuemin={0} aria-valuemax={100}>
-        <div className="h-full bg-sky-600 transition-all" style={{ width: `${progress * 100}%` }} />
+        <div className="h-full bg-emerald-600 transition-all" style={{ width: `${progress * 100}%` }} />
       </div>
 
       {steps.length > 1 && (
@@ -187,7 +187,7 @@ export function DocumentsWizard() {
               type="button"
               onClick={() => setStep(i)}
               className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
-                step === i ? 'bg-sky-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                step === i ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
               }`}
             >
               {s.name}
@@ -209,7 +209,7 @@ export function DocumentsWizard() {
                     id={`check-${globalIndex}`}
                     checked={!!item.checked}
                     onChange={() => toggle(globalIndex)}
-                    className="mt-1 h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                    className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                     aria-label={`Mark ${item.label} as provided`}
                   />
                   <div className="flex-1 min-w-0">
@@ -256,7 +256,7 @@ export function DocumentsWizard() {
                           href={apiUrl(`/children/${id}/attachments/${encodeURIComponent(filename)}`)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-sm text-sky-600 hover:underline"
+                          className="text-sm text-emerald-600 hover:underline"
                         >
                           View {filename}
                         </a>
@@ -275,7 +275,7 @@ export function DocumentsWizard() {
           type="button"
           onClick={save}
           disabled={saving}
-          className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700 disabled:opacity-50"
+          className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
         >
           {saving ? 'Saving…' : 'Save checklist'}
         </button>

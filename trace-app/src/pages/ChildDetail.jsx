@@ -98,6 +98,9 @@ export function ChildDetail() {
   if (error) return <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">{error.message}</div>;
   if (!child) return null;
 
+  const checklistTotal = child.checklist?.length ?? 0;
+  const checklistChecked = child.checklist?.filter((i) => i.checked).length ?? 0;
+
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
@@ -107,7 +110,7 @@ export function ChildDetail() {
         <div className="flex gap-2">
           <Link
             to={`/children/${id}/certificate-of-live-birth`}
-            className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700"
+            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
           >
             Certificate of Live Birth
           </Link>
@@ -159,16 +162,18 @@ export function ChildDetail() {
             <dt className="text-sm text-slate-500">Age group (requirements)</dt>
             <dd className="font-medium text-slate-800">{child.age_group?.replace(/_/g, ' ') || '—'}</dd>
           </div>
-          {(child.registrant_deceased || child.hilot_deceased || child.parent_foreigner) ? (
-            <div className="sm:col-span-2">
-              <dt className="text-sm text-slate-500 mb-1">Conditional requirements</dt>
-              <dd className="text-sm text-slate-700">
-                {child.registrant_deceased ? <span className="block">Death cert. (registrant)</span> : null}
-                {child.hilot_deceased && child.age <= 5 ? <span className="block">Death cert. (HILOT)</span> : null}
-                {child.parent_foreigner ? <span className="block">Passport or BI cert. (foreign parent)</span> : null}
-              </dd>
-            </div>
-          ) : null}
+          <div>
+              {(child.registrant_deceased || child.hilot_deceased || child.parent_foreigner) ? (
+                <div className="sm:col-span-2">
+                  <dt className="text-sm text-slate-500 mb-1">Conditional requirements</dt>
+                  <dd className="text-sm text-slate-700">
+                    {child.registrant_deceased ? <span className="block">Death cert. (registrant)</span> : null}
+                    {child.hilot_deceased && child.age <= 5 ? <span className="block">Death cert. (HILOT)</span> : null}
+                    {child.parent_foreigner ? <span className="block">Passport or BI cert. (foreign parent)</span> : null}
+                  </dd>
+                </div>
+              ) : null}
+           </div>
           {child.created_at && (
             <div>
               <dt className="text-sm text-slate-500">Created date</dt>
@@ -185,11 +190,41 @@ export function ChildDetail() {
               </dd>
             </div>
           )}
+          <div className="sm:col-span-2">
+            <dt className="text-sm text-slate-500 mb-1">Documents checklist</dt>
+            <dd className="mt-0.5">
+              {checklistTotal > 0 ? (
+                <div>
+                  <p className="font-medium text-slate-800">
+                    {checklistChecked}/{checklistTotal} complete
+                  </p>
+                  <div className="mt-1.5 h-2 w-full max-w-[200px] rounded-full bg-slate-200 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-emerald-500 transition-[width]"
+                      style={{
+                        width: `${checklistTotal ? Math.round((checklistChecked / checklistTotal) * 100) : 0}%`,
+                      }}
+                    />
+                  </div>
+                  <Link
+                    to={`/children/${id}/documents`}
+                    className="inline-block mt-1.5 text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+                  >
+                    View checklist →
+                  </Link>
+                </div>
+              ) : (
+                <p className="text-slate-600">
+                  — <Link to={`/children/${id}/documents`} className="text-emerald-600 hover:underline">Open document checklist</Link> to get started.
+                </p>
+              )}
+            </dd>
+          </div>
         </dl>
       </section>
 
       <p className="text-slate-600">
-        Use the <Link to={`/children/${id}/documents`} className="text-sky-600 hover:underline">Document checklist</Link> to see required documents for this age group and track progress.
+        Use the <Link to={`/children/${id}/documents`} className="text-emerald-600 hover:underline">Document checklist</Link> to see required documents for this age group and track progress.
       </p>
 
       {editModalOpen && (
@@ -217,7 +252,7 @@ export function ChildDetail() {
                       required
                       value={editForm.first_name}
                       onChange={(e) => updateEditForm('first_name', e.target.value)}
-                      className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+                      className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                       autoComplete="given-name"
                     />
                   </label>
@@ -227,7 +262,7 @@ export function ChildDetail() {
                       type="text"
                       value={editForm.middle_name}
                       onChange={(e) => updateEditForm('middle_name', e.target.value)}
-                      className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+                      className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                       autoComplete="additional-name"
                     />
                   </label>
@@ -238,7 +273,7 @@ export function ChildDetail() {
                       required
                       value={editForm.last_name}
                       onChange={(e) => updateEditForm('last_name', e.target.value)}
-                      className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+                      className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                       autoComplete="family-name"
                     />
                   </label>
@@ -250,7 +285,7 @@ export function ChildDetail() {
                     required
                     value={editForm.date_of_birth}
                     onChange={(e) => updateEditForm('date_of_birth', e.target.value)}
-                    className="mt-1 block w-full max-w-xs rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+                    className="mt-1 block w-full max-w-xs rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                   />
                 </label>
                 <label className="block">
@@ -259,7 +294,7 @@ export function ChildDetail() {
                     type="text"
                     value={editForm.place_of_birth}
                     onChange={(e) => updateEditForm('place_of_birth', e.target.value)}
-                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                   />
                 </label>
                 <label className="block">
@@ -268,7 +303,7 @@ export function ChildDetail() {
                     type="text"
                     value={editForm.contact_no}
                     onChange={(e) => updateEditForm('contact_no', e.target.value)}
-                    className="mt-1 block w-full max-w-xs rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+                    className="mt-1 block w-full max-w-xs rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                   />
                 </label>
                 <fieldset className="rounded-lg border border-slate-200 p-4">
@@ -280,25 +315,16 @@ export function ChildDetail() {
                         type="checkbox"
                         checked={editForm.registrant_deceased}
                         onChange={(e) => updateEditForm('registrant_deceased', e.target.checked)}
-                        className="rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                        className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                       />
                       <span className="text-sm text-slate-700">Registrant is deceased (attach death certificate)</span>
                     </label>
                     <label className="flex items-center gap-2">
                       <input
                         type="checkbox"
-                        checked={editForm.hilot_deceased}
-                        onChange={(e) => updateEditForm('hilot_deceased', e.target.checked)}
-                        className="rounded border-slate-300 text-sky-600 focus:ring-sky-500"
-                      />
-                      <span className="text-sm text-slate-700">HILOT is deceased, 5 y.o. & below (attach death certificate)</span>
-                    </label>
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
                         checked={editForm.parent_foreigner}
                         onChange={(e) => updateEditForm('parent_foreigner', e.target.checked)}
-                        className="rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                        className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                       />
                       <span className="text-sm text-slate-700">One parent is foreigner (attach passport or Bureau of Immigration cert.)</span>
                     </label>
@@ -309,7 +335,7 @@ export function ChildDetail() {
                 <button
                   type="submit"
                   disabled={editSaving}
-                  className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 disabled:opacity-50"
+                  className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 disabled:opacity-50"
                 >
                   {editSaving ? 'Saving…' : 'Update'}
                 </button>

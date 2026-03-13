@@ -1,6 +1,8 @@
 import { useParams, Link } from 'react-router-dom';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import toast from 'react-hot-toast';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import { childrenApi } from '../services/api';
 
 const DEFAULT_CERT = {
@@ -320,7 +322,7 @@ ${linksHtml}
           <button
             type="button"
             onClick={handlePrint}
-            className="px-4 py-2 bg-slate-800 text-white text-sm font-medium rounded hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2"
+            className="px-4 py-2 bg-emerald-700 text-white text-sm font-medium rounded hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
           >
             Print
           </button>
@@ -454,7 +456,7 @@ ${linksHtml}
                 <FormLine value={form.motherReligion} onChange={(v) => update('motherReligion', v)} />
               </div>
             </div>
-            <div className="flex flex-wrap gap-x-6 gap-y-2">
+            <div className="flex flex-wrap gap-x-6 gap-y-2">  
               <div className="flex-1 min-w-[80px]">
                 <p className="mb-1" style={{ fontWeight: 400, fontSize: '11px' }}>10a. Total number of children born alive</p>
                 <FormLine value={form.motherChildrenBornAlive} onChange={(v) => update('motherChildrenBornAlive', v)} />
@@ -770,3 +772,6 @@ ${linksHtml}
     </div>
   );
 }
+
+
+

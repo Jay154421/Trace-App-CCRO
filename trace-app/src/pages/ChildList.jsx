@@ -4,10 +4,21 @@ import { useQuery } from '../hooks/useQuery';
 import { childrenApi } from '../services/api';
 import { AddApplicantModal } from '../components/AddApplicantModal';
 
+function matchApplicant(c, query) {
+  if (!query.trim()) return true;
+  const q = query.trim().toLowerCase();
+  const name = `${c.last_name} ${c.first_name} ${c.middle_name || ''}`.toLowerCase();
+  const dob = (c.date_of_birth || '').toLowerCase();
+  return name.includes(q) || dob.includes(q);
+}
+
 export function ChildList() {
   const [modalOpen, setModalOpen] = useState(false);
   const [listKey, setListKey] = useState(0);
-  const { data: list = [], loading, error } = useQuery(childrenApi.list, [listKey]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const { data, loading, error } = useQuery(childrenApi.list, [listKey]);
+  const list = data ?? [];
+  const filteredList = list.filter((c) => matchApplicant(c, searchQuery));
 
   return (
     <div>
@@ -16,11 +27,24 @@ export function ChildList() {
         <button
           type="button"
           onClick={() => setModalOpen(true)}
-          className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+          className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
         >
           Add applicant
         </button>
       </div>
+
+      {list.length > 0 && (
+        <div className="mb-4">
+          <input
+            type="search"
+            placeholder="Search by name or date of birth…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full max-w-md rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+            aria-label="Search applicants"
+          />
+        </div>
+      )}
 
       <AddApplicantModal
         open={modalOpen}
@@ -42,14 +66,25 @@ export function ChildList() {
           <button
             type="button"
             onClick={() => setModalOpen(true)}
-            className="mt-2 inline-block text-sky-600 hover:text-sky-700 font-medium"
+            className="mt-2 inline-block text-emerald-600 hover:text-emerald-700 font-medium"
           >
             Add your first applicant
           </button>
         </div>
+      ) : filteredList.length === 0 ? (
+        <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-slate-600">
+          <p>No applicants match your search.</p>
+          <button
+            type="button"
+            onClick={() => setSearchQuery('')}
+            className="mt-2 inline-block text-emerald-600 hover:text-emerald-700 font-medium"
+          >
+            Clear search
+          </button>
+        </div>
       ) : (
         <ul className="bg-white rounded-xl border border-slate-200 shadow-sm divide-y divide-slate-200 overflow-hidden">
-          {list.map((c) => (
+          {filteredList.map((c) => (
             <li key={c.id}>
               <Link
                 to={`/children/${c.id}`}
@@ -69,7 +104,7 @@ export function ChildList() {
                       </p>
                       <div className="mt-1 h-1.5 w-full max-w-[120px] rounded-full bg-slate-200 overflow-hidden">
                         <div
-                          className="h-full rounded-full bg-sky-500 transition-[width]"
+                          className="h-full rounded-full bg-emerald-500 transition-[width]"
                           style={{ width: `${Math.round(((c.checklist_checked ?? 0) / c.checklist_total) * 100)}%` }}
                         />
                       </div>

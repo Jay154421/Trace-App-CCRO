@@ -47,7 +47,7 @@ export function Dashboard() {
           <button
             type="button"
             onClick={() => setModalOpen(true)}
-            className="mt-2 inline-flex items-center rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+            className="mt-2 inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
           >
             Add applicant
           </button>
@@ -75,7 +75,7 @@ export function Dashboard() {
             ))}
           </ul>
           <div className="px-5 py-3 bg-slate-50 border-t border-slate-200">
-            <Link to="/children" className="text-sm font-medium text-sky-600 hover:text-sky-700">
+            <Link to="/children" className="text-sm font-medium text-emerald-600 hover:text-emerald-700">
               View all applicants →
             </Link>
           </div>
