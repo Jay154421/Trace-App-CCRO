@@ -1,6 +1,7 @@
 import { useParams, Link } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import { jsPDF } from 'jspdf';
 import { childrenApi } from '../services/api';
 
 const isElectron = typeof window !== 'undefined' && window.electron?.isElectron;
@@ -10,7 +11,7 @@ const COLORS = {
   black: '#000000',
 };
 
-const FONT_FAMILY = 'Arial, Helvetica, sans-serif';
+const FONT_FAMILY = 'Arial';
 
 const LAYOUT = {
   document: {
@@ -21,8 +22,8 @@ const LAYOUT = {
     dpi: 300,
   },
   fields: {
-    province: { x: 86, y: 477, width: 860, height: 132 },
-    city_municipality: { x: 86, y: 636, width: 860, height: 132 },
+    province: { x: 96, y: 477},
+    city_municipality: { x: 96, y: 636 },
     registry_no: { x: 1634, y: 477, width: 774, height: 132 },
     child_name_first: { x: 301, y: 873, width: 602, height: 132 },
     child_name_middle: { x: 946, y: 873, width: 602, height: 132 },
@@ -72,6 +73,61 @@ const LAYOUT = {
   },
 };
 
+// Map each layout field key to how we get the value (cert key or function of f)
+const FIELD_VALUE_MAP = [
+  { key: 'province', valueKey: 'province' },
+  { key: 'city_municipality', valueKey: 'cityMunicipality' },
+  { key: 'registry_no', valueKey: 'registryNo' },
+  { key: 'child_name_first', valueKey: 'childFirst' },
+  { key: 'child_name_middle', valueKey: 'childMiddle' },
+  { key: 'child_name_last', valueKey: 'childLast' },
+  { key: 'sex', valueKey: 'sex' },
+  { key: 'date_of_birth_day', valueKey: 'birthDay' },
+  { key: 'date_of_birth_month', valueKey: 'birthMonth' },
+  { key: 'date_of_birth_year', valueKey: 'birthYear' },
+  { key: 'place_of_birth_hospital', valueKey: 'placeOfBirthName' },
+  { key: 'place_of_birth_city', valueKey: 'placeOfBirthCity' },
+  { key: 'place_of_birth_province', valueKey: 'placeOfBirthProvince' },
+  { key: 'type_of_birth', valueKey: 'typeOfBirth' },
+  { key: 'multiple_birth_order', valueKey: 'multipleBirthOrder' },
+  { key: 'birth_order', valueKey: 'birthOrder' },
+  { key: 'weight_at_birth', valueKey: 'weightGrams' },
+  { key: 'mother_maiden_first', valueKey: 'motherFirst' },
+  { key: 'mother_maiden_middle', valueKey: 'motherMiddle' },
+  { key: 'mother_maiden_last', valueKey: 'motherLast' },
+  { key: 'mother_citizenship', valueKey: 'motherCitizenship' },
+  { key: 'mother_religion', valueKey: 'motherReligion' },
+  { key: 'mother_occupation', valueKey: 'motherOccupation' },
+  { key: 'mother_age', valueKey: 'motherAge' },
+  { key: 'mother_residence_house', valueKey: 'motherResidenceLine1' },
+  { key: 'mother_residence_city', valueKey: 'motherResidenceCity' },
+  { key: 'mother_residence_province', valueKey: 'motherResidenceProvince' },
+  { key: 'father_name_first', valueKey: 'fatherFirst' },
+  { key: 'father_name_middle', valueKey: 'fatherMiddle' },
+  { key: 'father_name_last', valueKey: 'fatherLast' },
+  { key: 'father_citizenship', valueKey: 'fatherCitizenship' },
+  { key: 'father_religion', valueKey: 'fatherReligion' },
+  { key: 'father_occupation', valueKey: 'fatherOccupation' },
+  { key: 'father_residence_house', valueKey: 'fatherResidenceLine1' },
+  { key: 'father_residence_city', valueKey: 'fatherResidenceCity' },
+  { key: 'father_residence_province', valueKey: 'fatherResidenceProvince' },
+  { key: 'marriage_date', getValue: (f) => [f('marriageMonth'), f('marriageDay'), f('marriageYear')].filter(Boolean).join(' / ') },
+  { key: 'marriage_place_city', valueKey: 'marriagePlaceCity' },
+  { key: 'marriage_place_province', valueKey: 'marriagePlaceProvince' },
+  { key: 'attendant_type', valueKey: 'attendantType' },
+  { key: 'attendant_signature', getValue: (f) => f('attendantSignature') || f('attendantName') },
+  { key: 'attendant_address', valueKey: 'attendantAddress' },
+  { key: 'attendant_date', valueKey: 'attendantDate' },
+  { key: 'informant_signature', getValue: (f) => f('informantSignature') || f('informantName') },
+  { key: 'informant_relation', valueKey: 'informantRelationship' },
+  { key: 'informant_address', valueKey: 'informantAddress' },
+  { key: 'prepared_by', getValue: (f) => f('preparedBySignature') || f('preparedByName') },
+  { key: 'registered_by', getValue: (f) => f('registeredBySignature') || f('registeredByName') },
+];
+
+// Font size chosen so that at print scale (0.32) text is readable (~10pt equivalent)
+const POSITIONED_FONT_SIZE = 32;
+
 function PositionedValue({ fieldKey, value }) {
   const field = LAYOUT.fields[fieldKey];
   if (!field) return null;
@@ -85,9 +141,11 @@ function PositionedValue({ fieldKey, value }) {
         width: field.width,
         height: field.height,
         fontFamily: FONT_FAMILY,
-        fontSize: '10px',
+        fontSize: `${POSITIONED_FONT_SIZE}px`,
         padding: '2px 4px',
         color: COLORS.black,
+        WebkitPrintColorAdjust: 'exact',
+        printColorAdjust: 'exact',
       }}
     >
       {display}
@@ -95,17 +153,76 @@ function PositionedValue({ fieldKey, value }) {
   );
 }
 
+function parseDateOfBirth(dateStr) {
+  if (!dateStr || typeof dateStr !== 'string') return { day: '', month: '', year: '' };
+  const trimmed = dateStr.trim();
+  const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(trimmed);
+  if (iso) return { day: iso[3], month: iso[2], year: iso[1] };
+  const d = new Date(trimmed);
+  if (Number.isNaN(d.getTime())) return { day: '', month: '', year: '' };
+  return {
+    day: String(d.getDate()),
+    month: String(d.getMonth() + 1),
+    year: String(d.getFullYear()),
+  };
+}
+
+function getMergedCert(child, cert) {
+  if (!cert || typeof cert !== 'object') return {};
+  const birth = child?.date_of_birth ? parseDateOfBirth(child.date_of_birth) : {};
+  return {
+    ...cert,
+    childFirst: cert.childFirst ?? cert.child_first ?? child?.first_name ?? '',
+    childMiddle: cert.childMiddle ?? cert.child_middle ?? child?.middle_name ?? '',
+    childLast: cert.childLast ?? cert.child_last ?? child?.last_name ?? '',
+    birthDay: cert.birthDay ?? cert.birth_day ?? birth.day ?? '',
+    birthMonth: cert.birthMonth ?? cert.birth_month ?? birth.month ?? '',
+    birthYear: cert.birthYear ?? cert.birth_year ?? birth.year ?? '',
+  };
+}
+
+// Build PDF from merged cert data so content is guaranteed in the file (no print capture)
+function buildFieldPositionPdfBase64(merged) {
+  const camelToSnake = (s) => s.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
+  const f = (camelKey) => merged[camelKey] ?? merged[camelToSnake(camelKey)];
+
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'in', format: 'legal' });
+  doc.setFont('helvetica');
+  doc.setFontSize(10);
+  doc.setTextColor(0, 0, 0);
+
+  const W = LAYOUT.document.width;
+  const H = LAYOUT.document.height;
+  const pageW = 8.5;
+  const pageH = 14;
+  const yOffset = 0.08; // small offset from top of cell for baseline
+
+  for (const item of FIELD_VALUE_MAP) {
+    const field = LAYOUT.fields[item.key];
+    if (!field) continue;
+    const value = item.getValue ? item.getValue(f) : f(item.valueKey);
+    const str = value === '' || value === undefined || value === null ? '' : String(value);
+    const xIn = (field.x / W) * pageW;
+    const yIn = ((field.y + 25) / H) * pageH;
+    doc.text(str, xIn, yIn);
+  }
+
+  const dataUri = doc.output('datauristring');
+  return dataUri.indexOf(',') >= 0 ? dataUri.split(',')[1] : '';
+}
+
 export function FieldPosition() {
   const { id } = useParams();
+  const [child, setChild] = useState(null);
   const [cert, setCert] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const printRef = useRef(null);
 
   useEffect(() => {
     childrenApi
       .get(id)
       .then((data) => {
+        setChild(data);
         const raw = data.certificate_of_live_birth;
         setCert(raw && typeof raw === 'object' ? raw : {});
       })
@@ -129,14 +246,15 @@ export function FieldPosition() {
         }
         body * { visibility: hidden; }
         .field-position-print-wrapper {
-          position: relative !important;
-          width: 8.5in !important;
-          height: 14in !important;
+          position: absolute !important;
+          left: 0 !important; top: 0 !important;
+          width: 8.5in !important; height: 14in !important;
           min-height: 0 !important;
           overflow: hidden !important;
         }
+        .field-position-print-wrapper,
         .field-position-print-area,
-        .field-position-print-area * { visibility: visible; }
+        .field-position-print-area * { visibility: visible !important; }
         .field-position-print-area {
           position: absolute !important;
           left: 0 !important; top: 0 !important;
@@ -159,7 +277,9 @@ export function FieldPosition() {
   const handleSavePdf = async () => {
     if (!window.electron?.saveFieldPositionPdf) return;
     try {
-      const result = await window.electron.saveFieldPositionPdf();
+      const merged = getMergedCert(child, cert);
+      const base64 = buildFieldPositionPdfBase64(merged);
+      const result = await window.electron.saveFieldPositionPdf(base64);
       if (result?.ok) {
         toast.success('PDF saved.');
       }
@@ -172,14 +292,15 @@ export function FieldPosition() {
   if (error) return <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">{error.message}</div>;
   if (cert === null) return null;
 
-  const f = (key) => cert[key];
+  const merged = getMergedCert(child, cert);
+  const camelToSnake = (s) => s.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
+  const f = (camelKey) => merged[camelKey] ?? merged[camelToSnake(camelKey)];
 
   return (
     <>
       <div className="mb-4 flex items-center justify-between print-hide">
         <Link to={`/children/${id}`} className="text-sm text-slate-500 hover:text-slate-700">← Back to applicant</Link>
         <div className="flex items-center gap-2">
-          {isElectron && (
             <button
               type="button"
               onClick={handleSavePdf}
@@ -187,13 +308,12 @@ export function FieldPosition() {
             >
               Save as PDF
             </button>
-          )}
+        
         </div>
       </div>
 
       <div className="field-position-print-wrapper mx-auto bg-white min-h-screen overflow-auto" style={{ maxWidth: '100%' }}>
         <div
-          ref={printRef}
           className="field-position-print-area bg-white shadow-sm print:shadow-none"
           style={{
             position: 'relative',
@@ -201,7 +321,7 @@ export function FieldPosition() {
             height: LAYOUT.document.height,
             boxSizing: 'border-box',
             fontFamily: FONT_FAMILY,
-            fontSize: '12px',
+            fontSize: '14px',
             color: COLORS.black,
           }}
         >

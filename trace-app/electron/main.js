@@ -19,23 +19,14 @@ function createWindow(url) {
   win.loadURL(url);
   if (isDev) win.webContents.openDevTools();
 
-  ipcMain.handle('save-field-position-pdf', async () => {
+  ipcMain.handle('save-field-position-pdf', async (_event, pdfBase64) => {
     const { filePath } = await dialog.showSaveDialog(win, {
       defaultPath: `field-position-${Date.now()}.pdf`,
       filters: [{ name: 'PDF', extensions: ['pdf'] }],
     });
-    if (!filePath) return { ok: false };
-    // Legal: 8.5" x 14" (microns: 1 inch = 25400)
-    const MICRONS_PER_INCH = 25400;
-    const pdfBuffer = await win.webContents.printToPDF({
-      printBackground: true,
-      marginsType: 1,
-      pageSize: {
-        width: Math.round(8.5 * MICRONS_PER_INCH),
-        height: Math.round(14 * MICRONS_PER_INCH),
-      },
-    });
-    fs.writeFileSync(filePath, pdfBuffer);
+    if (!filePath || !pdfBase64) return { ok: false };
+    const buffer = Buffer.from(pdfBase64, 'base64');
+    fs.writeFileSync(filePath, buffer);
     return { ok: true, filePath };
   });
 }

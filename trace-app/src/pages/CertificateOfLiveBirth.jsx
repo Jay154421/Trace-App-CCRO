@@ -5,10 +5,13 @@ import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { childrenApi } from '../services/api';
 
+const DEFAULT_PROVINCE = 'Lanao';
+const DEFAULT_CITY_MUNICIPALITY = 'Iligan City';
+
 const DEFAULT_CERT = {
   registryNo: '',
-  province: '',
-  cityMunicipality: '',
+  province: DEFAULT_PROVINCE,
+  cityMunicipality: DEFAULT_CITY_MUNICIPALITY,
   childFirst: '',
   childMiddle: '',
   childLast: '',
@@ -84,6 +87,22 @@ const DEFAULT_CERT = {
 };
 
 const AUTO_SAVE_MS = 700;
+
+function parseDateOfBirth(dateStr) {
+  if (!dateStr || typeof dateStr !== 'string') return { day: '', month: '', year: '' };
+  const trimmed = dateStr.trim();
+  const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(trimmed);
+  if (iso) {
+    return { day: iso[3], month: iso[2], year: iso[1] };
+  }
+  const d = new Date(trimmed);
+  if (Number.isNaN(d.getTime())) return { day: '', month: '', year: '' };
+  return {
+    day: String(d.getDate()),
+    month: String(d.getMonth() + 1),
+    year: String(d.getFullYear()),
+  };
+}
 
 // Pixel-perfect colors from Certificate of Live Birth (Municipal Form No. 102)
 const COLORS = {
@@ -213,7 +232,19 @@ export function CertificateOfLiveBirth() {
         const cert = data.certificate_of_live_birth && typeof data.certificate_of_live_birth === 'object'
           ? data.certificate_of_live_birth
           : {};
-        setForm({ ...DEFAULT_CERT, ...cert });
+        const base = { ...DEFAULT_CERT, ...cert };
+        const fromChild = {
+          province: base.province || DEFAULT_PROVINCE,
+          cityMunicipality: base.cityMunicipality || DEFAULT_CITY_MUNICIPALITY,
+          childFirst: base.childFirst || (data.first_name ?? ''),
+          childMiddle: base.childMiddle || (data.middle_name ?? ''),
+          childLast: base.childLast || (data.last_name ?? ''),
+        };
+        const { day, month, year } = parseDateOfBirth(data.date_of_birth);
+        if (!base.birthDay && day) fromChild.birthDay = day;
+        if (!base.birthMonth && month) fromChild.birthMonth = month;
+        if (!base.birthYear && year) fromChild.birthYear = year;
+        setForm({ ...base, ...fromChild });
       })
       .catch(setError)
       .finally(() => setLoading(false));
