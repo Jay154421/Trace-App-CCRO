@@ -22,42 +22,42 @@ const LAYOUT = {
     dpi: 300,
   },
   fields: {
-    province: { x: 96, y: 477},
-    city_municipality: { x: 96, y: 636 },
+    province: { x: 600, y: 450},
+    city_municipality: { x: 600, y: 525},
     registry_no: { x: 1634, y: 477, width: 774, height: 132 },
-    child_name_first: { x: 301, y: 873, width: 602, height: 132 },
-    child_name_middle: { x: 946, y: 873, width: 602, height: 132 },
-    child_name_last: { x: 1591, y: 873, width: 774, height: 132 },
-    sex: { x: 86, y: 1059, width: 688, height: 132 },
-    date_of_birth_day: { x: 860, y: 1059, width: 344, height: 132 },
-    date_of_birth_month: { x: 1246, y: 1059, width: 516, height: 132 },
-    date_of_birth_year: { x: 1806, y: 1059, width: 516, height: 132 },
-    place_of_birth_hospital: { x: 86, y: 1244, width: 1118, height: 132 },
-    place_of_birth_city: { x: 1246, y: 1244, width: 602, height: 132 },
-    place_of_birth_province: { x: 1892, y: 1244, width: 559, height: 132 },
-    type_of_birth: { x: 86, y: 1430, width: 774, height: 132 },
-    multiple_birth_order: { x: 903, y: 1430, width: 774, height: 132 },
-    birth_order: { x: 1720, y: 1430, width: 516, height: 132 },
-    weight_at_birth: { x: 2236, y: 1430, width: 258, height: 132 },
-    mother_maiden_first: { x: 301, y: 1667, width: 602, height: 132 },
-    mother_maiden_middle: { x: 946, y: 1667, width: 602, height: 132 },
-    mother_maiden_last: { x: 1591, y: 1667, width: 774, height: 132 },
-    mother_citizenship: { x: 86, y: 1853, width: 860, height: 132 },
-    mother_religion: { x: 989, y: 1853, width: 860, height: 132 },
-    mother_occupation: { x: 1892, y: 1853, width: 602, height: 132 },
-    mother_age: { x: 2064, y: 2012, width: 387, height: 132 },
-    mother_residence_house: { x: 86, y: 2171, width: 860, height: 132 },
-    mother_residence_city: { x: 989, y: 2171, width: 688, height: 132 },
-    mother_residence_province: { x: 1720, y: 2171, width: 774, height: 132 },
-    father_name_first: { x: 301, y: 2383, width: 602, height: 132 },
-    father_name_middle: { x: 946, y: 2383, width: 602, height: 132 },
-    father_name_last: { x: 1591, y: 2383, width: 774, height: 132 },
-    father_citizenship: { x: 86, y: 2569, width: 860, height: 132 },
-    father_religion: { x: 989, y: 2569, width: 860, height: 132 },
-    father_occupation: { x: 1892, y: 2569, width: 602, height: 132 },
-    father_residence_house: { x: 86, y: 2755, width: 860, height: 132 },
-    father_residence_city: { x: 989, y: 2755, width: 688, height: 132 },
-    father_residence_province: { x: 1720, y: 2755, width: 774, height: 132 },
+    child_name_first: { x: 675, y: 690, width: 300 },
+    child_name_middle: {x: 1311, y: 690, width: 300},
+    child_name_last: { x: 1911, y: 690, width: 300},
+    sex: { x: 600, y: 789 },
+    date_of_birth_day: { x: 1425, y: 789, width: 30},
+    date_of_birth_month: { x: 1764, y: 789, width: 30},
+    date_of_birth_year: { x: 2178, y: 789, width: 80 },
+    place_of_birth_hospital: { x: 786, y: 900, width: 300 },
+    place_of_birth_city: { x: 1470, y: 900},
+    place_of_birth_province: { x: 1872, y: 900, width: 300},
+    type_of_birth: { x: 456, y: 1482},
+    multiple_birth_order: { x: 1056, y: 1482},
+    birth_order: { x: 1725, y: 1482},
+    weight_at_birth: { x: 2250, y: 1482},
+    mother_maiden_first: { x: 675, y: 1200},
+    mother_maiden_middle: { x: 1311, y: 1200},
+    mother_maiden_last: { x: 1911, y: 1200},
+    mother_citizenship: { x: 900, y: 1314},
+    mother_religion: { x: 1800, y: 1314},
+    mother_occupation: { x: 1725, y: 1553},
+    mother_age: { x: 2064, y: 2012 },
+    mother_residence_house: { x: 786, y: 1596 },
+    mother_residence_city: { x: 1470, y: 1596},
+    mother_residence_province: { x: 1872, y: 1596},
+    father_name_first: { x: 675, y: 1725},
+    father_name_middle: { x: 1311, y: 1725},
+    father_name_last: { x: 1911, y: 1725},
+    father_citizenship: { x: 525, y: 1875},
+    father_religion: { x: 1125, y: 1875, width: 300},
+    father_occupation: { x: 1725, y: 1875, width: 300},
+    father_residence_house: { x: 786, y: 1989, width: 300}, 
+    father_residence_city: { x: 1470, y: 1989, width: 300},
+    father_residence_province: { x: 1872, y: 1989, width: 300},
     marriage_date: { x: 86, y: 2994, width: 860, height: 132 },
     marriage_place_city: { x: 989, y: 2994, width: 688, height: 132 },
     marriage_place_province: { x: 1720, y: 2994, width: 774, height: 132 },
@@ -72,6 +72,21 @@ const LAYOUT = {
     registered_by: { x: 1290, y: 3815, width: 1118, height: 132 },
   },
 };
+
+const CENTERED_FIELD_KEYS = [
+  'child_name_first', 'child_name_middle', 'child_name_last',
+  'sex',
+  'date_of_birth_day', 'date_of_birth_month', 'date_of_birth_year',
+  'place_of_birth_hospital', 'place_of_birth_city', 'place_of_birth_province',
+  'type_of_birth', 'multiple_birth_order', 'birth_order', 'weight_at_birth',
+  'mother_maiden_first', 'mother_maiden_middle', 'mother_maiden_last',
+  'mother_occupation',
+  'mother_residence_house', 'mother_residence_city', 'mother_residence_province',
+  'father_name_first', 'father_name_middle', 'father_name_last',
+  'father_occupation',
+  'father_residence_house', 'father_residence_city', 'father_residence_province',
+  'marriage_date', 'marriage_place_city', 'marriage_place_province',
+];
 
 // Map each layout field key to how we get the value (cert key or function of f)
 const FIELD_VALUE_MAP = [
@@ -125,13 +140,14 @@ const FIELD_VALUE_MAP = [
   { key: 'registered_by', getValue: (f) => f('registeredBySignature') || f('registeredByName') },
 ];
 
-// Font size chosen so that at print scale (0.32) text is readable (~10pt equivalent)
-const POSITIONED_FONT_SIZE = 32;
+// Font size for all positioned field values
+const POSITIONED_FONT_SIZE = 20;
 
 function PositionedValue({ fieldKey, value }) {
   const field = LAYOUT.fields[fieldKey];
   if (!field) return null;
   const display = value === '' || value === undefined || value === null ? '' : String(value);
+  const isCentered = CENTERED_FIELD_KEYS.includes(fieldKey);
   return (
     <span
       className="absolute overflow-hidden"
@@ -146,6 +162,7 @@ function PositionedValue({ fieldKey, value }) {
         color: COLORS.black,
         WebkitPrintColorAdjust: 'exact',
         printColorAdjust: 'exact',
+        ...(isCentered && { textAlign: 'center' }),
       }}
     >
       {display}
