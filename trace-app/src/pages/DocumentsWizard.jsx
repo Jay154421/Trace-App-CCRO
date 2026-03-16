@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { childrenApi } from '../services/api';
@@ -36,23 +36,45 @@ function buildChecklist(requirements, existing = []) {
 
 export function DocumentsWizard() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [child, setChild] = useState(null);
   const [checklist, setChecklist] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [step, setStep] = useState(0);
+  const [leaveModalOpen, setLeaveModalOpen] = useState(false);
+  const [initialChecklist, setInitialChecklist] = useState(null);
 
   useEffect(() => {
     childrenApi
       .get(id)
       .then((data) => {
         setChild(data);
-        setChecklist(buildChecklist(data.requirements || { all: [] }, data.checklist || []));
+        const built = buildChecklist(data.requirements || { all: [] }, data.checklist || []);
+        setChecklist(built);
+        setInitialChecklist(built);
       })
       .catch(setError)
       .finally(() => setLoading(false));
   }, [id]);
+
+  const hasUnsavedChanges = initialChecklist && checklist.some((curr, i) => {
+    const init = initialChecklist[i];
+    if (!init) return true;
+    const notesChanged = (curr.notes ?? '') !== (init.notes ?? '');
+    const checkedChanged = !!curr.checked !== !!init.checked;
+    const hasNewFiles = (curr.attachmentFiles?.length ?? 0) > 0;
+    return notesChanged || checkedChanged || hasNewFiles;
+  });
+
+  const handleBackClick = () => {
+    if (hasUnsavedChanges) {
+      setLeaveModalOpen(true);
+    } else {
+      navigate(`/children/${id}`);
+    }
+  };
 
   const toggle = (index) => {
     setChecklist((prev) => {
@@ -123,13 +145,23 @@ export function DocumentsWizard() {
         return item;
       })
     );
-    childrenApi
+    return childrenApi
       .updateChecklist(id, items)
       .then(() => {
         toast.success('Checklist saved.');
+        const cleared = checklist.map((c) => ({ ...c, attachmentFiles: [] }));
+        setChecklist(cleared);
+        setInitialChecklist(cleared);
       })
-      .catch((err) => toast.error(err?.message || 'Failed to save checklist.'))
+      .catch((err) => {
+        toast.error(err?.message || 'Failed to save checklist.');
+        throw err;
+      })
       .finally(() => setSaving(false));
+  };
+
+  const saveAndLeave = () => {
+    save().then(() => navigate(`/children/${id}`));
   };
 
   function fileToBase64(file) {
@@ -164,7 +196,13 @@ export function DocumentsWizard() {
     <div>
       <div className="mb-6">
         <div className="flex flex-wrap items-center gap-3">
-          <Link to={`/children/${id}`} className="text-sm text-slate-500 hover:text-slate-700">← Back to applicant</Link>
+          <button
+            type="button"
+            onClick={handleBackClick}
+            className="text-sm text-slate-500 hover:text-slate-700"
+          >
+            ← Back to applicant
+          </button>
           <Link to={`/children/${id}/certificate-of-live-birth`} className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">Certificate of Live Birth</Link>
         </div>
         <h1 className="text-2xl font-semibold text-slate-800 mt-2">
@@ -279,10 +317,65 @@ export function DocumentsWizard() {
         >
           {saving ? 'Saving…' : 'Save checklist'}
         </button>
-        <Link to={`/children/${id}`} className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+        <button
+          type="button"
+          onClick={handleBackClick}
+          className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+        >
           Back to applicant
-        </Link>
+        </button>
       </div>
+
+      {leaveModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50"
+          onClick={() => setLeaveModalOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="leave-modal-title"
+        >
+          <div
+            className="bg-white rounded-xl border border-slate-200 shadow-lg w-full max-w-sm p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 id="leave-modal-title" className="text-lg font-semibold text-slate-800">
+              Save changes?
+            </h2>
+            <p className="mt-2 text-sm text-slate-600">
+              You are leaving the page without saving your changes.
+            </p>
+            <div className="flex flex-col gap-3 mt-5">
+              <button
+                type="button"
+                onClick={() => {
+                  setLeaveModalOpen(false);
+                  saveAndLeave();
+                }}
+                className="w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+              >
+                Save Changes
+              </button>
+              <button
+                type="button"
+                onClick={() => setLeaveModalOpen(false)}
+                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+              >
+                Stay on Page
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setLeaveModalOpen(false);
+                  navigate(`/children/${id}`);
+                }}
+                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+              >
+                Discard Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

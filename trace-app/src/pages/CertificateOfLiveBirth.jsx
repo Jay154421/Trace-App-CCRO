@@ -283,50 +283,11 @@ export function CertificateOfLiveBirth() {
   if (error) return <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">{error.message}</div>;
   if (!child) return null;
 
-  const handlePrint = () => {
-    const el = certContentRef.current;
-    if (!el) {
-      window.print();
-      return;
-    }
-    const certHtml = el.outerHTML;
-    const styleLinks = [...document.querySelectorAll('link[rel="stylesheet"]')]
-      .map((l) => l.href)
-      .filter(Boolean);
-    const linksHtml = styleLinks.map((href) => `<link rel="stylesheet" href="${href}">`).join('\n');
-    const printDoc = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title></title>
-${linksHtml}
-<style>
-  @page { size: 8.5in 14in; margin: 0.25in; }
-  body { margin: 0; padding: 0; background: white; box-sizing: border-box; height: 14in; overflow: hidden; display: flex; align-items: flex-start; justify-content: flex-start; }
-  body > div { box-sizing: border-box; transform-origin: top left; transform: scale(0.82); width: 8.5in; }
-  body * { box-sizing: border-box; }
-</style></head><body>${certHtml}</body></html>`;
-    const w = window.open('', '_blank');
-    if (!w) {
-      window.print();
-      return;
-    }
-    w.document.write(printDoc);
-    w.document.close();
-    w.focus();
-    setTimeout(() => w.print(), 500);
-  };
-
   return (
     <div className="mx-auto" style={{ width: '8.5in', maxWidth: '100%' }}>
       <div className="mb-4 flex items-center justify-between print:hidden">
         <Link to={`/children/${id}`} className="text-sm text-slate-500 hover:text-slate-700">← Back to applicant</Link>
-        <div className="flex items-center gap-3">
-          {saving && <span className="text-sm text-slate-500">Saving…</span>}
-          <button
-            type="button"
-            onClick={handlePrint}
-            className="px-4 py-2 bg-emerald-700 text-white text-sm font-medium rounded hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
-          >
-            Print
-          </button>
-        </div>
+        {saving && <span className="text-sm text-slate-500">Saving…</span>}
       </div>
 
       <div
@@ -545,7 +506,6 @@ ${linksHtml}
         </FormSection>
 
         <GreenRule />
-
         <div style={{ fontFamily: FONT_FAMILY, color: COLORS.black, marginTop: '8px' }}>
           <p style={{ fontWeight: 700, fontSize: '12px', marginBottom: '2px' }}>MARRIAGE OF PARENTS</p>
           <p style={{ fontSize: '9px', fontWeight: 400, marginBottom: '6px' }}>(If not married, accomplish Affidavit of Acknowledgement/Admission of Paternity at the back.)</p>
@@ -767,7 +727,6 @@ ${linksHtml}
           </div>
         </div>
       </div>
-
       <p className="mt-4 text-sm text-slate-600 print:hidden">Applicant: {child.first_name} {child.last_name}. Edit any field; changes save automatically.</p>
     </div>
   );
