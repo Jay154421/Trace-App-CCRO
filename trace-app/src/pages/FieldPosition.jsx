@@ -21,54 +21,55 @@ const LAYOUT = {
     paper: '8.5x14in',
     dpi: 300,
   },
-  fields: {
-    province: { x: 600, y: 450},
-    city_municipality: { x: 600, y: 525},
+  fields: { 
+    province: { x: 600, y: 447},
+    city_municipality: { x: 600, y: 519},
     registry_no: { x: 1634, y: 477},
-    child_name_first: { x: 675, y: 690, width: 340 },
-    child_name_middle: {x: 1311, y: 690, width: 340},
-    child_name_last: { x: 1911, y: 690, width: 340},
-    sex: { x: 600, y: 789 },
-    date_of_birth_day: { x: 1425, y: 789, width: 30},
-    date_of_birth_month: { x: 1764, y: 789, width: 30},
-    date_of_birth_year: { x: 2178, y: 789},
-    place_of_birth_hospital: { x: 786, y: 900 },
-    place_of_birth_city: { x: 1470, y: 900},
-    place_of_birth_province: { x: 1872, y: 900, width: 300},
-    type_of_birth: { x: 456, y: 1074},
-    multiple_birth_order: { x: 1056, y: 1074},
-    birth_order: { x: 1725, y: 1074},
-    weight_at_birth: { x: 2250, y: 1074},
-    mother_maiden_first: { x: 675, y: 1200, width: 340},
-    mother_maiden_middle: { x: 1311, y: 1200, width: 340},
-    mother_maiden_last: { x: 1911, y: 1200, width: 340},
-    mother_citizenship: { x: 900, y: 1314},
-    mother_religion: { x: 1800, y: 1314},
-    mother_children_born_alive: { x: 459, y: 1458},
-    mother_children_living: { x: 786, y: 1458},
-    mother_children_dead: { x: 1056, y: 1458},
-    mother_occupation: { x: 1470, y: 1458},
-    mother_age: { x: 2175, y: 1458 },
-    mother_residence_house: { x: 336, y: 1596},
-    mother_residence_city: { x: 1200, y: 1596},
-    mother_residence_province: { x: 1872, y: 1596},
-    father_name_first: { x: 675, y: 1725, width: 340},
-    father_name_middle: { x: 1311, y: 1725, width: 340},
-    father_name_last: { x: 1911, y: 1725, width: 340},
-    father_citizenship: { x: 336, y: 1875},
-    father_religion: { x: 900, y: 1875},
-    father_occupation: { x: 1725, y: 1875},
-    father_residence_house: { x: 336, y: 1989}, 
-    father_residence_city: { x: 1200, y: 1989},
-    father_residence_province: { x: 1872, y: 1989},
-    marriage_date: { x: 708, y: 2148, width: 210},
-    marriage_place: { x: 1653, y: 2148, width: 628},
+    child_name_first: { x: 531, y: 648},
+    child_name_middle: {x: 1179, y: 648},
+    child_name_last: { x: 1830, y: 648},
+    sex: { x: 600, y: 753 },
+    date_of_birth_day: { x: 1425, y: 753},
+    date_of_birth_month: { x: 1764, y: 753},
+    date_of_birth_year: { x: 2178, y: 753},
+    place_of_birth_hospital: { x: 786, y: 885 },
+    place_of_birth_city: { x: 1470, y: 885},
+    place_of_birth_province: { x: 1872, y: 885, width: 300},
+    type_of_birth: { x: 456, y: 1038},
+    multiple_birth_order: { x: 1056, y: 1038},
+    birth_order: { x: 1725, y: 1038},
+    weight_at_birth: { x: 2124, y: 1038},         
+    mother_maiden_first: { x: 531, y: 1167},
+    mother_maiden_middle: { x: 1179, y: 1167},
+    mother_maiden_last: { x: 1830, y: 1167},
+    mother_citizenship: { x: 543, y: 1275},
+    mother_religion: { x: 1800, y: 1275},
+    mother_children_born_alive: { x: 459, y: 1440},
+    mother_children_living: { x: 786, y: 1440},
+    mother_children_dead: { x: 1056, y: 1440},
+    mother_occupation: { x: 1470, y: 1440},
+    mother_age: { x: 2175, y: 1440 },
+    mother_residence_house: { x: 336, y: 1533},
+    mother_residence_city: { x: 1200, y: 1533},
+    mother_residence_province: { x: 1872, y: 1533},
+    father_name_first: { x: 531, y: 1677, width: 640},
+    father_name_middle: { x: 1179, y: 1677, width: 640},
+    father_name_last: { x: 1830, y: 1677, width: 640},
+    father_citizenship: { x: 336, y: 1818},
+    father_religion: { x: 900, y: 1818},
+    father_occupation: { x: 1725, y: 1818},
+    father_age: { x: 2175, y: 1818 },
+    father_residence_house: { x: 336, y: 1959}, 
+    father_residence_city: { x: 1200, y: 1959},
+    father_residence_province: { x: 1872, y: 1959},
+    marriage_date: { x: 471, y: 2148},
+    marriage_place: { x: 1287, y: 2148},
     // attendant_type: { x: 507, y: 2646,},
     // attendant_signature: { x: 86, y: 3391, width: 860, height: 132 },
-    attendant_title: { x: 507, y: 2646 },
-    attendant_name: { x: 483, y: 2574},
-    attendant_address: { x: 1500, y: 2505, width: 344},
-    attendant_date: { x: 1512, y: 2646},
+    attendant_title: { x: 507, y: 2643 },
+    attendant_name: { x: 483, y: 2562},
+    attendant_address: { x: 1500, y: 2505, width: 644},
+    attendant_date: { x: 1512, y: 2643},
     attendant_time: { x: 1533, y: 2409},
     // informant_signature: { x: 86, y: 3603, width: 860, height: 132 },
     // informant_relation: { x: 989, y: 3603, width: 688, height: 132 },
@@ -89,7 +90,7 @@ const CENTERED_FIELD_KEYS = [
   'mother_occupation',
   'mother_residence_house', 'mother_residence_city', 'mother_residence_province',
   'father_name_first', 'father_name_middle', 'father_name_last',
-  'father_occupation',
+  'father_occupation', 'father_age',
   'father_residence_house', 'father_residence_city', 'father_residence_province',
   'marriage_date', 'marriage_place',
 ];
@@ -132,6 +133,7 @@ const FIELD_VALUE_MAP = [
   { key: 'father_citizenship', valueKey: 'fatherCitizenship' },
   { key: 'father_religion', valueKey: 'fatherReligion' },
   { key: 'father_occupation', valueKey: 'fatherOccupation' },
+  { key: 'father_age', valueKey: 'fatherAge' },
   { key: 'father_residence_house', valueKey: 'fatherResidenceLine1' },
   { key: 'father_residence_city', valueKey: 'fatherResidenceCity' },
   { key: 'father_residence_province', valueKey: 'fatherResidenceProvince' },
@@ -223,7 +225,7 @@ function buildFieldPositionPdfBase64(merged) {
   const H = LAYOUT.document.height;
   const pageW = 8.5;
   const pageH = 14;
-  const yOffset = 0.08; // small offset from top of cell for baseline
+  const lineHeightIn = 12 / 72;
 
   for (const item of FIELD_VALUE_MAP) {
     const field = LAYOUT.fields[item.key];
@@ -231,8 +233,30 @@ function buildFieldPositionPdfBase64(merged) {
     const value = item.getValue ? item.getValue(f) : f(item.valueKey);
     const str = value === '' || value === undefined || value === null ? '' : String(value);
     const xIn = (field.x / W) * pageW;
-    const yIn = ((field.y + 25) / H) * pageH;
-    doc.text(str, xIn, yIn);
+    let yIn = ((field.y + 25) / H) * pageH;
+    const maxWidthIn = field.width != null ? (field.width / W) * pageW : null;
+    const inputLines = str.split(/\r?\n/);
+
+    for (let i = 0; i < inputLines.length; i++) {
+      const line = inputLines[i];
+      if (maxWidthIn != null && maxWidthIn > 0) {
+        const opts = { maxWidth: maxWidthIn };
+        doc.text(line, xIn, yIn, opts);
+        let lineHeightUsed = lineHeightIn;
+        if (typeof doc.getTextDimensions === 'function') {
+          try {
+            const dims = doc.getTextDimensions(line, opts);
+            if (dims && typeof dims.h === 'number' && dims.h > 0) {
+              lineHeightUsed = dims.h;
+            }
+          } catch (_) {}
+        }
+        yIn += lineHeightUsed;
+      } else {
+        doc.text(line, xIn, yIn);
+        yIn += lineHeightIn;
+      }
+    }
   }
 
   const dataUri = doc.output('datauristring');
@@ -389,6 +413,7 @@ export function FieldPosition() {
           <PositionedValue fieldKey="father_citizenship" value={f('fatherCitizenship')} />
           <PositionedValue fieldKey="father_religion" value={f('fatherReligion')} />
           <PositionedValue fieldKey="father_occupation" value={f('fatherOccupation')} />
+          <PositionedValue fieldKey="father_age" value={f('fatherAge')} />
           <PositionedValue fieldKey="father_residence_house" value={f('fatherResidenceLine1')} />
           <PositionedValue fieldKey="father_residence_city" value={f('fatherResidenceCity')} />
           <PositionedValue fieldKey="father_residence_province" value={f('fatherResidenceProvince')} />

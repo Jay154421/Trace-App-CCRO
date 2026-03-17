@@ -2,6 +2,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { childrenApi } from '../services/api';
+import { formatDateDDMMYYYY } from '../utils/date';
 
 const emptyEditForm = {
   first_name: '',
@@ -150,7 +151,7 @@ export function ChildDetail() {
         <dl className="grid gap-3 sm:grid-cols-2">
           <div>
             <dt className="text-sm text-slate-500">Date of birth</dt>
-            <dd className="font-medium text-slate-800">{child.date_of_birth}</dd>
+            <dd className="font-medium text-slate-800">{formatDateDDMMYYYY(child.date_of_birth)}</dd>
           </div>
           <div>
             <dt className="text-sm text-slate-500">Age</dt>

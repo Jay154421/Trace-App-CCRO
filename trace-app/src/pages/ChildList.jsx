@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '../hooks/useQuery';
 import { childrenApi } from '../services/api';
 import { AddApplicantModal } from '../components/AddApplicantModal';
+import { formatDateDDMMYYYY } from '../utils/date';
 
 function matchApplicant(c, query) {
   if (!query.trim()) return true;
@@ -95,7 +96,7 @@ export function ChildList() {
                     {c.last_name}, {c.first_name} {c.middle_name || ''}
                   </span>
                   <p className="text-sm text-slate-500 mt-0.5">
-                    DOB: {c.date_of_birth}
+                    DOB: {formatDateDDMMYYYY(c.date_of_birth)}
                   </p>
                   {c.checklist_total != null && c.checklist_total > 0 ? (
                     <div className="mt-1.5">
