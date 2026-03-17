@@ -24,15 +24,15 @@ const LAYOUT = {
   fields: {
     province: { x: 600, y: 450},
     city_municipality: { x: 600, y: 525},
-    registry_no: { x: 1634, y: 477, width: 774, height: 132 },
+    registry_no: { x: 1634, y: 477},
     child_name_first: { x: 675, y: 690, width: 340 },
     child_name_middle: {x: 1311, y: 690, width: 340},
     child_name_last: { x: 1911, y: 690, width: 340},
     sex: { x: 600, y: 789 },
     date_of_birth_day: { x: 1425, y: 789, width: 30},
     date_of_birth_month: { x: 1764, y: 789, width: 30},
-    date_of_birth_year: { x: 2178, y: 789, width: 80 },
-    place_of_birth_hospital: { x: 786, y: 900, width: 300 },
+    date_of_birth_year: { x: 2178, y: 789},
+    place_of_birth_hospital: { x: 786, y: 900 },
     place_of_birth_city: { x: 1470, y: 900},
     place_of_birth_province: { x: 1872, y: 900, width: 300},
     type_of_birth: { x: 456, y: 1074},
@@ -42,14 +42,14 @@ const LAYOUT = {
     mother_maiden_first: { x: 675, y: 1200, width: 340},
     mother_maiden_middle: { x: 1311, y: 1200, width: 340},
     mother_maiden_last: { x: 1911, y: 1200, width: 340},
-    mother_citizenship: { x: 900, y: 1314,width: 300},
-    mother_religion: { x: 1800, y: 1314,width: 300},
+    mother_citizenship: { x: 900, y: 1314},
+    mother_religion: { x: 1800, y: 1314},
     mother_children_born_alive: { x: 459, y: 1458},
     mother_children_living: { x: 786, y: 1458},
     mother_children_dead: { x: 1056, y: 1458},
     mother_occupation: { x: 1470, y: 1458},
     mother_age: { x: 2175, y: 1458 },
-    mother_residence_house: { x: 336, y: 1596 },
+    mother_residence_house: { x: 336, y: 1596},
     mother_residence_city: { x: 1200, y: 1596},
     mother_residence_province: { x: 1872, y: 1596},
     father_name_first: { x: 675, y: 1725, width: 340},
@@ -61,13 +61,15 @@ const LAYOUT = {
     father_residence_house: { x: 336, y: 1989}, 
     father_residence_city: { x: 1200, y: 1989},
     father_residence_province: { x: 1872, y: 1989},
-    // marriage_date: { x: 86, y: 2994, width: 860, height: 132 },
-    // marriage_place_city: { x: 989, y: 2994, width: 688, height: 132 },
-    // marriage_place_province: { x: 1720, y: 2994, width: 774, height: 132 },
-    // attendant_type: { x: 86, y: 3205, width: 1290, height: 132 },
+    marriage_date: { x: 708, y: 2148, width: 210},
+    marriage_place: { x: 1653, y: 2148, width: 628},
+    // attendant_type: { x: 507, y: 2646,},
     // attendant_signature: { x: 86, y: 3391, width: 860, height: 132 },
-    // attendant_address: { x: 989, y: 3391, width: 774, height: 132 },
-    // attendant_date: { x: 1806, y: 3391, width: 602, height: 132 },
+    attendant_title: { x: 507, y: 2646 },
+    attendant_name: { x: 483, y: 2574},
+    attendant_address: { x: 1500, y: 2505, width: 344},
+    attendant_date: { x: 1512, y: 2646},
+    attendant_time: { x: 1533, y: 2409},
     // informant_signature: { x: 86, y: 3603, width: 860, height: 132 },
     // informant_relation: { x: 989, y: 3603, width: 688, height: 132 },
     // informant_address: { x: 1720, y: 3603, width: 774, height: 132 },
@@ -89,7 +91,7 @@ const CENTERED_FIELD_KEYS = [
   'father_name_first', 'father_name_middle', 'father_name_last',
   'father_occupation',
   'father_residence_house', 'father_residence_city', 'father_residence_province',
-  'marriage_date', 'marriage_place_city', 'marriage_place_province',
+  'marriage_date', 'marriage_place',
 ];
 
 // Map each layout field key to how we get the value (cert key or function of f)
@@ -134,12 +136,14 @@ const FIELD_VALUE_MAP = [
   { key: 'father_residence_city', valueKey: 'fatherResidenceCity' },
   { key: 'father_residence_province', valueKey: 'fatherResidenceProvince' },
   { key: 'marriage_date', getValue: (f) => [f('marriageMonth'), f('marriageDay'), f('marriageYear')].filter(Boolean).join(' / ') },
-  { key: 'marriage_place_city', valueKey: 'marriagePlaceCity' },
-  { key: 'marriage_place_province', valueKey: 'marriagePlaceProvince' },
-  { key: 'attendant_type', valueKey: 'attendantType' },
+  { key: 'marriage_place', valueKey: 'marriagePlace' },
+  // { key: 'attendant_type', valueKey: 'attendantType' },
+  { key: 'attendant_title', valueKey: 'attendantTitle' },
+  { key: 'attendant_name', valueKey: 'attendantName' },
   { key: 'attendant_signature', getValue: (f) => f('attendantSignature') || f('attendantName') },
   { key: 'attendant_address', valueKey: 'attendantAddress' },
   { key: 'attendant_date', valueKey: 'attendantDate' },
+  { key: 'attendant_time', getValue: (f) => [f('attendantTime'), f('attendantAmpm')].filter(Boolean).join(' ') },  
   { key: 'informant_signature', getValue: (f) => f('informantSignature') || f('informantName') },
   { key: 'informant_relation', valueKey: 'informantRelationship' },
   { key: 'informant_address', valueKey: 'informantAddress' },
@@ -392,12 +396,14 @@ export function FieldPosition() {
             fieldKey="marriage_date"
             value={[f('marriageMonth'), f('marriageDay'), f('marriageYear')].filter(Boolean).join(' / ')}
           />
-          <PositionedValue fieldKey="marriage_place_city" value={f('marriagePlaceCity')} />
-          <PositionedValue fieldKey="marriage_place_province" value={f('marriagePlaceProvince')} />
+          <PositionedValue fieldKey="marriage_place" value={f('marriagePlace')} />
           <PositionedValue fieldKey="attendant_type" value={f('attendantType')} />
+          <PositionedValue fieldKey="attendant_title" value={f('attendantTitle')} />
+          <PositionedValue fieldKey="attendant_name" value={f('attendantName')} />
           <PositionedValue fieldKey="attendant_signature" value={f('attendantSignature') || f('attendantName')} />
           <PositionedValue fieldKey="attendant_address" value={f('attendantAddress')} />
           <PositionedValue fieldKey="attendant_date" value={f('attendantDate')} />
+          <PositionedValue fieldKey="attendant_time" value={[f('attendantTime'), f('attendantAmpm')].filter(Boolean).join(' ')} />
           <PositionedValue fieldKey="informant_signature" value={f('informantSignature') || f('informantName')} />
           <PositionedValue fieldKey="informant_relation" value={f('informantRelationship')} />
           <PositionedValue fieldKey="informant_address" value={f('informantAddress')} />

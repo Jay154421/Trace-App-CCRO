@@ -5,7 +5,7 @@ import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { childrenApi } from '../services/api';
 
-const DEFAULT_PROVINCE = 'Lanao';
+const DEFAULT_PROVINCE = 'Lanao Del Norte';
 const DEFAULT_CITY_MUNICIPALITY = 'Iligan City';
 
 const DEFAULT_CERT = {
@@ -54,9 +54,7 @@ const DEFAULT_CERT = {
   marriageMonth: '',
   marriageDay: '',
   marriageYear: '',
-  marriagePlaceCity: '',
-  marriagePlaceProvince: '',
-  marriagePlaceCountry: '',
+  marriagePlace: '',
   attendantType: '',
   attendantOthersSpecify: '',
   attendantTime: '',
@@ -554,9 +552,7 @@ export function CertificateOfLiveBirth() {
             <div className="flex-1 min-w-[200px]">
               <p className="mb-1" style={{ fontWeight: 400 }}>20b. PLACE</p>
               <div className="flex gap-2 flex-wrap">
-                <FormLine value={form.marriagePlaceCity} onChange={(v) => update('marriagePlaceCity', v)} placeholder="(City / Municipality)" className="flex-1 min-w-[80px]" useLowerStyle />
-                <FormLine value={form.marriagePlaceProvince} onChange={(v) => update('marriagePlaceProvince', v)} placeholder="(Province)" className="flex-1 min-w-[80px]" useLowerStyle />
-                <FormLine value={form.marriagePlaceCountry} onChange={(v) => update('marriagePlaceCountry', v)} placeholder="(Country)" className="flex-1 min-w-[80px]" useLowerStyle />
+                <FormLine value={form.marriagePlace} onChange={(v) => update('marriagePlace', v)} placeholder="(City / Municipality, Province, Country)" className="flex-1 min-w-[80px]" useLowerStyle />
               </div>
             </div>
           </div>
