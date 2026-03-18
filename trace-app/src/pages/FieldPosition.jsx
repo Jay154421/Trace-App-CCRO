@@ -27,10 +27,10 @@ const LAYOUT = {
     child_name_middle: {x: 1179, y: 648},
     child_name_last: { x: 1830, y: 648},
     sex: { x: 600, y: 753 },
-    date_of_birth_day: { x: 1425, y: 753},
-    date_of_birth_month: { x: 1764, y: 753},
-    date_of_birth_year: { x: 2064, y: 753},
-    place_of_birth_hospital: { x: 786, y: 885 },
+    date_of_birth_day: { x: 1380, y: 753},
+    date_of_birth_month: { x: 1722, y: 753},
+    date_of_birth_year: { x: 2124, y: 753},
+    place_of_birth_hospital: { x: 576, y: 885 },
     place_of_birth_city: { x: 1470, y: 885},
     place_of_birth_province: { x: 1872, y: 885},
     type_of_birth: { x: 456, y: 1038},
@@ -45,28 +45,30 @@ const LAYOUT = {
     mother_children_born_alive: { x: 459, y: 1440},
     mother_children_living: { x: 786, y: 1440},
     mother_children_dead: { x: 1056, y: 1440},
-    mother_occupation: { x: 1470, y: 1440},
+    mother_occupation: { x: 1392, y: 1440},
     mother_age: { x: 2175, y: 1440 },
-    mother_residence_house: { x: 336, y: 1533},
-    mother_residence_city: { x: 1122, y: 1533},
-    mother_residence_province: { x: 1605, y: 1533},
+    mother_residence_house: { x: 336, y: 1557},
+    mother_residence_city: { x: 1122, y: 1557},
+    mother_residence_province: { x: 1605, y: 1557},
+    mother_country: { x: 2070, y: 1557},
     father_name_first: { x: 531, y: 1677, width: 640},
     father_name_middle: { x: 1179, y: 1677, width: 640},
     father_name_last: { x: 1830, y: 1677, width: 640},
     father_citizenship: { x: 336, y: 1818},
     father_religion: { x: 900, y: 1818},
-    father_occupation: { x: 1725, y: 1818},
+    father_occupation: { x: 1509, y: 1818},
     father_age: { x: 2175, y: 1818 },
-    father_residence_house: { x: 336, y: 1959}, 
+    father_residence_house: { x: 336, y: 1959},
     father_residence_city: { x: 1122, y: 1959},
     father_residence_province: { x: 1605, y: 1959},
+    father_country: { x: 2070, y: 1959},
     marriage_date: { x: 471, y: 2148},
     marriage_place: { x: 1287, y: 2148},
     // attendant_type: { x: 507, y: 2646,},
     // attendant_signature: { x: 86, y: 3391, width: 860, height: 132 },
     attendant_title: { x: 507, y: 2643 },
     attendant_name: { x: 483, y: 2562},
-    attendant_address: { x: 1500, y: 2505, width: 644},
+    attendant_address: { x: 1500, y: 2505, width: 944},
     attendant_date: { x: 1512, y: 2643},
     attendant_time: { x: 1533, y: 2409},
     informant_signature: { x: 519, y: 2928},
@@ -95,9 +97,11 @@ const CENTERED_FIELD_KEYS = [
   'mother_children_born_alive', 'mother_children_living', 'mother_children_dead',
   'mother_occupation',
   'mother_residence_house', 'mother_residence_city', 'mother_residence_province',
+  'mother_country',
   'father_name_first', 'father_name_middle', 'father_name_last',
   'father_occupation', 'father_age',
   'father_residence_house', 'father_residence_city', 'father_residence_province',
+  'father_country',
   'marriage_date', 'marriage_place',
 ];
 
@@ -133,6 +137,7 @@ const FIELD_VALUE_MAP = [
   { key: 'mother_residence_house', valueKey: 'motherResidenceLine1' },
   { key: 'mother_residence_city', valueKey: 'motherResidenceCity' },
   { key: 'mother_residence_province', valueKey: 'motherResidenceProvince' },
+  { key: 'mother_country', valueKey: 'motherCountry' },
   { key: 'father_name_first', valueKey: 'fatherFirst' },
   { key: 'father_name_middle', valueKey: 'fatherMiddle' },
   { key: 'father_name_last', valueKey: 'fatherLast' },
@@ -143,6 +148,7 @@ const FIELD_VALUE_MAP = [
   { key: 'father_residence_house', valueKey: 'fatherResidenceLine1' },
   { key: 'father_residence_city', valueKey: 'fatherResidenceCity' },
   { key: 'father_residence_province', valueKey: 'fatherResidenceProvince' },
+  { key: 'father_country', valueKey: 'fatherCountry' },
   { key: 'marriage_date', getValue: (f) => [f('marriageMonth'), f('marriageDay'), f('marriageYear')].filter(Boolean).join(' / ') },
   { key: 'marriage_place', valueKey: 'marriagePlace' },
   // { key: 'attendant_type', valueKey: 'attendantType' },
@@ -167,13 +173,50 @@ const FIELD_VALUE_MAP = [
   { key: 'registered_by_date', valueKey: 'registeredByDate' },
 ];
 
+/** Layout field keys whose values are address lines (abbreviate before COB uppercase). */
+const ADDRESS_ABBREV_FIELD_KEYS = new Set([
+  'place_of_birth_hospital',
+  'marriage_place',
+  'mother_residence_house',
+  'father_residence_house',
+  'attendant_address',
+  'informant_address',
+]);
+
+/** Whole-word abbreviations for address lines (Street → St., Barangay → Brgy.). */
+function abbreviateAddressText(value) {
+  if (value === '' || value === undefined || value === null) return '';
+  const s = String(value);
+  if (!s.trim()) return s;
+  return s
+    .replace(/\bSubdivision\b/gi, 'Subd.')
+    .replace(/\bBuilding\b/gi, 'Bldg.')
+    .replace(/\bApartment\b/gi, 'Apt.')
+    .replace(/\bParkway\b/gi, 'Pkwy.')
+    .replace(/\bHighway\b/gi, 'Hwy.')
+    .replace(/\bAvenue\b/gi, 'Ave.')
+    .replace(/\bRoad\b/gi, 'Rd.')
+    .replace(/\bBarangay\b/gi, 'Brgy.')
+    .replace(/\bPurok\b/gi, 'Prk.')
+    .replace(/\bStreet\b/gi, 'St.')
+    .replace(/\bBlock\b/gi, 'Blk.')
+    .replace(/\bLane\b/gi, 'Ln.')
+    .replace(/\bLot\b/gi, 'Lt.');
+}
+
 // Font size for all positioned field values
 const POSITIONED_FONT_SIZE = 20;
+
+/** All COB (certificate of live birth) field values display in uppercase. */
+function toCobDisplay(value) {
+  if (value === '' || value === undefined || value === null) return '';
+  return String(value).toUpperCase();
+}
 
 function PositionedValue({ fieldKey, value }) {
   const field = LAYOUT.fields[fieldKey];
   if (!field) return null;
-  const display = value === '' || value === undefined || value === null ? '' : String(value);
+  const display = toCobDisplay(value);
   const isCentered = CENTERED_FIELD_KEYS.includes(fieldKey);
   return (
     <span
@@ -211,9 +254,32 @@ function parseDateOfBirth(dateStr) {
   };
 }
 
+function countryDisplayFromCodeOrText(codeOrText) {
+  if (!codeOrText || typeof codeOrText !== 'string') return '';
+  const t = codeOrText.trim();
+  if (t.length === 2 && /^[A-Za-z]{2}$/.test(t)) {
+    try {
+      const dn = new Intl.DisplayNames(['en'], { type: 'region' });
+      const n = dn.of(t.toUpperCase());
+      if (n && n !== t.toUpperCase()) return n;
+    } catch (_) {}
+  }
+  return t;
+}
+
 function getMergedCert(child, cert) {
   if (!cert || typeof cert !== 'object') return {};
   const birth = child?.date_of_birth ? parseDateOfBirth(child.date_of_birth) : {};
+  const resMother = cert.motherResidenceCountry ?? cert.mother_residence_country ?? '';
+  const resFather = cert.fatherResidenceCountry ?? cert.father_residence_country ?? '';
+  const mc =
+    (cert.motherCountry && String(cert.motherCountry).trim()) ||
+    (cert.mother_country && String(cert.mother_country).trim()) ||
+    countryDisplayFromCodeOrText(resMother);
+  const fc =
+    (cert.fatherCountry && String(cert.fatherCountry).trim()) ||
+    (cert.father_country && String(cert.father_country).trim()) ||
+    countryDisplayFromCodeOrText(resFather);
   return {
     ...cert,
     childFirst: cert.childFirst ?? cert.child_first ?? child?.first_name ?? '',
@@ -222,6 +288,8 @@ function getMergedCert(child, cert) {
     birthDay: cert.birthDay ?? cert.birth_day ?? birth.day ?? '',
     birthMonth: cert.birthMonth ?? cert.birth_month ?? birth.month ?? '',
     birthYear: cert.birthYear ?? cert.birth_year ?? birth.year ?? '',
+    motherCountry: mc,
+    fatherCountry: fc,
   };
 }
 
@@ -264,8 +332,9 @@ function buildFieldPositionPdfBase64(merged) {
   for (const item of FIELD_VALUE_MAP) {
     const field = LAYOUT.fields[item.key];
     if (!field) continue;
-    const value = item.getValue ? item.getValue(f) : f(item.valueKey);
-    const str = value === '' || value === undefined || value === null ? '' : String(value);
+    const raw = item.getValue ? item.getValue(f) : f(item.valueKey);
+    const value = ADDRESS_ABBREV_FIELD_KEYS.has(item.key) ? abbreviateAddressText(raw) : raw;
+    const str = toCobDisplay(value);
     const xIn = (field.x / W) * pageW;
     let yIn = ((field.y + 25) / H) * pageH;
     const maxWidthIn = field.width != null ? (field.width / W) * pageW : null;
@@ -429,6 +498,7 @@ export function FieldPosition() {
   const merged = getMergedCert(child, cert);
   const camelToSnake = (s) => s.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
   const f = (camelKey) => merged[camelKey] ?? merged[camelToSnake(camelKey)];
+  const addr = (camelKey) => abbreviateAddressText(f(camelKey));
 
   return (
     <>
@@ -509,7 +579,7 @@ export function FieldPosition() {
           <PositionedValue fieldKey="date_of_birth_day" value={f('birthDay')} />
           <PositionedValue fieldKey="date_of_birth_month" value={f('birthMonth')} />
           <PositionedValue fieldKey="date_of_birth_year" value={f('birthYear')} />
-          <PositionedValue fieldKey="place_of_birth_hospital" value={f('placeOfBirthName')} />
+          <PositionedValue fieldKey="place_of_birth_hospital" value={addr('placeOfBirthName')} />
           <PositionedValue fieldKey="place_of_birth_city" value={f('placeOfBirthCity')} />
           <PositionedValue fieldKey="place_of_birth_province" value={f('placeOfBirthProvince')} />
           <PositionedValue fieldKey="type_of_birth" value={f('typeOfBirth')} />
@@ -526,9 +596,10 @@ export function FieldPosition() {
           <PositionedValue fieldKey="mother_children_dead" value={f('motherChildrenDead')} />
           <PositionedValue fieldKey="mother_occupation" value={f('motherOccupation')} />
           <PositionedValue fieldKey="mother_age" value={f('motherAge')} />
-          <PositionedValue fieldKey="mother_residence_house" value={f('motherResidenceLine1')} />
+          <PositionedValue fieldKey="mother_residence_house" value={addr('motherResidenceLine1')} />
           <PositionedValue fieldKey="mother_residence_city" value={f('motherResidenceCity')} />
           <PositionedValue fieldKey="mother_residence_province" value={f('motherResidenceProvince')} />
+          <PositionedValue fieldKey="mother_country" value={f('motherCountry')} />
           <PositionedValue fieldKey="father_name_first" value={f('fatherFirst')} />
           <PositionedValue fieldKey="father_name_middle" value={f('fatherMiddle')} />
           <PositionedValue fieldKey="father_name_last" value={f('fatherLast')} />
@@ -536,24 +607,25 @@ export function FieldPosition() {
           <PositionedValue fieldKey="father_religion" value={f('fatherReligion')} />
           <PositionedValue fieldKey="father_occupation" value={f('fatherOccupation')} />
           <PositionedValue fieldKey="father_age" value={f('fatherAge')} />
-          <PositionedValue fieldKey="father_residence_house" value={f('fatherResidenceLine1')} />
+          <PositionedValue fieldKey="father_residence_house" value={addr('fatherResidenceLine1')} />
           <PositionedValue fieldKey="father_residence_city" value={f('fatherResidenceCity')} />
           <PositionedValue fieldKey="father_residence_province" value={f('fatherResidenceProvince')} />
+          <PositionedValue fieldKey="father_country" value={f('fatherCountry')} />
           <PositionedValue
             fieldKey="marriage_date"
             value={[f('marriageMonth'), f('marriageDay'), f('marriageYear')].filter(Boolean).join(' / ')}
           />
-          <PositionedValue fieldKey="marriage_place" value={f('marriagePlace')} />
+          <PositionedValue fieldKey="marriage_place" value={addr('marriagePlace')} />
           <PositionedValue fieldKey="attendant_type" value={f('attendantType')} />
           <PositionedValue fieldKey="attendant_title" value={f('attendantTitle')} />
           <PositionedValue fieldKey="attendant_name" value={f('attendantName')} />
           <PositionedValue fieldKey="attendant_signature" value={f('attendantSignature') || f('attendantName')} />
-          <PositionedValue fieldKey="attendant_address" value={f('attendantAddress')} />
+          <PositionedValue fieldKey="attendant_address" value={addr('attendantAddress')} />
           <PositionedValue fieldKey="attendant_date" value={f('attendantDate')} />
           <PositionedValue fieldKey="attendant_time" value={[f('attendantTime'), f('attendantAmpm')].filter(Boolean).join(' ')} />
           <PositionedValue fieldKey="informant_signature" value={f('informantSignature') || f('informantName')} />
           <PositionedValue fieldKey="informant_relation" value={f('informantRelationship')} />
-          <PositionedValue fieldKey="informant_address" value={f('informantAddress')} />
+          <PositionedValue fieldKey="informant_address" value={addr('informantAddress')} />
           <PositionedValue fieldKey="informant_date" value={f('informantDate')} />
           <PositionedValue fieldKey="received_by" value={f('receivedBySignature') || f('receivedByName')} />
           <PositionedValue fieldKey="received_by_title" value={f('receivedByTitle')} />

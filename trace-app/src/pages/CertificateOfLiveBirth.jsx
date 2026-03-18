@@ -40,6 +40,7 @@ const DEFAULT_CERT = {
   motherResidenceCity: '',
   motherResidenceProvince: '',
   motherResidenceCountry: '',
+  motherCountry: '',
   fatherFirst: '',
   fatherMiddle: '',
   fatherLast: '',
@@ -51,6 +52,7 @@ const DEFAULT_CERT = {
   fatherResidenceCity: '',
   fatherResidenceProvince: '',
   fatherResidenceCountry: '',
+  fatherCountry: '',
   marriageMonth: '',
   marriageDay: '',
   marriageYear: '',
@@ -92,6 +94,68 @@ const RECEIVED_BY_OPTIONS = [
   { name: 'PHOEBE L. BENIGA', title: 'REGISTRATION OFFICER II' },
   { name: 'JAN FLAURENCE A. OBLENDA', title: 'REGISTRATION OFFICER II' },
 ];
+
+const FALLBACK_COUNTRY_OPTIONS = [
+  { code: 'PH', name: 'Philippines' },
+  { code: 'US', name: 'United States' },
+  { code: 'GB', name: 'United Kingdom' },
+  { code: 'AU', name: 'Australia' },
+  { code: 'CA', name: 'Canada' },
+  { code: 'SA', name: 'Saudi Arabia' },
+  { code: 'AE', name: 'United Arab Emirates' },
+  { code: 'JP', name: 'Japan' },
+  { code: 'SG', name: 'Singapore' },
+  { code: 'MY', name: 'Malaysia' },
+];
+
+function buildIso3166CountryOptions() {
+  try {
+    const dn = new Intl.DisplayNames(['en'], { type: 'region' });
+    const list = [];
+    for (let i = 0; i < 26; i += 1) {
+      for (let j = 0; j < 26; j += 1) {
+        const code = String.fromCharCode(65 + i, 65 + j);
+        const name = dn.of(code);
+        if (!name || name === code) continue;
+        list.push({ code, name });
+      }
+    }
+    return list.sort((a, b) => a.name.localeCompare(b.name));
+  } catch {
+    return [...FALLBACK_COUNTRY_OPTIONS].sort((a, b) => a.name.localeCompare(b.name));
+  }
+}
+
+const COUNTRY_OPTIONS = buildIso3166CountryOptions();
+const COUNTRY_CODE_SET = new Set(COUNTRY_OPTIONS.map((c) => c.code));
+
+/** Normalize loaded value to ISO alpha-2 when possible; keep unknown text for legacy rows. */
+function normalizeStoredCountry(value) {
+  if (!value || typeof value !== 'string') return '';
+  const t = value.trim();
+  if (t.length === 2 && COUNTRY_CODE_SET.has(t.toUpperCase())) return t.toUpperCase();
+  const hit = COUNTRY_OPTIONS.find((o) => o.name.toLowerCase() === t.toLowerCase());
+  if (hit) return hit.code;
+  return t;
+}
+
+/** Full country name for PDF / printed field (from ISO code or legacy text). */
+function countryCodeToDisplayName(value) {
+  if (!value || typeof value !== 'string') return '';
+  const t = value.trim();
+  if (t.length === 2 && COUNTRY_CODE_SET.has(t.toUpperCase())) {
+    const code = t.toUpperCase();
+    const hit = COUNTRY_OPTIONS.find((o) => o.code === code);
+    if (hit) return hit.name;
+    try {
+      const dn = new Intl.DisplayNames(['en'], { type: 'region' });
+      const n = dn.of(code);
+      if (n && n !== code) return n;
+    } catch (_) {}
+    return code;
+  }
+  return t;
+}
 
 const SECTION_IDS = ['header', 'child', 'mother', 'father', 'marriage', 'attendant', 'signatures', 'remarks'];
 const SECTION_LABELS = ['Header', 'Child', 'Mother', 'Father', 'Marriage', 'Attendant', 'Signatures', 'Remarks'];
@@ -152,6 +216,43 @@ function DropdownArrowIcon() {
     <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0 }} aria-hidden>
       <path d="M2 4l4 4 4-4" stroke={COLORS.iconGray} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
+  );
+}
+
+function FormCountrySelect({ value = '', onChange, className = '', width }) {
+  const t = typeof value === 'string' ? value.trim() : '';
+  const isCode = t.length === 2 && COUNTRY_CODE_SET.has(t.toUpperCase());
+  const selectValue = isCode ? t.toUpperCase() : t;
+  const showLegacyOption = t.length > 0 && !isCode;
+
+  return (
+    <select
+      aria-label="Country"
+      value={selectValue}
+      onChange={(e) => onChange(e.target.value)}
+      className={`focus:outline-none focus:ring-0 min-h-[1.25rem] cursor-pointer appearance-none bg-no-repeat bg-[length:12px] bg-[right_4px_center] ${width || 'flex-1 min-w-0'} ${className}`}
+      style={{
+        fontFamily: FONT_FAMILY,
+        fontSize: '16px',
+        backgroundColor: COLORS.white,
+        border: 'none',
+        borderBottom: `1px solid ${COLORS.accentGreen}`,
+        borderRadius: 0,
+        padding: '2px 22px 2px 4px',
+        color: COLORS.black,
+        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%23666' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
+      }}
+    >
+      <option value="">(Country)</option>
+      {showLegacyOption && (
+        <option value={t}>{t} (update)</option>
+      )}
+      {COUNTRY_OPTIONS.map(({ code, name }) => (
+        <option key={code} value={code}>
+          {name}
+        </option>
+      ))}
+    </select>
   );
 }
 
@@ -216,6 +317,14 @@ export function CertificateOfLiveBirth() {
           ? data.certificate_of_live_birth
           : {};
         const base = { ...DEFAULT_CERT, ...cert };
+        base.motherResidenceCountry = normalizeStoredCountry(base.motherResidenceCountry);
+        base.fatherResidenceCountry = normalizeStoredCountry(base.fatherResidenceCountry);
+        if (!String(base.motherCountry || '').trim()) {
+          base.motherCountry = countryCodeToDisplayName(base.motherResidenceCountry);
+        }
+        if (!String(base.fatherCountry || '').trim()) {
+          base.fatherCountry = countryCodeToDisplayName(base.fatherResidenceCountry);
+        }
         const fromChild = {
           province: base.province || DEFAULT_PROVINCE,
           cityMunicipality: base.cityMunicipality || DEFAULT_CITY_MUNICIPALITY,
@@ -499,7 +608,31 @@ export function CertificateOfLiveBirth() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <FormLine value={form.motherResidenceCity} onChange={(v) => update('motherResidenceCity', v)} placeholder="(City/Municipality)" className="w-full" width="w-full" />
                   <FormLine value={form.motherResidenceProvince} onChange={(v) => update('motherResidenceProvince', v)} placeholder="(Province)" className="w-full" width="w-full" />
-                  <FormLine value={form.motherResidenceCountry} onChange={(v) => update('motherResidenceCountry', v)} placeholder="(Country)" className="w-full" width="w-full" />
+                  <FormCountrySelect
+                    value={form.motherResidenceCountry}
+                    onChange={(v) => {
+                      const n = normalizeStoredCountry(v);
+                      setForm((p) => ({
+                        ...p,
+                        motherResidenceCountry: n,
+                        motherCountry: countryCodeToDisplayName(n) || '',
+                      }));
+                    }}
+                    className="w-full"
+                    width="w-full"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1 font-normal text-slate-600" style={{ fontSize: '14px' }}>
+                    Country (printed on certificate)
+                  </label>
+                  <FormLine
+                    value={form.motherCountry}
+                    onChange={(v) => update('motherCountry', v)}
+                    placeholder="e.g. PHILIPPINES"
+                    className="w-full"
+                    width="w-full"
+                  />
                 </div>
               </div>
             </div>
@@ -546,7 +679,31 @@ export function CertificateOfLiveBirth() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <FormLine value={form.fatherResidenceCity} onChange={(v) => update('fatherResidenceCity', v)} placeholder="(City/Municipality)" className="w-full" width="w-full" />
                   <FormLine value={form.fatherResidenceProvince} onChange={(v) => update('fatherResidenceProvince', v)} placeholder="(Province)" className="w-full" width="w-full" />
-                  <FormLine value={form.fatherResidenceCountry} onChange={(v) => update('fatherResidenceCountry', v)} placeholder="(Country)" className="w-full" width="w-full" />
+                  <FormCountrySelect
+                    value={form.fatherResidenceCountry}
+                    onChange={(v) => {
+                      const n = normalizeStoredCountry(v);
+                      setForm((p) => ({
+                        ...p,
+                        fatherResidenceCountry: n,
+                        fatherCountry: countryCodeToDisplayName(n) || '',
+                      }));
+                    }}
+                    className="w-full"
+                    width="w-full"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1 font-normal text-slate-600" style={{ fontSize: '14px' }}>
+                    Country (printed on certificate)
+                  </label>
+                  <FormLine
+                    value={form.fatherCountry}
+                    onChange={(v) => update('fatherCountry', v)}
+                    placeholder="e.g. PHILIPPINES"
+                    className="w-full"
+                    width="w-full"
+                  />
                 </div>
               </div>
             </div>
