@@ -19,9 +19,17 @@ function createWindow(url) {
   win.loadURL(url);
   if (isDev) win.webContents.openDevTools();
 
-  ipcMain.handle('save-field-position-pdf', async (_event, pdfBase64) => {
+  ipcMain.handle('save-field-position-pdf', async (_event, pdfBase64, suggestedFileName) => {
+    let defaultPath = `field-position-${Date.now()}.pdf`;
+    if (typeof suggestedFileName === 'string' && suggestedFileName.trim()) {
+      let base = path.basename(suggestedFileName.trim());
+      base = base.replace(/[<>:"|?*\u0000-\u001f]/g, '').trim();
+      if (!base.toLowerCase().endsWith('.pdf')) base = `${base}.pdf`;
+      if (base.length > 200) base = `${base.slice(0, 196)}.pdf`;
+      if (base && base !== '.pdf') defaultPath = base;
+    }
     const { filePath } = await dialog.showSaveDialog(win, {
-      defaultPath: `field-position-${Date.now()}.pdf`,
+      defaultPath,
       filters: [{ name: 'PDF', extensions: ['pdf'] }],
     });
     if (!filePath || !pdfBase64) return { ok: false };

@@ -179,31 +179,6 @@ function FormLine({ value = '', onChange, placeholder, className = '', width, re
   );
 }
 
-function FormSection({ verticalLabel, children }) {
-  return (
-    <div className="flex gap-0 flex-wrap" style={{ borderBottom: `2px solid ${COLORS.accentGreen}` }}>
-      {verticalLabel && (
-        <div
-          className="flex-shrink-0 flex items-center justify-center font-bold uppercase tracking-widest border-r py-2 pr-2"
-          style={{
-            writingMode: 'vertical-rl',
-            textOrientation: 'mixed',
-            transform: 'rotate(180deg)',
-            minHeight: '100px',
-            borderColor: COLORS.accentGreen,
-            color: COLORS.black,
-            fontFamily: FONT_FAMILY,
-            fontSize: '16px',
-          }}
-        >
-          {verticalLabel}
-        </div>
-      )}
-      <div className="flex-1 min-w-0 py-2 pl-2" style={{ borderColor: COLORS.accentGreen }}>{children}</div>
-    </div>
-  );
-}
-
 function SectionStripe({ title, caption, children }) {
   return (
     <div style={{ border: `1px solid ${COLORS.borderGray}`, marginBottom: 0, borderRadius: 0 }}>
@@ -534,72 +509,114 @@ export function CertificateOfLiveBirth() {
 
           <div className={`certificate-tab-panel certificate-card ${activeTabIndex === 3 ? 'active' : ''}`} id="father">
         <GreenRule />
-        <FormSection verticalLabel="FATHER">
-          <div className="space-y-2.5" style={{ fontFamily: FONT_FAMILY, fontSize: '16px', color: COLORS.black }}>
-            <div>
-              <p className="mb-1" style={{ fontWeight: 400, fontSize: '16px' }}>14. NAME</p>
+        <div style={{ borderBottom: `2px solid ${COLORS.accentGreen}`, fontFamily: FONT_FAMILY, color: COLORS.black }}>
+          <h2 className="text-lg font-bold uppercase mb-4 pb-2" style={{ borderBottom: `1px solid ${COLORS.accentGreen}`, fontSize: '18px' }}>Father</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4" style={{ fontSize: '16px' }}>
+            <div className="md:col-span-2">
+              <label className="block mb-1 font-normal">14. NAME</label>
               <div className="flex flex-wrap gap-2 items-baseline">
                 <FormLine value={form.fatherFirst} onChange={(v) => update('fatherFirst', v)} placeholder="(First)" className="flex-1 min-w-[80px]" />
                 <FormLine value={form.fatherMiddle} onChange={(v) => update('fatherMiddle', v)} placeholder="(Middle)" className="flex-1 min-w-[80px]" />
                 <FormLine value={form.fatherLast} onChange={(v) => update('fatherLast', v)} placeholder="(Last)" className="flex-1 min-w-[80px]" />
               </div>
             </div>
-            <div className="flex flex-wrap gap-x-6 gap-y-2">
-              <div className="flex-1 min-w-[100px]">
-                <p className="mb-1" style={{ fontWeight: 400, fontSize: '16px' }}>15. CITIZENSHIP</p>
-                <FormLine value={form.fatherCitizenship} onChange={(v) => update('fatherCitizenship', v)} />
-              </div>
-              <div className="flex-1 min-w-[100px]">
-                <p className="mb-1" style={{ fontWeight: 400, fontSize: '16px' }}>16. RELIGION/RELIGIOUS SECT</p>
-                <FormLine value={form.fatherReligion} onChange={(v) => update('fatherReligion', v)} />
-              </div>
-              <div className="flex-1 min-w-[100px]">
-                <p className="mb-1" style={{ fontWeight: 400, fontSize: '16px' }}>17. OCCUPATION</p>
-                <FormLine value={form.fatherOccupation} onChange={(v) => update('fatherOccupation', v)} />
-              </div>
-              <div className="flex-shrink-0">
-                <p className="mb-1" style={{ fontWeight: 400, fontSize: '16px' }}>18. AGE at the time of this birth (completed years)</p>
-                <div className="flex items-baseline gap-1">
-                  <FormLine value={form.fatherAge} onChange={(v) => update('fatherAge', v)} className="w-14" width="w-14" />
-                  <span style={{ fontSize: '14px', marginLeft: '2px' }}>#</span>
-                </div>
-              </div>
+            <div>
+              <label className="block mb-1 font-normal">15. CITIZENSHIP</label>
+              <FormLine value={form.fatherCitizenship} onChange={(v) => update('fatherCitizenship', v)} className="w-full" width="w-full" />
             </div>
             <div>
-              <p className="mb-1" style={{ fontWeight: 400, fontSize: '16px' }}>19. RESIDENCE</p>
-              <div className="space-y-1">
-                <FormLine value={form.fatherResidenceLine1} onChange={(v) => update('fatherResidenceLine1', v)} placeholder="(House No., St., Barangay)" />
-                <div className="flex gap-4 flex-wrap">
-                  <FormLine value={form.fatherResidenceCity} onChange={(v) => update('fatherResidenceCity', v)} placeholder="(City/Municipality)" className="flex-1 min-w-[100px]" />
-                  <FormLine value={form.fatherResidenceProvince} onChange={(v) => update('fatherResidenceProvince', v)} placeholder="(Province)" className="flex-1 min-w-[100px]" />
-                  <FormLine value={form.fatherResidenceCountry} onChange={(v) => update('fatherResidenceCountry', v)} placeholder="(Country)" className="flex-1 min-w-[100px]" />
+              <label className="block mb-1 font-normal">16. RELIGION/RELIGIOUS SECT</label>
+              <FormLine value={form.fatherReligion} onChange={(v) => update('fatherReligion', v)} className="w-full" width="w-full" />
+            </div>
+            <div>
+              <label className="block mb-1 font-normal">17. OCCUPATION</label>
+              <FormLine value={form.fatherOccupation} onChange={(v) => update('fatherOccupation', v)} className="w-full" width="w-full" />
+            </div>
+            <div>
+              <label className="block mb-1 font-normal">18. AGE at the time of this birth (completed years)</label>
+              <div className="flex items-baseline gap-2">
+                <FormLine value={form.fatherAge} onChange={(v) => update('fatherAge', v)} className="w-20" width="w-20" />
+                <span style={{ fontSize: '14px' }}>#</span>
+              </div>
+            </div>
+            <div className="md:col-span-2">
+              <label className="block mb-1 font-normal">19. RESIDENCE</label>
+              <div className="space-y-2 w-full">
+                <FormLine value={form.fatherResidenceLine1} onChange={(v) => update('fatherResidenceLine1', v)} placeholder="(House No., St., Barangay)" className="w-full" width="w-full" />
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <FormLine value={form.fatherResidenceCity} onChange={(v) => update('fatherResidenceCity', v)} placeholder="(City/Municipality)" className="w-full" width="w-full" />
+                  <FormLine value={form.fatherResidenceProvince} onChange={(v) => update('fatherResidenceProvince', v)} placeholder="(Province)" className="w-full" width="w-full" />
+                  <FormLine value={form.fatherResidenceCountry} onChange={(v) => update('fatherResidenceCountry', v)} placeholder="(Country)" className="w-full" width="w-full" />
                 </div>
               </div>
             </div>
           </div>
-        </FormSection>
+        </div>
           </div>
 
           <div className={`certificate-tab-panel certificate-card ${activeTabIndex === 4 ? 'active' : ''}`} id="marriage">
-        <GreenRule />
-        <div style={{ fontFamily: FONT_FAMILY, color: COLORS.black, marginTop: '8px' }}>
-          <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '2px' }}>MARRIAGE OF PARENTS</p>
-          <p style={{ fontSize: '15px', fontWeight: 400, marginBottom: '6px' }}>(If not married, accomplish Affidavit of Acknowledgement/Admission of Paternity at the back.)</p>
-          <div style={{ height: 2, backgroundColor: COLORS.accentLightGreen, marginBottom: '8px', borderRadius: 0 }} />
-          <div className="flex flex-wrap gap-x-6 gap-y-2" style={{ fontSize: '16px' }}>
-            <div>
-              <p className="mb-1" style={{ fontWeight: 400 }}>20a. DATE</p>
-              <div className="flex flex-wrap gap-2 items-center">
-                <FormLine value={form.marriageMonth} onChange={(v) => update('marriageMonth', v)} placeholder="(Month)" className="w-20" width="w-20" useLowerStyle />
-                <FormLine value={form.marriageDay} onChange={(v) => update('marriageDay', v)} placeholder="(Day)" className="w-14" width="w-14" useLowerStyle />
-                <FormLine value={form.marriageYear} onChange={(v) => update('marriageYear', v)} placeholder="(Year)" className="w-20" width="w-20" useLowerStyle />
-                <CalendarIcon />
+        <div
+          style={{
+            fontFamily: FONT_FAMILY,
+            color: COLORS.black,
+            border: `1px solid ${COLORS.borderGray}`,
+            borderRadius: 8,
+            boxShadow: '0 2px 10px rgba(0,0,0,0.07)',
+            overflow: 'hidden',
+            backgroundColor: COLORS.white,
+          }}
+        >
+          <div style={{ height: 2, backgroundColor: COLORS.accentGreen, width: '100%' }} />
+          <div style={{ padding: '14px 16px 18px' }}>
+            <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '6px', letterSpacing: '0.02em' }}>MARRIAGE OF PARENTS</p>
+            <p style={{ fontSize: '14px', fontWeight: 400, marginBottom: 0, lineHeight: 1.45 }}>
+              (If not married, accomplish Affidavit of Acknowledgement/Admission of Paternity at the back.)
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 mt-5 items-start" style={{ fontSize: '16px' }}>
+              <div>
+                <label className="block mb-2" style={{ fontWeight: 700 }}>
+                  20a. DATE
+                </label>
+                <div className="flex flex-wrap items-center gap-2">
+                  <FormLine
+                    value={form.marriageMonth}
+                    onChange={(v) => update('marriageMonth', v)}
+                    placeholder="(Month)"
+                    className="min-w-[7rem] flex-1 sm:flex-none sm:w-[7.5rem]"
+                    width="min-w-[7rem] flex-1 sm:flex-none sm:w-[7.5rem]"
+                    useLowerStyle
+                  />
+                  <FormLine
+                    value={form.marriageDay}
+                    onChange={(v) => update('marriageDay', v)}
+                    placeholder="(Day)"
+                    className="w-14 flex-shrink-0"
+                    width="w-14"
+                    useLowerStyle
+                  />
+                  <FormLine
+                    value={form.marriageYear}
+                    onChange={(v) => update('marriageYear', v)}
+                    placeholder="(Year)"
+                    className="w-[4.5rem] flex-shrink-0"
+                    width="w-[4.5rem]"
+                    useLowerStyle
+                  />
+                  <CalendarIcon />
+                </div>
               </div>
-            </div>
-            <div className="flex-1 min-w-[200px]">
-              <p className="mb-1" style={{ fontWeight: 400 }}>20b. PLACE</p>
-              <div className="flex gap-2 flex-wrap">
-                <FormLine value={form.marriagePlace} onChange={(v) => update('marriagePlace', v)} placeholder="(City / Municipality, Province, Country)" className="flex-1 min-w-[80px]" useLowerStyle />
+              <div className="min-w-0">
+                <label className="block mb-2" style={{ fontWeight: 700 }}>
+                  20b. PLACE
+                </label>
+                <FormLine
+                  value={form.marriagePlace}
+                  onChange={(v) => update('marriagePlace', v)}
+                  placeholder="(City / Municipality, Province, Country)"
+                  className="w-full"
+                  width="w-full"
+                  useLowerStyle
+                />
               </div>
             </div>
           </div>
@@ -653,36 +670,35 @@ export function CertificateOfLiveBirth() {
             </span>
             on the date of birth specified above.
           </p>
-          <div className="flex gap-x-8 gap-y-2 flex-wrap" style={{ fontSize: '14px' }}>
-            <div className="flex flex-col gap-2 flex-1 min-w-[180px]">
-              <div>
-                <p className="mb-1" style={{ fontWeight: 400 }}>Signature</p>
-                <div className="flex items-center gap-1">
-                  <QuillIcon />
-                  <FormLine value={form.attendantSignature} onChange={(v) => update('attendantSignature', v)} placeholder="Signature" className="flex-1" useLowerStyle />
-                </div>
-              </div>
-              <div>
-                <p className="mb-1" style={{ fontWeight: 400 }}>Name in Print</p>
-                <FormLine value={form.attendantName} onChange={(v) => update('attendantName', v)} useLowerStyle />
-              </div>
-              <div>
-                <p className="mb-1" style={{ fontWeight: 400 }}>Title or Position</p>
-                <FormLine value={form.attendantTitle} onChange={(v) => update('attendantTitle', v)} useLowerStyle />
+          <div
+            className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4"
+            style={{ fontSize: '14px' }}
+          >
+            <div>
+              <p className="mb-1" style={{ fontWeight: 400 }}>Signature</p>
+              <div className="flex items-center gap-1">
+                <QuillIcon />
+                <FormLine value={form.attendantSignature} onChange={(v) => update('attendantSignature', v)} placeholder="Signature" className="flex-1 min-w-0" useLowerStyle />
               </div>
             </div>
-            <div className="flex flex-col gap-2 flex-1 min-w-[180px]">
-              <div>
-                <p className="mb-1" style={{ fontWeight: 400 }}>Address</p>
-                <FormLine value={form.attendantAddress} onChange={(v) => update('attendantAddress', v)} className="w-full" useLowerStyle />
+            <div>
+              <p className="mb-1" style={{ fontWeight: 400 }}>Address</p>
+              <FormLine value={form.attendantAddress} onChange={(v) => update('attendantAddress', v)} className="w-full" useLowerStyle />
+            </div>
+            <div>
+              <p className="mb-1" style={{ fontWeight: 400 }}>Name in Print</p>
+              <FormLine value={form.attendantName} onChange={(v) => update('attendantName', v)} useLowerStyle />
+            </div>
+            <div>
+              <p className="mb-1" style={{ fontWeight: 400 }}>Date</p>
+              <div className="flex items-center gap-1">
+                <FormLine value={form.attendantDate} onChange={(v) => update('attendantDate', v)} className="flex-1 min-w-0" useLowerStyle />
+                <CalendarIcon />
               </div>
-              <div>
-                <p className="mb-1" style={{ fontWeight: 400 }}>Date</p>
-                <div className="flex items-center gap-1">
-                  <FormLine value={form.attendantDate} onChange={(v) => update('attendantDate', v)} useLowerStyle />
-                  <CalendarIcon />
-                </div>
-              </div>
+            </div>
+            <div className="sm:col-span-2">
+              <p className="mb-1" style={{ fontWeight: 400 }}>Title or Position</p>
+              <FormLine value={form.attendantTitle} onChange={(v) => update('attendantTitle', v)} useLowerStyle />
             </div>
           </div>
         </SectionStripe>

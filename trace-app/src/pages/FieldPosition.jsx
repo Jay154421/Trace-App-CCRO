@@ -227,6 +227,26 @@ function getMergedCert(child, cert) {
   };
 }
 
+function buildFieldPositionPdfSuggestedFileName(child, cert) {
+  const merged = getMergedCert(child, cert);
+  const parts = [merged.childFirst, merged.childMiddle, merged.childLast].filter(
+    (p) => p && String(p).trim()
+  );
+  const rawName = parts.join(' ');
+  const name =
+    rawName
+      .replace(/[\\/:*?"<>|]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 150) || 'Applicant';
+  const dateStr = new Date().toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+  return `${name}-${dateStr}.pdf`;
+}
+
 // Build PDF from merged cert data so content is guaranteed in the file (no print capture)
 function buildFieldPositionPdfBase64(merged) {
   const camelToSnake = (s) => s.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
@@ -347,7 +367,8 @@ export function FieldPosition() {
     try {
       const merged = getMergedCert(child, cert);
       const base64 = buildFieldPositionPdfBase64(merged);
-      const result = await window.electron.saveFieldPositionPdf(base64);
+      const suggested = buildFieldPositionPdfSuggestedFileName(child, cert);
+      const result = await window.electron.saveFieldPositionPdf(base64, suggested);
       if (result?.ok) {
         toast.success('PDF saved.');
       }
