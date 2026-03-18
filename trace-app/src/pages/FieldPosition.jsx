@@ -59,7 +59,7 @@ const LAYOUT = {
     father_occupation: { x: 1509, y: 1818},
     father_age: { x: 2175, y: 1818 },
     father_residence_house: { x: 336, y: 1959},
-    father_residence_city: { x: 1122, y: 1959},
+    father_residence_city: { x: 1122, y: 1959},  ///x-1203
     father_residence_province: { x: 1605, y: 1959},
     father_country: { x: 2070, y: 1959},
     marriage_date: { x: 471, y: 2148},
@@ -71,9 +71,9 @@ const LAYOUT = {
     attendant_address: { x: 1500, y: 2505, width: 944},
     attendant_date: { x: 1512, y: 2643},
     attendant_time: { x: 1533, y: 2409},
-    informant_signature: { x: 519, y: 2928},
+    informant_signature: { x: 507, y: 2856},
     informant_relation: { x: 612, y: 3000},
-    informant_address: { x: 519, y: 3069},
+    informant_address: { x: 399, y: 3057},
     informant_date: { x: 519, y: 3129},
     received_by: { x: 519, y: 3306 },
     received_by_title: { x: 519, y: 3375},
@@ -86,6 +86,81 @@ const LAYOUT = {
     registered_by_date: { x: 1665, y: 3447 },
   },
 };
+
+/** Space between form columns (layout px) so wrapped PDF/overlay text does not bleed into the next box. */
+const PDF_COLUMN_GUTTER_PX = 20;
+
+/**
+ * Multi-column form rows, keys ordered left → right by `x`.
+ * Used to infer each column width when `field.width` is not set.
+ */
+const PDF_MULTI_COLUMN_ROWS = [
+  ['child_name_first', 'child_name_middle', 'child_name_last'],
+  ['sex', 'date_of_birth_day', 'date_of_birth_month', 'date_of_birth_year'],
+  ['place_of_birth_hospital', 'place_of_birth_city', 'place_of_birth_province'],
+  ['type_of_birth', 'multiple_birth_order', 'birth_order', 'weight_at_birth'],
+  ['mother_maiden_first', 'mother_maiden_middle', 'mother_maiden_last'],
+  ['mother_citizenship', 'mother_religion'],
+  [
+    'mother_children_born_alive',
+    'mother_children_living',
+    'mother_children_dead',
+    'mother_occupation',
+    'mother_age',
+  ],
+  [
+    'mother_residence_house',
+    'mother_residence_city',
+    'mother_residence_province',
+    'mother_country',
+  ],
+  ['father_citizenship', 'father_religion', 'father_occupation', 'father_age'],
+  [
+    'father_residence_house',
+    'father_residence_city',
+    'father_residence_province',
+    'father_country',
+  ],
+  ['marriage_date', 'marriage_place'],
+];
+
+/** Single fields: max width from x to a logical right edge (layout px). */
+const PDF_FIELD_MAX_WIDTH_TO_X = {
+  informant_address: 1665,
+  informant_relation: 1665,
+  attendant_name: 1500,
+  attendant_title: 1512,
+  attendant_date: LAYOUT.document.width,
+  attendant_time: LAYOUT.document.width,
+};
+
+/**
+ * @param {string} fieldKey
+ * @returns {number | null} width in layout px, or null if unconstrained
+ */
+function getEffectiveColumnWidthPx(fieldKey) {
+  const field = LAYOUT.fields[fieldKey];
+  if (!field) return null;
+  if (field.width != null && field.width > 0) return field.width;
+
+  const docW = LAYOUT.document.width;
+  for (const row of PDF_MULTI_COLUMN_ROWS) {
+    const idx = row.indexOf(fieldKey);
+    if (idx === -1) continue;
+    const x0 = LAYOUT.fields[row[idx]].x;
+    if (idx + 1 < row.length) {
+      const x1 = LAYOUT.fields[row[idx + 1]].x;
+      return Math.max(48, x1 - x0 - PDF_COLUMN_GUTTER_PX);
+    }
+    return Math.max(48, docW - x0 - PDF_COLUMN_GUTTER_PX);
+  }
+
+  const rightEdge = PDF_FIELD_MAX_WIDTH_TO_X[fieldKey];
+  if (rightEdge != null) {
+    return Math.max(48, rightEdge - field.x - PDF_COLUMN_GUTTER_PX);
+  }
+  return null;
+}
 
 const CENTERED_FIELD_KEYS = [
   'child_name_first', 'child_name_middle', 'child_name_last',
@@ -204,8 +279,12 @@ function abbreviateAddressText(value) {
     .replace(/\bLot\b/gi, 'Lt.');
 }
 
-// Font size for all positioned field values
+// Font size for all positioned field values (matches ~10pt PDF at this layout scale)
 const POSITIONED_FONT_SIZE = 20;
+const INFORMANT_ADDRESS_COMPACT_LEN = 44;
+const INFORMANT_ADDRESS_COMPACT_PDF_PT = 8;
+const INFORMANT_ADDRESS_COMPACT_OVERLAY_PX =
+  (INFORMANT_ADDRESS_COMPACT_PDF_PT / 10) * POSITIONED_FONT_SIZE;
 
 /** All COB (certificate of live birth) field values display in uppercase. */
 function toCobDisplay(value) {
@@ -213,26 +292,44 @@ function toCobDisplay(value) {
   return String(value).toUpperCase();
 }
 
-function PositionedValue({ fieldKey, value }) {
+function PositionedValue({ fieldKey, value, fontLenSource }) {
   const field = LAYOUT.fields[fieldKey];
   if (!field) return null;
   const display = toCobDisplay(value);
+  const lenForFont =
+    fieldKey === 'informant_address' && fontLenSource !== undefined && fontLenSource !== null
+      ? String(fontLenSource).trim().length
+      : String(value ?? '').trim().length;
+  const fontPx =
+    fieldKey === 'informant_address' && lenForFont >= INFORMANT_ADDRESS_COMPACT_LEN
+      ? INFORMANT_ADDRESS_COMPACT_OVERLAY_PX
+      : POSITIONED_FONT_SIZE;
   const isCentered = CENTERED_FIELD_KEYS.includes(fieldKey);
+  const colW = getEffectiveColumnWidthPx(fieldKey);
+  const boxWidth = field.width ?? colW ?? undefined;
+  const useWrap = boxWidth != null;
   return (
     <span
       className="absolute overflow-hidden"
       style={{
         left: field.x,
         top: field.y,
-        width: field.width,
+        width: boxWidth,
         height: field.height,
+        maxHeight: field.height == null && useWrap ? 120 : undefined,
         fontFamily: FONT_FAMILY,
-        fontSize: `${POSITIONED_FONT_SIZE}px`,
+        fontSize: `${fontPx}px`,
         padding: '2px 4px',
         color: COLORS.black,
         WebkitPrintColorAdjust: 'exact',
         printColorAdjust: 'exact',
         ...(isCentered && { textAlign: 'center' }),
+        ...(useWrap && {
+          display: 'block',
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
+          lineHeight: 1.15,
+        }),
       }}
     >
       {display}
@@ -313,6 +410,44 @@ function buildFieldPositionPdfSuggestedFileName(child, cert) {
   return `${name}-${dateStr}.pdf`;
 }
 
+const PDF_MIN_SHRINK_PT = 7;
+const PDF_SHRINK_STEP = 0.5;
+
+/**
+ * Keep preferredPt if one line fits at that size. Otherwise shrink only when a smaller
+ * font reduces wrapped line count; among those, use the largest font that achieves the
+ * minimum line count (slightly smaller only when it helps).
+ */
+function pickPdfFontPtForColumn(doc, line, maxWidthIn, preferredPt) {
+  if (!maxWidthIn || maxWidthIn <= 0) return preferredPt;
+  const text = line == null ? '' : String(line);
+  if (!text.trim()) return preferredPt;
+
+  const lineCountAt = (pt) => {
+    doc.setFontSize(pt);
+    try {
+      if (typeof doc.splitTextToSize === 'function') {
+        return doc.splitTextToSize(text, maxWidthIn).length;
+      }
+    } catch (_) {}
+    return 1;
+  };
+
+  let minLines = Infinity;
+  let bestPt = preferredPt;
+  for (let pt = preferredPt; pt >= PDF_MIN_SHRINK_PT; pt -= PDF_SHRINK_STEP) {
+    const n = lineCountAt(pt);
+    if (n < minLines) {
+      minLines = n;
+      bestPt = pt;
+    } else if (n === minLines) {
+      bestPt = Math.max(bestPt, pt);
+    }
+  }
+  doc.setFontSize(bestPt);
+  return bestPt;
+}
+
 // Build PDF from merged cert data so content is guaranteed in the file (no print capture)
 function buildFieldPositionPdfBase64(merged) {
   const camelToSnake = (s) => s.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
@@ -320,29 +455,45 @@ function buildFieldPositionPdfBase64(merged) {
 
   const doc = new jsPDF({ orientation: 'portrait', unit: 'in', format: 'legal' });
   doc.setFont('helvetica');
-  doc.setFontSize(10);
+  const DEFAULT_PDF_FONT_PT = 10;
+  doc.setFontSize(DEFAULT_PDF_FONT_PT);
   doc.setTextColor(0, 0, 0);
 
   const W = LAYOUT.document.width;
   const H = LAYOUT.document.height;
   const pageW = 8.5;
   const pageH = 14;
-  const lineHeightIn = 12 / 72;
 
   for (const item of FIELD_VALUE_MAP) {
     const field = LAYOUT.fields[item.key];
     if (!field) continue;
+
     const raw = item.getValue ? item.getValue(f) : f(item.valueKey);
+    const rawTrimLen = String(raw ?? '').trim().length;
+    const fontPt =
+      item.key === 'informant_address' && rawTrimLen >= INFORMANT_ADDRESS_COMPACT_LEN
+        ? INFORMANT_ADDRESS_COMPACT_PDF_PT
+        : item.key === 'weight_at_birth'
+          ? 8
+          : DEFAULT_PDF_FONT_PT;
+    doc.setFontSize(fontPt);
+    const defaultLineHeightIn = (fontPt * 1.2) / 72;
+
     const value = ADDRESS_ABBREV_FIELD_KEYS.has(item.key) ? abbreviateAddressText(raw) : raw;
     const str = toCobDisplay(value);
     const xIn = (field.x / W) * pageW;
     let yIn = ((field.y + 25) / H) * pageH;
-    const maxWidthIn = field.width != null ? (field.width / W) * pageW : null;
+    const widthPx = getEffectiveColumnWidthPx(item.key);
+    const maxWidthIn =
+      widthPx != null && widthPx > 0 ? (widthPx / W) * pageW : null;
     const inputLines = str.split(/\r?\n/);
 
     for (let i = 0; i < inputLines.length; i++) {
       const line = inputLines[i];
       if (maxWidthIn != null && maxWidthIn > 0) {
+        const chosenPt = pickPdfFontPtForColumn(doc, line, maxWidthIn, fontPt);
+        doc.setFontSize(chosenPt);
+        const lineHeightIn = (chosenPt * 1.2) / 72;
         const opts = { maxWidth: maxWidthIn };
         doc.text(line, xIn, yIn, opts);
         let lineHeightUsed = lineHeightIn;
@@ -356,8 +507,9 @@ function buildFieldPositionPdfBase64(merged) {
         }
         yIn += lineHeightUsed;
       } else {
+        doc.setFontSize(fontPt);
         doc.text(line, xIn, yIn);
-        yIn += lineHeightIn;
+        yIn += defaultLineHeightIn;
       }
     }
   }
@@ -625,7 +777,11 @@ export function FieldPosition() {
           <PositionedValue fieldKey="attendant_time" value={[f('attendantTime'), f('attendantAmpm')].filter(Boolean).join(' ')} />
           <PositionedValue fieldKey="informant_signature" value={f('informantSignature') || f('informantName')} />
           <PositionedValue fieldKey="informant_relation" value={f('informantRelationship')} />
-          <PositionedValue fieldKey="informant_address" value={addr('informantAddress')} />
+          <PositionedValue
+            fieldKey="informant_address"
+            value={addr('informantAddress')}
+            fontLenSource={f('informantAddress')}
+          />
           <PositionedValue fieldKey="informant_date" value={f('informantDate')} />
           <PositionedValue fieldKey="received_by" value={f('receivedBySignature') || f('receivedByName')} />
           <PositionedValue fieldKey="received_by_title" value={f('receivedByTitle')} />
