@@ -31,10 +31,10 @@ const LAYOUT = {
     sex: { x: 600, y: 753 },
     date_of_birth_day: { x: 1425, y: 753},
     date_of_birth_month: { x: 1764, y: 753},
-    date_of_birth_year: { x: 2178, y: 753},
+    date_of_birth_year: { x: 2064, y: 753},
     place_of_birth_hospital: { x: 786, y: 885 },
     place_of_birth_city: { x: 1470, y: 885},
-    place_of_birth_province: { x: 1872, y: 885, width: 300},
+    place_of_birth_province: { x: 1872, y: 885},
     type_of_birth: { x: 456, y: 1038},
     multiple_birth_order: { x: 1056, y: 1038},
     birth_order: { x: 1725, y: 1038},
@@ -50,8 +50,8 @@ const LAYOUT = {
     mother_occupation: { x: 1470, y: 1440},
     mother_age: { x: 2175, y: 1440 },
     mother_residence_house: { x: 336, y: 1533},
-    mother_residence_city: { x: 1200, y: 1533},
-    mother_residence_province: { x: 1872, y: 1533},
+    mother_residence_city: { x: 1122, y: 1533},
+    mother_residence_province: { x: 1605, y: 1533},
     father_name_first: { x: 531, y: 1677, width: 640},
     father_name_middle: { x: 1179, y: 1677, width: 640},
     father_name_last: { x: 1830, y: 1677, width: 640},
@@ -60,8 +60,8 @@ const LAYOUT = {
     father_occupation: { x: 1725, y: 1818},
     father_age: { x: 2175, y: 1818 },
     father_residence_house: { x: 336, y: 1959}, 
-    father_residence_city: { x: 1200, y: 1959},
-    father_residence_province: { x: 1872, y: 1959},
+    father_residence_city: { x: 1122, y: 1959},
+    father_residence_province: { x: 1605, y: 1959},
     marriage_date: { x: 471, y: 2148},
     marriage_place: { x: 1287, y: 2148},
     // attendant_type: { x: 507, y: 2646,},
@@ -71,11 +71,19 @@ const LAYOUT = {
     attendant_address: { x: 1500, y: 2505, width: 644},
     attendant_date: { x: 1512, y: 2643},
     attendant_time: { x: 1533, y: 2409},
-    // informant_signature: { x: 86, y: 3603, width: 860, height: 132 },
-    // informant_relation: { x: 989, y: 3603, width: 688, height: 132 },
-    // informant_address: { x: 1720, y: 3603, width: 774, height: 132 },
-    // prepared_by: { x: 86, y: 3815, width: 860, height: 132 },
-    // registered_by: { x: 1290, y: 3815, width: 1118, height: 132 },
+    informant_signature: { x: 519, y: 2928},
+    informant_relation: { x: 612, y: 3000},
+    informant_address: { x: 519, y: 3069},
+    informant_date: { x: 519, y: 3129},
+    received_by: { x: 519, y: 3306 },
+    received_by_title: { x: 519, y: 3375},
+    received_by_date: { x: 519, y: 3447 },
+    prepared_by: { x: 1665, y: 2928 },
+    prepared_by_title: { x: 1665, y: 3000},
+    prepared_by_date: { x: 1665, y: 3069 },
+    registered_by: { x: 1665, y: 3306 },
+    registered_by_title: { x: 1665, y: 3375 },
+    registered_by_date: { x: 1665, y: 3447 },
   },
 };
 
@@ -149,8 +157,16 @@ const FIELD_VALUE_MAP = [
   { key: 'informant_signature', getValue: (f) => f('informantSignature') || f('informantName') },
   { key: 'informant_relation', valueKey: 'informantRelationship' },
   { key: 'informant_address', valueKey: 'informantAddress' },
+  { key: 'informant_date', valueKey: 'informantDate' },
   { key: 'prepared_by', getValue: (f) => f('preparedBySignature') || f('preparedByName') },
+  { key: 'prepared_by_title', valueKey: 'preparedByTitle' },
+  { key: 'prepared_by_date', valueKey: 'preparedByDate' },
+  { key: 'received_by', getValue: (f) => f('receivedBySignature') || f('receivedByName') },
+  { key: 'received_by_title', valueKey: 'receivedByTitle' },
+  { key: 'received_by_date', valueKey: 'receivedByDate' },
   { key: 'registered_by', getValue: (f) => f('registeredBySignature') || f('registeredByName') },
+  { key: 'registered_by_title', valueKey: 'registeredByTitle' },
+  { key: 'registered_by_date', valueKey: 'registeredByDate' },
 ];
 
 // Font size for all positioned field values
@@ -432,8 +448,16 @@ export function FieldPosition() {
           <PositionedValue fieldKey="informant_signature" value={f('informantSignature') || f('informantName')} />
           <PositionedValue fieldKey="informant_relation" value={f('informantRelationship')} />
           <PositionedValue fieldKey="informant_address" value={f('informantAddress')} />
+          <PositionedValue fieldKey="informant_date" value={f('informantDate')} />
+          <PositionedValue fieldKey="received_by" value={f('receivedBySignature') || f('receivedByName')} />
+          <PositionedValue fieldKey="received_by_title" value={f('receivedByTitle')} />
+          <PositionedValue fieldKey="received_by_date" value={f('receivedByDate')} />
           <PositionedValue fieldKey="prepared_by" value={f('preparedBySignature') || f('preparedByName')} />
+          <PositionedValue fieldKey="prepared_by_title" value={f('preparedByTitle')} />
+          <PositionedValue fieldKey="prepared_by_date" value={f('preparedByDate')} />
           <PositionedValue fieldKey="registered_by" value={f('registeredBySignature') || f('registeredByName')} />
+          <PositionedValue fieldKey="registered_by_title" value={f('registeredByTitle')} />
+          <PositionedValue fieldKey="registered_by_date" value={f('registeredByDate')} />
         </div>
       </div>
     </>
