@@ -1,10 +1,8 @@
 import { useParams, Link } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { jsPDF } from 'jspdf';
 import { childrenApi } from '../services/api';
-
-const isElectron = typeof window !== 'undefined' && window.electron?.isElectron;
 
 const COLORS = {
   white: '#FFFFFF',
@@ -305,6 +303,9 @@ export function FieldPosition() {
   const [cert, setCert] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null);
+  const pdfPreviewObjectUrlRef = useRef(null);
 
   useEffect(() => {
     childrenApi
@@ -362,6 +363,50 @@ export function FieldPosition() {
     };
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (pdfPreviewObjectUrlRef.current) {
+        URL.revokeObjectURL(pdfPreviewObjectUrlRef.current);
+        pdfPreviewObjectUrlRef.current = null;
+      }
+    };
+  }, []);
+
+  const releasePdfPreviewUrl = () => {
+    if (pdfPreviewObjectUrlRef.current) {
+      URL.revokeObjectURL(pdfPreviewObjectUrlRef.current);
+      pdfPreviewObjectUrlRef.current = null;
+    }
+    setPdfPreviewUrl(null);
+  };
+
+  const closePdfPreview = () => {
+    setPdfPreviewOpen(false);
+    releasePdfPreviewUrl();
+  };
+
+  const handlePreviewPdf = () => {
+    try {
+      const merged = getMergedCert(child, cert);
+      const base64 = buildFieldPositionPdfBase64(merged);
+      if (!base64) {
+        toast.error('Could not generate PDF.');
+        return;
+      }
+      releasePdfPreviewUrl();
+      const binary = atob(base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      const blob = new Blob([bytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      pdfPreviewObjectUrlRef.current = url;
+      setPdfPreviewUrl(url);
+      setPdfPreviewOpen(true);
+    } catch (e) {
+      toast.error(e?.message || 'Preview failed.');
+    }
+  };
+
   const handleSavePdf = async () => {
     if (!window.electron?.saveFieldPositionPdf) return;
     try {
@@ -387,17 +432,57 @@ export function FieldPosition() {
 
   return (
     <>
+      {pdfPreviewOpen && pdfPreviewUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 print-hide"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="field-position-pdf-preview-title"
+        >
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/50"
+            onClick={closePdfPreview}
+            aria-label="Close PDF preview"
+          />
+          <div className="relative z-10 flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+            <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-3">
+              <h2 id="field-position-pdf-preview-title" className="text-sm font-semibold text-slate-800">
+                PDF preview
+              </h2>
+              <button
+                type="button"
+                onClick={closePdfPreview}
+                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Close
+              </button>
+            </div>
+            <iframe
+              src={pdfPreviewUrl}
+              title="Field position PDF preview"
+              className="min-h-[70vh] w-full flex-1 border-0 bg-slate-100"
+            />
+          </div>
+        </div>
+      )}
       <div className="mb-4 flex items-center justify-between print-hide">
         <Link to={`/children/${id}`} className="text-sm text-slate-500 hover:text-slate-700">← Back to applicant</Link>
         <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleSavePdf}
-              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-            >
-              Save as PDF
-            </button>
-        
+          <button
+            type="button"
+            onClick={handlePreviewPdf}
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Preview PDF
+          </button>
+          <button
+            type="button"
+            onClick={handleSavePdf}
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Save as PDF
+          </button>
         </div>
       </div>
 
