@@ -77,8 +77,18 @@ const FIELD_POSITIONS = {
   father_residence_city: { x: 1215, y: 1959, width: 330 },
   father_residence_province: { x: 1605, y: 1959, width: 375},
   father_country: { x: 2070, y: 1959, width: 315 },
-  marriage_date: { x: 471, y: 2148 },
-  marriage_place: { x: 1287, y: 2148 },
+  marriage_date_month: { x: 507, y: 2148 },
+  marriage_date_day: { x: 696, y: 2148 },
+  marriage_date_year: { x: 873, y: 2148 },
+  marriage_place_city: { x: 1239, y: 2148, width: 378 },
+  marriage_place_province: { x: 1667, y: 2148 , width: 397},
+  marriage_place_country: { x: 2112, y: 2148, width: 342 },
+  // Attendant type radio button positions
+  attendant_radio_physician: { x: 234, y: 2227 },
+  attendant_radio_nurse: { x: 555, y: 2277 },
+  attendant_radio_hilot: { x: 1131, y: 2277 },
+  attendant_radio_other: { x: 1758, y: 2277 },
+  attendant_type_specify: { x: 2148, y: 2277 },
   attendant_title: { x: 507, y: 2643 },
   attendant_name: { x: 483, y: 2562, width: 780 },
   attendant_address: { x: 1500, y: 2505, width: 905},
@@ -114,7 +124,7 @@ const PDF_MULTI_COLUMN_ROWS = [
   ['mother_residence_house', 'mother_residence_city', 'mother_residence_province', 'mother_country'],
   ['father_citizenship', 'father_religion', 'father_occupation', 'father_age'],
   ['father_residence_house', 'father_residence_city', 'father_residence_province', 'father_country'],
-  ['marriage_date', 'marriage_place'],
+  ['marriage_date_month', 'marriage_date_day', 'marriage_date_year', 'marriage_place_city', 'marriage_place_province', 'marriage_place_country'],
   ['informant_signature', 'informant_relation'],
   ['prepared_by', 'received_by', 'registered_by'],
 ];
@@ -146,7 +156,7 @@ const CENTERED_FIELD_KEYS = [
   'father_occupation', 'father_age',
   'father_residence_house', 'father_residence_city', 'father_residence_province',
   'father_country',
-  'marriage_date', 'marriage_place',
+  'marriage_date_month', 'marriage_date_day', 'marriage_date_year', 'marriage_place_city', 'marriage_place_province', 'marriage_place_country',
 ];
 
 /** Fields requiring address abbreviation */
@@ -302,13 +312,6 @@ function countryDisplayFromCodeOrText(codeOrText) {
 }
 
 /**
- * Join date parts with separator
- */
-function joinDateParts(month, day, year) {
-  return [month, day, year].filter(Boolean).join(' / ');
-}
-
-/**
  * Join time parts with separator
  */
 function joinTimeParts(time, ampm) {
@@ -320,6 +323,27 @@ function joinTimeParts(time, ampm) {
  */
 function getSignatureOrName(signature, name) {
   return signature || name;
+}
+
+/**
+ * Normalize attendant type value for comparison
+ */
+function normalizeAttendantType(value) {
+  if (!value) return null;
+  const normalized = String(value).toLowerCase().trim();
+  if (normalized === 'physician' || normalized === 'md' || normalized === 'doctor') {
+    return 'physician';
+  }
+  if (normalized === 'nurse' || normalized === 'rn') {
+    return 'nurse';
+  }
+  if (normalized === 'hilot' || normalized === 'traditional birth attendant' || normalized === 'tba' || normalized === 'midwife') {
+    return 'hilot';
+  }
+  if (normalized === 'other' || normalized === 'others') {
+    return 'other';
+  }
+  return normalized;
 }
 
 // ============================================================================
@@ -372,8 +396,13 @@ const FIELD_VALUE_MAP = [
   { key: 'father_residence_city', valueKey: 'fatherResidenceCity' },
   { key: 'father_residence_province', valueKey: 'fatherResidenceProvince' },
   { key: 'father_country', valueKey: 'fatherCountry' },
-  { key: 'marriage_date', getValue: (getVal) => joinDateParts(getVal('marriageMonth'), getVal('marriageDay'), getVal('marriageYear')) },
-  { key: 'marriage_place', valueKey: 'marriagePlace' },
+  { key: 'marriage_date_month', valueKey: 'marriageMonth' },
+  { key: 'marriage_date_day', valueKey: 'marriageDay' },
+  { key: 'marriage_date_year', valueKey: 'marriageYear' },
+  { key: 'marriage_place_city', valueKey: 'marriagePlaceCity' },
+  { key: 'marriage_place_province', valueKey: 'marriagePlaceProvince' },
+  { key: 'marriage_place_country', valueKey: 'marriagePlaceCountry' },
+  { key: 'attendant_type_specify', getValue: (getVal) => getVal('attendantTypeSpecify') ?? getVal('attendantOthersSpecify') ?? '' },
   { key: 'attendant_title', valueKey: 'attendantTitle' },
   { key: 'attendant_name', valueKey: 'attendantName' },
   { key: 'attendant_signature', getValue: (getVal) => getSignatureOrName(getVal('attendantSignature'), getVal('attendantName')) },
@@ -503,6 +532,18 @@ function base64ToBlobUrl(base64) {
 }
 
 /**
+ * Draw radio button mark (small filled box) at specified position
+ * Matches CertificateOfLiveBirth style - small 4x4 pixel box
+ */
+function drawRadioMark(doc, x, y) {
+  // Check mark for radio button selection
+  doc.setFillColor(0, 0, 0);
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(20);
+  doc.text('•', x, y, { align: 'center', baseline: 'middle' });
+}
+
+/**
  * Build PDF as base64 data URI
  */
 function buildFieldPositionPdfBase64(merged) {
@@ -512,6 +553,9 @@ function buildFieldPositionPdfBase64(merged) {
   doc.setTextColor(0, 0, 0);
 
   const { width: docWidth, height: docHeight, pageWidthInches, pageHeightInches } = PDF_LAYOUT.document;
+
+  // Get attendant type for radio button logic
+  const attendantType = normalizeAttendantType(merged.attendantType ?? merged.attendant_type);
 
   for (const item of FIELD_VALUE_MAP) {
     const field = FIELD_POSITIONS[item.key];
@@ -525,7 +569,7 @@ function buildFieldPositionPdfBase64(merged) {
     if (item.key === 'informant_address' && rawTrimLen >= INFORMANT_ADDRESS_COMPACT_LENGTH) {
       fontPt = INFORMANT_ADDRESS_COMPACT_PDF_PT;
     } else if (item.key === 'weight_at_birth') {
-      fontPt = 8;
+      fontPt = 9;
     } else if (item.key === 'attendant_address') {
       fontPt = getAttendantAddressFontPt(rawTrimLen);
     }
@@ -562,6 +606,35 @@ function buildFieldPositionPdfBase64(merged) {
         doc.setFontSize(fontPt);
         doc.text(line, xIn, yIn);
         yIn += defaultLineHeightIn;
+      }
+    }
+  }
+
+  // Draw attendant type radio button marks
+  const radioPositions = {
+    physician: { x: 234, y: 2227 },
+    nurse: { x: 555, y: 2277 },
+    hilot: { x: 1131, y: 2277 },
+    other: { x: 1758, y: 2277 },
+  };
+
+  if (attendantType && radioPositions[attendantType]) {
+    const pos = radioPositions[attendantType];
+    const xIn = (pos.x / docWidth) * pageWidthInches;
+    const yIn = ((pos.y + 10) / docHeight) * pageHeightInches;
+    drawRadioMark(doc, xIn, yIn);
+  }
+
+  // Draw "other" specify text if applicable
+  if (attendantType === 'other') {
+    const specifyField = FIELD_POSITIONS['attendant_type_specify'];
+    if (specifyField) {
+      const specifyValue = merged.attendantTypeSpecify ?? merged.attendantOthersSpecify ?? merged.attendant_type_specify ?? '';
+      if (specifyValue) {
+        const xIn = (specifyField.x / docWidth) * pageWidthInches;
+        const yIn = ((specifyField.y + 25) / docHeight) * pageHeightInches;
+        doc.setFontSize(PDF_LAYOUT.pdfDefaultFontSize);
+        doc.text(toCobDisplay(specifyValue), xIn, yIn);
       }
     }
   }
@@ -705,6 +778,30 @@ function getAttendantAddressFontPt(addressLength) {
   return Math.round((PDF_LAYOUT.pdfDefaultFontSize - progress * fontRange) * 10) / 10;
 }
 
+/**
+ * Radio mark component - matches CertificateOfLiveBirth style
+ * Small 4x4 box with border, filled black when selected
+ */
+function RadioMark({ x, y, show }) {
+  return (
+    <span
+      className="absolute inline-block"
+      style={{
+        left: x,
+        top: y,
+        width: 2,
+        height: 2,
+        fontSize: '10px',
+        lineHeight: '1',
+        color: show ? '#000000' : 'transparent',
+        textAlign: 'center',
+      }}
+    >
+      {show ? '•' : ''}
+    </span>
+  );
+}
+
 function PositionedValue({ fieldKey, value, fontLenSource }) {
   const field = FIELD_POSITIONS[fieldKey];
   if (!field) return null;
@@ -814,6 +911,9 @@ export function FieldPosition() {
   const merged = buildMergedCertData(child, cert);
   const getVal = (key) => getMergedValue(merged, key);
   const getAbbrevVal = (key) => abbreviateAddressText(getVal(key));
+  
+  // Get normalized attendant type for radio button logic
+  const attendantType = normalizeAttendantType(getVal('attendantType') ?? getVal('attendant_type'));
 
   return (
     <>
@@ -940,11 +1040,21 @@ export function FieldPosition() {
           <PositionedValue fieldKey="father_country" value={getVal('fatherCountry')} />
 
           {/* Marriage */}
-          <PositionedValue
-            fieldKey="marriage_date"
-            value={joinDateParts(getVal('marriageMonth'), getVal('marriageDay'), getVal('marriageYear'))}
-          />
-          <PositionedValue fieldKey="marriage_place" value={getAbbrevVal('marriagePlace')} />
+          <PositionedValue fieldKey="marriage_date_month" value={getVal('marriageMonth')} />
+          <PositionedValue fieldKey="marriage_date_day" value={getVal('marriageDay')} />
+          <PositionedValue fieldKey="marriage_date_year" value={getVal('marriageYear')} />
+          <PositionedValue fieldKey="marriage_place_city" value={getVal('marriagePlaceCity')} />
+          <PositionedValue fieldKey="marriage_place_province" value={getVal('marriagePlaceProvince')} />
+          <PositionedValue fieldKey="marriage_place_country" value={getVal('marriagePlaceCountry')} />
+
+          {/* Attendant Type Radio Buttons - matching CertificateOfLiveBirth style */}
+          <RadioMark x={234} y={2227} show={attendantType === 'physician'} />
+          <RadioMark x={555} y={2277} show={attendantType === 'nurse'} />
+          <RadioMark x={1758} y={2277} show={attendantType === 'hilot'} />
+          <RadioMark x={1758} y={2277} show={attendantType === 'other'} />
+          
+          {/* Attendant Type Specify (only show for "other") */}
+          <PositionedValue fieldKey="attendant_type_specify" value={attendantType === 'other' ? (getVal('attendantTypeSpecify') ?? getVal('attendantOthersSpecify') ?? '') : ''} />
 
           {/* Attendant */}
           <PositionedValue fieldKey="attendant_name" value={getVal('attendantName')} />

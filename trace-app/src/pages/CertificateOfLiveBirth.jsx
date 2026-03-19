@@ -56,7 +56,9 @@ const DEFAULT_CERT = {
   marriageMonth: '',
   marriageDay: '',
   marriageYear: '',
-  marriagePlace: '',
+  marriagePlaceCity: '',
+  marriagePlaceProvince: '',
+  marriagePlaceCountry: '',
   attendantType: '',
   attendantOthersSpecify: '',
   attendantTime: '',
@@ -766,14 +768,32 @@ export function CertificateOfLiveBirth() {
                 <label className="block mb-2" style={{ fontWeight: 700 }}>
                   20b. PLACE
                 </label>
-                <FormLine
-                  value={form.marriagePlace}
-                  onChange={(v) => update('marriagePlace', v)}
-                  placeholder="(City / Municipality, Province, Country)"
-                  className="w-full"
-                  width="w-full"
-                  useLowerStyle
-                />
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <FormLine
+                    value={form.marriagePlaceCity}
+                    onChange={(v) => update('marriagePlaceCity', v)}
+                    placeholder="(City/Municipality)"
+                    className="w-full"
+                    width="w-full"
+                    useLowerStyle
+                  />
+                  <FormLine
+                    value={form.marriagePlaceProvince}
+                    onChange={(v) => update('marriagePlaceProvince', v)}
+                    placeholder="(Province)"
+                    className="w-full"
+                    width="w-full"
+                    useLowerStyle
+                  />
+                  <FormLine
+                    value={form.marriagePlaceCountry}
+                    onChange={(v) => update('marriagePlaceCountry', v)}
+                    placeholder="(Country)"
+                    className="w-full"
+                    width="w-full"
+                    useLowerStyle
+                  />
+                </div>
               </div>
             </div>
           </div>
