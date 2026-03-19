@@ -1,8 +1,12 @@
 import { useParams, Link } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { jsPDF } from 'jspdf';
 import { childrenApi } from '../services/api';
+
+// ============================================================================
+// CONSTANTS
+// ============================================================================
 
 const COLORS = {
   white: '#FFFFFF',
@@ -11,89 +15,94 @@ const COLORS = {
 
 const FONT_FAMILY = 'Arial';
 
-const LAYOUT = {
+// PDF Layout dimensions (layout pixels)
+const PDF_LAYOUT = {
   document: {
     width: 2550,
     height: 4200,
-    unit: 'px',
-    paper: '8.5x14in',
+    pageWidthInches: 8.5,
+    pageHeightInches: 14,
     dpi: 300,
   },
-  fields: { 
-    province: { x: 600, y: 447},
-    city_municipality: { x: 600, y: 519},
-    registry_no: { x: 1634, y: 477},
-    child_name_first: { x: 531, y: 648},
-    child_name_middle: {x: 1179, y: 648},
-    child_name_last: { x: 1830, y: 648},
-    sex: { x: 600, y: 753 },
-    date_of_birth_day: { x: 1380, y: 753},
-    date_of_birth_month: { x: 1722, y: 753},
-    date_of_birth_year: { x: 2124, y: 753},
-    place_of_birth_hospital: { x: 576, y: 885 },
-    place_of_birth_city: { x: 1470, y: 885},
-    place_of_birth_province: { x: 1872, y: 885},
-    type_of_birth: { x: 456, y: 1038},
-    multiple_birth_order: { x: 1056, y: 1038},
-    birth_order: { x: 1725, y: 1038},
-    weight_at_birth: { x: 2124, y: 1038},         
-    mother_maiden_first: { x: 531, y: 1167},
-    mother_maiden_middle: { x: 1179, y: 1167},
-    mother_maiden_last: { x: 1830, y: 1167},
-    mother_citizenship: { x: 543, y: 1275},
-    mother_religion: { x: 1800, y: 1275},
-    mother_children_born_alive: { x: 459, y: 1440},
-    mother_children_living: { x: 786, y: 1440},
-    mother_children_dead: { x: 1056, y: 1440},
-    mother_occupation: { x: 1392, y: 1440},
-    mother_age: { x: 2175, y: 1440 },
-    mother_residence_house: { x: 336, y: 1557},
-    mother_residence_city: { x: 1122, y: 1557},
-    mother_residence_province: { x: 1605, y: 1557},
-    mother_country: { x: 2070, y: 1557},
-    father_name_first: { x: 531, y: 1677, width: 640},
-    father_name_middle: { x: 1179, y: 1677, width: 640},
-    father_name_last: { x: 1830, y: 1677, width: 640},
-    father_citizenship: { x: 336, y: 1818},
-    father_religion: { x: 900, y: 1818},
-    father_occupation: { x: 1509, y: 1818},
-    father_age: { x: 2175, y: 1818 },
-    father_residence_house: { x: 336, y: 1959},
-    father_residence_city: { x: 1122, y: 1959},  ///x-1203
-    father_residence_province: { x: 1605, y: 1959},
-    father_country: { x: 2070, y: 1959},
-    marriage_date: { x: 471, y: 2148},
-    marriage_place: { x: 1287, y: 2148},
-    // attendant_type: { x: 507, y: 2646,},
-    // attendant_signature: { x: 86, y: 3391, width: 860, height: 132 },
-    attendant_title: { x: 507, y: 2643 },
-    attendant_name: { x: 483, y: 2562},
-    attendant_address: { x: 1500, y: 2505, width: 944},
-    attendant_date: { x: 1512, y: 2643},
-    attendant_time: { x: 1533, y: 2409},
-    informant_signature: { x: 507, y: 2856},
-    informant_relation: { x: 612, y: 3000},
-    informant_address: { x: 399, y: 3057},
-    informant_date: { x: 519, y: 3129},
-    received_by: { x: 519, y: 3306 },
-    received_by_title: { x: 519, y: 3375},
-    received_by_date: { x: 519, y: 3447 },
-    prepared_by: { x: 1665, y: 2928 },
-    prepared_by_title: { x: 1665, y: 3000},
-    prepared_by_date: { x: 1665, y: 3069 },
-    registered_by: { x: 1665, y: 3306 },
-    registered_by_title: { x: 1665, y: 3375 },
-    registered_by_date: { x: 1665, y: 3447 },
-  },
+  renderScale: 0.32,
+  fieldFontSize: 20,
+  pdfDefaultFontSize: 10,
+  pdfMinShrinkSize: 7,
+  pdfShrinkStep: 0.5,
+  lineHeightRatio: 1.2,
+  defaultWrapMaxHeight: 120,
 };
 
-/** Space between form columns (layout px) so wrapped PDF/overlay text does not bleed into the next box. */
+// Field position coordinates (layout pixels)
+const FIELD_POSITIONS = {
+  province: { x: 600, y: 447 },
+  city_municipality: { x: 600, y: 519 },
+  registry_no: { x: 1634, y: 477 },
+  child_name_first: { x: 531, y: 648 },
+  child_name_middle: { x: 1179, y: 648 },
+  child_name_last: { x: 1830, y: 648 },
+  sex: { x: 600, y: 753 },
+  date_of_birth_day: { x: 1380, y: 753 },
+  date_of_birth_month: { x: 1722, y: 753 },
+  date_of_birth_year: { x: 2124, y: 753 },
+  place_of_birth_hospital: { x: 576, y: 885 },
+  place_of_birth_city: { x: 1470, y: 885 },
+  place_of_birth_province: { x: 1872, y: 885 },
+  type_of_birth: { x: 456, y: 1038 },
+  multiple_birth_order: { x: 1056, y: 1038 },
+  birth_order: { x: 1725, y: 1038 },
+  weight_at_birth: { x: 2124, y: 1038 },
+  mother_maiden_first: { x: 531, y: 1167 },
+  mother_maiden_middle: { x: 1179, y: 1167 },
+  mother_maiden_last: { x: 1830, y: 1167 },
+  mother_citizenship: { x: 543, y: 1275 },
+  mother_religion: { x: 1800, y: 1275 },
+  mother_children_born_alive: { x: 459, y: 1440 },
+  mother_children_living: { x: 786, y: 1440 },
+  mother_children_dead: { x: 1056, y: 1440 },
+  mother_occupation: { x: 1392, y: 1440 },
+  mother_age: { x: 2175, y: 1440 },
+  mother_residence_house: { x: 336, y: 1557 },
+  mother_residence_city: { x: 1122, y: 1557 },
+  mother_residence_province: { x: 1605, y: 1557 },
+  mother_country: { x: 2070, y: 1557 },
+  father_name_first: { x: 531, y: 1677, width: 640 },
+  father_name_middle: { x: 1179, y: 1677, width: 640 },
+  father_name_last: { x: 1830, y: 1677, width: 640 },
+  father_citizenship: { x: 336, y: 1818 },
+  father_religion: { x: 900, y: 1818 },
+  father_occupation: { x: 1509, y: 1818 },
+  father_age: { x: 2175, y: 1818 },
+  father_residence_house: { x: 336, y: 1959 },
+  father_residence_city: { x: 1122, y: 1959 },
+  father_residence_province: { x: 1605, y: 1959 },
+  father_country: { x: 2070, y: 1959 },
+  marriage_date: { x: 471, y: 2148 },
+  marriage_place: { x: 1287, y: 2148 },
+  attendant_title: { x: 507, y: 2643 },
+  attendant_name: { x: 483, y: 2562 },
+  attendant_address: { x: 1500, y: 2505, width: 944 },
+  attendant_date: { x: 1512, y: 2643 },
+  attendant_time: { x: 1533, y: 2409 },
+  informant_signature: { x: 507, y: 2856 },
+  informant_relation: { x: 612, y: 3000 },
+  informant_address: { x: 399, y: 3057 },
+  informant_date: { x: 519, y: 3129 },
+  received_by: { x: 519, y: 3306 },
+  received_by_title: { x: 519, y: 3375 },
+  received_by_date: { x: 519, y: 3447 },
+  prepared_by: { x: 1665, y: 2928 },
+  prepared_by_title: { x: 1665, y: 3000 },
+  prepared_by_date: { x: 1665, y: 3069 },
+  registered_by: { x: 1665, y: 3306 },
+  registered_by_title: { x: 1665, y: 3375 },
+  registered_by_date: { x: 1665, y: 3447 },
+};
+
+/** Space between form columns to prevent text bleeding into next box */
 const PDF_COLUMN_GUTTER_PX = 20;
 
-/**
- * Multi-column form rows, keys ordered left → right by `x`.
- * Used to infer each column width when `field.width` is not set.
- */
+/** Multi-column form rows for inferring column width */
 const PDF_MULTI_COLUMN_ROWS = [
   ['child_name_first', 'child_name_middle', 'child_name_last'],
   ['sex', 'date_of_birth_day', 'date_of_birth_month', 'date_of_birth_year'],
@@ -101,67 +110,25 @@ const PDF_MULTI_COLUMN_ROWS = [
   ['type_of_birth', 'multiple_birth_order', 'birth_order', 'weight_at_birth'],
   ['mother_maiden_first', 'mother_maiden_middle', 'mother_maiden_last'],
   ['mother_citizenship', 'mother_religion'],
-  [
-    'mother_children_born_alive',
-    'mother_children_living',
-    'mother_children_dead',
-    'mother_occupation',
-    'mother_age',
-  ],
-  [
-    'mother_residence_house',
-    'mother_residence_city',
-    'mother_residence_province',
-    'mother_country',
-  ],
+  ['mother_children_born_alive', 'mother_children_living', 'mother_children_dead', 'mother_occupation', 'mother_age'],
+  ['mother_residence_house', 'mother_residence_city', 'mother_residence_province', 'mother_country'],
   ['father_citizenship', 'father_religion', 'father_occupation', 'father_age'],
-  [
-    'father_residence_house',
-    'father_residence_city',
-    'father_residence_province',
-    'father_country',
-  ],
+  ['father_residence_house', 'father_residence_city', 'father_residence_province', 'father_country'],
   ['marriage_date', 'marriage_place'],
 ];
 
-/** Single fields: max width from x to a logical right edge (layout px). */
+/** Single fields with max width from x to logical right edge */
 const PDF_FIELD_MAX_WIDTH_TO_X = {
-  informant_address: 1665,
-  informant_relation: 1665,
+  informant_address: PDF_LAYOUT.document.width,
+  informant_relation: PDF_LAYOUT.document.width,
+  attendant_address: PDF_LAYOUT.document.width,
   attendant_name: 1500,
   attendant_title: 1512,
-  attendant_date: LAYOUT.document.width,
-  attendant_time: LAYOUT.document.width,
+  attendant_date: PDF_LAYOUT.document.width,
+  attendant_time: PDF_LAYOUT.document.width,
 };
 
-/**
- * @param {string} fieldKey
- * @returns {number | null} width in layout px, or null if unconstrained
- */
-function getEffectiveColumnWidthPx(fieldKey) {
-  const field = LAYOUT.fields[fieldKey];
-  if (!field) return null;
-  if (field.width != null && field.width > 0) return field.width;
-
-  const docW = LAYOUT.document.width;
-  for (const row of PDF_MULTI_COLUMN_ROWS) {
-    const idx = row.indexOf(fieldKey);
-    if (idx === -1) continue;
-    const x0 = LAYOUT.fields[row[idx]].x;
-    if (idx + 1 < row.length) {
-      const x1 = LAYOUT.fields[row[idx + 1]].x;
-      return Math.max(48, x1 - x0 - PDF_COLUMN_GUTTER_PX);
-    }
-    return Math.max(48, docW - x0 - PDF_COLUMN_GUTTER_PX);
-  }
-
-  const rightEdge = PDF_FIELD_MAX_WIDTH_TO_X[fieldKey];
-  if (rightEdge != null) {
-    return Math.max(48, rightEdge - field.x - PDF_COLUMN_GUTTER_PX);
-  }
-  return null;
-}
-
+/** Fields that display centered text */
 const CENTERED_FIELD_KEYS = [
   'child_name_first', 'child_name_middle', 'child_name_last',
   'sex',
@@ -180,7 +147,174 @@ const CENTERED_FIELD_KEYS = [
   'marriage_date', 'marriage_place',
 ];
 
-// Map each layout field key to how we get the value (cert key or function of f)
+/** Fields requiring address abbreviation */
+const ADDRESS_ABBREV_FIELD_KEYS = new Set([
+  'place_of_birth_hospital',
+  'marriage_place',
+  'mother_residence_house',
+  'father_residence_house',
+  'attendant_address',
+  'informant_address',
+]);
+
+/** Print styles injected into document */
+const PRINT_STYLES_ID = 'field-position-print';
+
+/** Compact address character threshold */
+const INFORMANT_ADDRESS_COMPACT_LENGTH = 44;
+const INFORMANT_ADDRESS_COMPACT_PDF_PT = 8;
+const INFORMANT_ADDRESS_COMPACT_OVERLAY_PX =
+  (INFORMANT_ADDRESS_COMPACT_PDF_PT / 10) * PDF_LAYOUT.fieldFontSize;
+
+/** Attendant address shrinking threshold (characters) */
+const ATTENDANT_ADDRESS_SHRINK_MIN_CHARS = 35;
+const ATTENDANT_ADDRESS_SHRINK_MAX_CHARS = 60;
+const ATTENDANT_ADDRESS_MIN_FONT_PX = 12;
+
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+/**
+ * Convert camelCase string to snake_case
+ */
+function camelToSnake(str) {
+  return str.replace(/[A-Z]/g, (char) => `_${char.toLowerCase()}`);
+}
+
+/**
+ * Get value from merged data using camelCase key, falling back to snake_case
+ */
+function getMergedValue(merged, key) {
+  return merged[key] ?? merged[camelToSnake(key)];
+}
+
+/**
+ * Get effective column width in pixels for a field
+ * @returns {number | null} width in layout px, or null if unconstrained
+ */
+function getEffectiveColumnWidthPx(fieldKey) {
+  const field = FIELD_POSITIONS[fieldKey];
+  if (!field) return null;
+  if (field.width != null && field.width > 0) return field.width;
+
+  const docWidth = PDF_LAYOUT.document.width;
+  for (const row of PDF_MULTI_COLUMN_ROWS) {
+    const idx = row.indexOf(fieldKey);
+    if (idx === -1) continue;
+    const x0 = FIELD_POSITIONS[row[idx]].x;
+    if (idx + 1 < row.length) {
+      const x1 = FIELD_POSITIONS[row[idx + 1]].x;
+      return Math.max(48, x1 - x0 - PDF_COLUMN_GUTTER_PX);
+    }
+    return Math.max(48, docWidth - x0 - PDF_COLUMN_GUTTER_PX);
+  }
+
+  const rightEdge = PDF_FIELD_MAX_WIDTH_TO_X[fieldKey];
+  if (rightEdge != null) {
+    return Math.max(48, rightEdge - field.x - PDF_COLUMN_GUTTER_PX);
+  }
+  return null;
+}
+
+/**
+ * Abbreviate address text (Street → St., Barangay → Brgy.)
+ */
+function abbreviateAddressText(value) {
+  if (!value) return '';
+  const str = String(value);
+  if (!str.trim()) return str;
+  return str
+    .replace(/\bSubdivision\b/gi, 'Subd.')
+    .replace(/\bBuilding\b/gi, 'Bldg.')
+    .replace(/\bApartment\b/gi, 'Apt.')
+    .replace(/\bParkway\b/gi, 'Pkwy.')
+    .replace(/\bHighway\b/gi, 'Hwy.')
+    .replace(/\bAvenue\b/gi, 'Ave.')
+    .replace(/\bRoad\b/gi, 'Rd.')
+    .replace(/\bBarangay\b/gi, 'Brgy.')
+    .replace(/\bPurok\b/gi, 'Prk.')
+    .replace(/\bStreet\b/gi, 'St.')
+    .replace(/\bBlock\b/gi, 'Blk.')
+    .replace(/\bLane\b/gi, 'Ln.')
+    .replace(/\bLot\b/gi, 'Lt.');
+}
+
+/**
+ * Convert value to Certificate of Live Birth display format (uppercase)
+ */
+function toCobDisplay(value) {
+  if (!value) return '';
+  return String(value).toUpperCase();
+}
+
+/**
+ * Parse date string into day, month, year components
+ */
+function parseDateOfBirth(dateStr) {
+  if (!dateStr || typeof dateStr !== 'string') {
+    return { day: '', month: '', year: '' };
+  }
+  const trimmed = dateStr.trim();
+  const isoMatch = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(trimmed);
+  if (isoMatch) {
+    return { day: isoMatch[3], month: isoMatch[2], year: isoMatch[1] };
+  }
+  const date = new Date(trimmed);
+  if (Number.isNaN(date.getTime())) {
+    return { day: '', month: '', year: '' };
+  }
+  return {
+    day: String(date.getDate()),
+    month: String(date.getMonth() + 1),
+    year: String(date.getFullYear()),
+  };
+}
+
+/**
+ * Convert country code to display name
+ */
+function countryDisplayFromCodeOrText(codeOrText) {
+  if (!codeOrText || typeof codeOrText !== 'string') return '';
+  const text = codeOrText.trim();
+  if (text.length === 2 && /^[A-Za-z]{2}$/.test(text)) {
+    try {
+      const displayNames = new Intl.DisplayNames(['en'], { type: 'region' });
+      const name = displayNames.of(text.toUpperCase());
+      if (name && name !== text.toUpperCase()) return name;
+    } catch (_) { /* ignore */ }
+  }
+  return text;
+}
+
+/**
+ * Join date parts with separator
+ */
+function joinDateParts(month, day, year) {
+  return [month, day, year].filter(Boolean).join(' / ');
+}
+
+/**
+ * Join time parts with separator
+ */
+function joinTimeParts(time, ampm) {
+  return [time, ampm].filter(Boolean).join(' ');
+}
+
+/**
+ * Get signature value with fallback to name
+ */
+function getSignatureOrName(signature, name) {
+  return signature || name;
+}
+
+// ============================================================================
+// FIELD VALUE MAPPING
+// ============================================================================
+
+/**
+ * Map layout field keys to how to get the value (cert key or function)
+ */
 const FIELD_VALUE_MAP = [
   { key: 'province', valueKey: 'province' },
   { key: 'city_municipality', valueKey: 'cityMunicipality' },
@@ -224,159 +358,54 @@ const FIELD_VALUE_MAP = [
   { key: 'father_residence_city', valueKey: 'fatherResidenceCity' },
   { key: 'father_residence_province', valueKey: 'fatherResidenceProvince' },
   { key: 'father_country', valueKey: 'fatherCountry' },
-  { key: 'marriage_date', getValue: (f) => [f('marriageMonth'), f('marriageDay'), f('marriageYear')].filter(Boolean).join(' / ') },
+  { key: 'marriage_date', getValue: (getVal) => joinDateParts(getVal('marriageMonth'), getVal('marriageDay'), getVal('marriageYear')) },
   { key: 'marriage_place', valueKey: 'marriagePlace' },
-  // { key: 'attendant_type', valueKey: 'attendantType' },
   { key: 'attendant_title', valueKey: 'attendantTitle' },
   { key: 'attendant_name', valueKey: 'attendantName' },
-  { key: 'attendant_signature', getValue: (f) => f('attendantSignature') || f('attendantName') },
+  { key: 'attendant_signature', getValue: (getVal) => getSignatureOrName(getVal('attendantSignature'), getVal('attendantName')) },
   { key: 'attendant_address', valueKey: 'attendantAddress' },
   { key: 'attendant_date', valueKey: 'attendantDate' },
-  { key: 'attendant_time', getValue: (f) => [f('attendantTime'), f('attendantAmpm')].filter(Boolean).join(' ') },  
-  { key: 'informant_signature', getValue: (f) => f('informantSignature') || f('informantName') },
+  { key: 'attendant_time', getValue: (getVal) => joinTimeParts(getVal('attendantTime'), getVal('attendantAmpm')) },
+  { key: 'informant_signature', getValue: (getVal) => getSignatureOrName(getVal('informantSignature'), getVal('informantName')) },
   { key: 'informant_relation', valueKey: 'informantRelationship' },
   { key: 'informant_address', valueKey: 'informantAddress' },
   { key: 'informant_date', valueKey: 'informantDate' },
-  { key: 'prepared_by', getValue: (f) => f('preparedBySignature') || f('preparedByName') },
+  { key: 'prepared_by', getValue: (getVal) => getSignatureOrName(getVal('preparedBySignature'), getVal('preparedByName')) },
   { key: 'prepared_by_title', valueKey: 'preparedByTitle' },
   { key: 'prepared_by_date', valueKey: 'preparedByDate' },
-  { key: 'received_by', getValue: (f) => f('receivedBySignature') || f('receivedByName') },
+  { key: 'received_by', getValue: (getVal) => getSignatureOrName(getVal('receivedBySignature'), getVal('receivedByName')) },
   { key: 'received_by_title', valueKey: 'receivedByTitle' },
   { key: 'received_by_date', valueKey: 'receivedByDate' },
-  { key: 'registered_by', getValue: (f) => f('registeredBySignature') || f('registeredByName') },
+  { key: 'registered_by', getValue: (getVal) => getSignatureOrName(getVal('registeredBySignature'), getVal('registeredByName')) },
   { key: 'registered_by_title', valueKey: 'registeredByTitle' },
   { key: 'registered_by_date', valueKey: 'registeredByDate' },
 ];
 
-/** Layout field keys whose values are address lines (abbreviate before COB uppercase). */
-const ADDRESS_ABBREV_FIELD_KEYS = new Set([
-  'place_of_birth_hospital',
-  'marriage_place',
-  'mother_residence_house',
-  'father_residence_house',
-  'attendant_address',
-  'informant_address',
-]);
+// ============================================================================
+// MERGED DATA BUILDER (SRP - Single Responsibility Principle)
+// ============================================================================
 
-/** Whole-word abbreviations for address lines (Street → St., Barangay → Brgy.). */
-function abbreviateAddressText(value) {
-  if (value === '' || value === undefined || value === null) return '';
-  const s = String(value);
-  if (!s.trim()) return s;
-  return s
-    .replace(/\bSubdivision\b/gi, 'Subd.')
-    .replace(/\bBuilding\b/gi, 'Bldg.')
-    .replace(/\bApartment\b/gi, 'Apt.')
-    .replace(/\bParkway\b/gi, 'Pkwy.')
-    .replace(/\bHighway\b/gi, 'Hwy.')
-    .replace(/\bAvenue\b/gi, 'Ave.')
-    .replace(/\bRoad\b/gi, 'Rd.')
-    .replace(/\bBarangay\b/gi, 'Brgy.')
-    .replace(/\bPurok\b/gi, 'Prk.')
-    .replace(/\bStreet\b/gi, 'St.')
-    .replace(/\bBlock\b/gi, 'Blk.')
-    .replace(/\bLane\b/gi, 'Ln.')
-    .replace(/\bLot\b/gi, 'Lt.');
-}
-
-// Font size for all positioned field values (matches ~10pt PDF at this layout scale)
-const POSITIONED_FONT_SIZE = 20;
-const INFORMANT_ADDRESS_COMPACT_LEN = 44;
-const INFORMANT_ADDRESS_COMPACT_PDF_PT = 8;
-const INFORMANT_ADDRESS_COMPACT_OVERLAY_PX =
-  (INFORMANT_ADDRESS_COMPACT_PDF_PT / 10) * POSITIONED_FONT_SIZE;
-
-/** All COB (certificate of live birth) field values display in uppercase. */
-function toCobDisplay(value) {
-  if (value === '' || value === undefined || value === null) return '';
-  return String(value).toUpperCase();
-}
-
-function PositionedValue({ fieldKey, value, fontLenSource }) {
-  const field = LAYOUT.fields[fieldKey];
-  if (!field) return null;
-  const display = toCobDisplay(value);
-  const lenForFont =
-    fieldKey === 'informant_address' && fontLenSource !== undefined && fontLenSource !== null
-      ? String(fontLenSource).trim().length
-      : String(value ?? '').trim().length;
-  const fontPx =
-    fieldKey === 'informant_address' && lenForFont >= INFORMANT_ADDRESS_COMPACT_LEN
-      ? INFORMANT_ADDRESS_COMPACT_OVERLAY_PX
-      : POSITIONED_FONT_SIZE;
-  const isCentered = CENTERED_FIELD_KEYS.includes(fieldKey);
-  const colW = getEffectiveColumnWidthPx(fieldKey);
-  const boxWidth = field.width ?? colW ?? undefined;
-  const useWrap = boxWidth != null;
-  return (
-    <span
-      className="absolute overflow-hidden"
-      style={{
-        left: field.x,
-        top: field.y,
-        width: boxWidth,
-        height: field.height,
-        maxHeight: field.height == null && useWrap ? 120 : undefined,
-        fontFamily: FONT_FAMILY,
-        fontSize: `${fontPx}px`,
-        padding: '2px 4px',
-        color: COLORS.black,
-        WebkitPrintColorAdjust: 'exact',
-        printColorAdjust: 'exact',
-        ...(isCentered && { textAlign: 'center' }),
-        ...(useWrap && {
-          display: 'block',
-          whiteSpace: 'pre-wrap',
-          wordBreak: 'break-word',
-          lineHeight: 1.15,
-        }),
-      }}
-    >
-      {display}
-    </span>
-  );
-}
-
-function parseDateOfBirth(dateStr) {
-  if (!dateStr || typeof dateStr !== 'string') return { day: '', month: '', year: '' };
-  const trimmed = dateStr.trim();
-  const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(trimmed);
-  if (iso) return { day: iso[3], month: iso[2], year: iso[1] };
-  const d = new Date(trimmed);
-  if (Number.isNaN(d.getTime())) return { day: '', month: '', year: '' };
-  return {
-    day: String(d.getDate()),
-    month: String(d.getMonth() + 1),
-    year: String(d.getFullYear()),
-  };
-}
-
-function countryDisplayFromCodeOrText(codeOrText) {
-  if (!codeOrText || typeof codeOrText !== 'string') return '';
-  const t = codeOrText.trim();
-  if (t.length === 2 && /^[A-Za-z]{2}$/.test(t)) {
-    try {
-      const dn = new Intl.DisplayNames(['en'], { type: 'region' });
-      const n = dn.of(t.toUpperCase());
-      if (n && n !== t.toUpperCase()) return n;
-    } catch (_) {}
-  }
-  return t;
-}
-
-function getMergedCert(child, cert) {
+/**
+ * Merge child and certificate data into a unified object
+ * Handles both camelCase and snake_case key variations
+ */
+function buildMergedCertData(child, cert) {
   if (!cert || typeof cert !== 'object') return {};
+
   const birth = child?.date_of_birth ? parseDateOfBirth(child.date_of_birth) : {};
   const resMother = cert.motherResidenceCountry ?? cert.mother_residence_country ?? '';
   const resFather = cert.fatherResidenceCountry ?? cert.father_residence_country ?? '';
+
   const mc =
     (cert.motherCountry && String(cert.motherCountry).trim()) ||
     (cert.mother_country && String(cert.mother_country).trim()) ||
     countryDisplayFromCodeOrText(resMother);
+
   const fc =
     (cert.fatherCountry && String(cert.fatherCountry).trim()) ||
     (cert.father_country && String(cert.father_country).trim()) ||
     countryDisplayFromCodeOrText(resFather);
+
   return {
     ...cert,
     childFirst: cert.childFirst ?? cert.child_first ?? child?.first_name ?? '',
@@ -390,33 +419,12 @@ function getMergedCert(child, cert) {
   };
 }
 
-function buildFieldPositionPdfSuggestedFileName(child, cert) {
-  const merged = getMergedCert(child, cert);
-  const parts = [merged.childFirst, merged.childMiddle, merged.childLast].filter(
-    (p) => p && String(p).trim()
-  );
-  const rawName = parts.join(' ');
-  const name =
-    rawName
-      .replace(/[\\/:*?"<>|]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .slice(0, 150) || 'Applicant';
-  const dateStr = new Date().toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
-  return `${name}-${dateStr}.pdf`;
-}
-
-const PDF_MIN_SHRINK_PT = 7;
-const PDF_SHRINK_STEP = 0.5;
+// ============================================================================
+// PDF UTILITIES (OCP - Open/Closed Principle, extensibility for future)
+// ============================================================================
 
 /**
- * Keep preferredPt if one line fits at that size. Otherwise shrink only when a smaller
- * font reduces wrapped line count; among those, use the largest font that achieves the
- * minimum line count (slightly smaller only when it helps).
+ * Pick optimal PDF font size to fit content in column
  */
 function pickPdfFontPtForColumn(doc, line, maxWidthIn, preferredPt) {
   if (!maxWidthIn || maxWidthIn <= 0) return preferredPt;
@@ -429,18 +437,18 @@ function pickPdfFontPtForColumn(doc, line, maxWidthIn, preferredPt) {
       if (typeof doc.splitTextToSize === 'function') {
         return doc.splitTextToSize(text, maxWidthIn).length;
       }
-    } catch (_) {}
+    } catch (_) { /* ignore */ }
     return 1;
   };
 
   let minLines = Infinity;
   let bestPt = preferredPt;
-  for (let pt = preferredPt; pt >= PDF_MIN_SHRINK_PT; pt -= PDF_SHRINK_STEP) {
-    const n = lineCountAt(pt);
-    if (n < minLines) {
-      minLines = n;
+  for (let pt = preferredPt; pt >= PDF_LAYOUT.pdfMinShrinkSize; pt -= PDF_LAYOUT.pdfShrinkStep) {
+    const count = lineCountAt(pt);
+    if (count < minLines) {
+      minLines = count;
       bestPt = pt;
-    } else if (n === minLines) {
+    } else if (count === minLines) {
       bestPt = Math.max(bestPt, pt);
     }
   }
@@ -448,44 +456,72 @@ function pickPdfFontPtForColumn(doc, line, maxWidthIn, preferredPt) {
   return bestPt;
 }
 
-// Build PDF from merged cert data so content is guaranteed in the file (no print capture)
-function buildFieldPositionPdfBase64(merged) {
-  const camelToSnake = (s) => s.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
-  const f = (camelKey) => merged[camelKey] ?? merged[camelToSnake(camelKey)];
+/**
+ * Generate PDF filename suggestion
+ */
+function buildPdfFilename(child, cert) {
+  const merged = buildMergedCertData(child, cert);
+  const parts = [merged.childFirst, merged.childMiddle, merged.childLast].filter(
+    (p) => p && String(p).trim()
+  );
+  const rawName = parts.join(' ');
+  const sanitized = rawName
+    .replace(/[\\/:*?"<>|]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 150) || 'Applicant';
+  const dateStr = new Date().toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+  return `${sanitized}-${dateStr}.pdf`;
+}
 
+/**
+ * Convert base64 to blob URL
+ */
+function base64ToBlobUrl(base64) {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+}
+
+/**
+ * Build PDF as base64 data URI
+ */
+function buildFieldPositionPdfBase64(merged) {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'in', format: 'legal' });
   doc.setFont('helvetica');
-  const DEFAULT_PDF_FONT_PT = 10;
-  doc.setFontSize(DEFAULT_PDF_FONT_PT);
+  doc.setFontSize(PDF_LAYOUT.pdfDefaultFontSize);
   doc.setTextColor(0, 0, 0);
 
-  const W = LAYOUT.document.width;
-  const H = LAYOUT.document.height;
-  const pageW = 8.5;
-  const pageH = 14;
+  const { width: docWidth, height: docHeight, pageWidthInches, pageHeightInches } = PDF_LAYOUT.document;
 
   for (const item of FIELD_VALUE_MAP) {
-    const field = LAYOUT.fields[item.key];
+    const field = FIELD_POSITIONS[item.key];
     if (!field) continue;
 
-    const raw = item.getValue ? item.getValue(f) : f(item.valueKey);
+    const getVal = (key) => getMergedValue(merged, key);
+    const raw = item.getValue ? item.getValue(getVal) : getVal(item.valueKey);
     const rawTrimLen = String(raw ?? '').trim().length;
-    const fontPt =
-      item.key === 'informant_address' && rawTrimLen >= INFORMANT_ADDRESS_COMPACT_LEN
-        ? INFORMANT_ADDRESS_COMPACT_PDF_PT
-        : item.key === 'weight_at_birth'
-          ? 8
-          : DEFAULT_PDF_FONT_PT;
+
+    let fontPt = PDF_LAYOUT.pdfDefaultFontSize;
+    if (item.key === 'informant_address' && rawTrimLen >= INFORMANT_ADDRESS_COMPACT_LENGTH) {
+      fontPt = INFORMANT_ADDRESS_COMPACT_PDF_PT;
+    } else if (item.key === 'weight_at_birth') {
+      fontPt = 8;
+    }
     doc.setFontSize(fontPt);
-    const defaultLineHeightIn = (fontPt * 1.2) / 72;
+    const defaultLineHeightIn = (fontPt * PDF_LAYOUT.lineHeightRatio) / 72;
 
     const value = ADDRESS_ABBREV_FIELD_KEYS.has(item.key) ? abbreviateAddressText(raw) : raw;
     const str = toCobDisplay(value);
-    const xIn = (field.x / W) * pageW;
-    let yIn = ((field.y + 25) / H) * pageH;
+    const xIn = (field.x / docWidth) * pageWidthInches;
+    let yIn = ((field.y + 25) / docHeight) * pageHeightInches;
     const widthPx = getEffectiveColumnWidthPx(item.key);
-    const maxWidthIn =
-      widthPx != null && widthPx > 0 ? (widthPx / W) * pageW : null;
+    const maxWidthIn = widthPx != null && widthPx > 0 ? (widthPx / docWidth) * pageWidthInches : null;
     const inputLines = str.split(/\r?\n/);
 
     for (let i = 0; i < inputLines.length; i++) {
@@ -493,7 +529,7 @@ function buildFieldPositionPdfBase64(merged) {
       if (maxWidthIn != null && maxWidthIn > 0) {
         const chosenPt = pickPdfFontPtForColumn(doc, line, maxWidthIn, fontPt);
         doc.setFontSize(chosenPt);
-        const lineHeightIn = (chosenPt * 1.2) / 72;
+        const lineHeightIn = (chosenPt * PDF_LAYOUT.lineHeightRatio) / 72;
         const opts = { maxWidth: maxWidthIn };
         doc.text(line, xIn, yIn, opts);
         let lineHeightUsed = lineHeightIn;
@@ -503,7 +539,7 @@ function buildFieldPositionPdfBase64(merged) {
             if (dims && typeof dims.h === 'number' && dims.h > 0) {
               lineHeightUsed = dims.h;
             }
-          } catch (_) {}
+          } catch (_) { /* ignore */ }
         }
         yIn += lineHeightUsed;
       } else {
@@ -518,32 +554,17 @@ function buildFieldPositionPdfBase64(merged) {
   return dataUri.indexOf(',') >= 0 ? dataUri.split(',')[1] : '';
 }
 
-export function FieldPosition() {
-  const { id } = useParams();
-  const [child, setChild] = useState(null);
-  const [cert, setCert] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
-  const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null);
-  const pdfPreviewObjectUrlRef = useRef(null);
+// ============================================================================
+// CUSTOM HOOKS
+// ============================================================================
 
+/**
+ * Hook to manage print styles injection/cleanup
+ */
+function usePrintStyles() {
   useEffect(() => {
-    childrenApi
-      .get(id)
-      .then((data) => {
-        setChild(data);
-        const raw = data.certificate_of_live_birth;
-        setCert(raw && typeof raw === 'object' ? raw : {});
-      })
-      .catch(setError)
-      .finally(() => setLoading(false));
-  }, [id]);
-
-  useEffect(() => {
-    const styleId = 'field-position-print';
     const style = document.createElement('style');
-    style.id = styleId;
+    style.id = PRINT_STYLES_ID;
     style.textContent = `
       @media print {
         @page { size: 8.5in 14in; margin: 0; }
@@ -570,8 +591,8 @@ export function FieldPosition() {
           left: 0 !important; top: 0 !important;
           margin: 0 !important; padding: 0 !important;
           transform-origin: top left;
-          transform: scale(0.32);
-          width: 2550px; height: 4200px;
+          transform: scale(${PDF_LAYOUT.renderScale});
+          width: ${PDF_LAYOUT.document.width}px; height: ${PDF_LAYOUT.document.height}px;
         }
         aside[aria-label="Main navigation"],
         .print-hide { display: none !important; visibility: hidden !important; }
@@ -579,78 +600,187 @@ export function FieldPosition() {
     `;
     document.head.appendChild(style);
     return () => {
-      const el = document.getElementById(styleId);
-      if (el) el.remove()
+      const el = document.getElementById(PRINT_STYLES_ID);
+      if (el) el.remove();
     };
   }, []);
+}
+
+/**
+ * Hook to manage PDF preview URL lifecycle
+ */
+function usePdfPreviewUrl() {
+  const objectUrlRef = useRef(null);
+  const [url, setUrl] = useState(null);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     return () => {
-      if (pdfPreviewObjectUrlRef.current) {
-        URL.revokeObjectURL(pdfPreviewObjectUrlRef.current);
-        pdfPreviewObjectUrlRef.current = null;
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
+        objectUrlRef.current = null;
       }
     };
   }, []);
 
-  const releasePdfPreviewUrl = () => {
-    if (pdfPreviewObjectUrlRef.current) {
-      URL.revokeObjectURL(pdfPreviewObjectUrlRef.current);
-      pdfPreviewObjectUrlRef.current = null;
+  const releaseUrl = useCallback(() => {
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current);
+      objectUrlRef.current = null;
     }
-    setPdfPreviewUrl(null);
-  };
+    setUrl(null);
+  }, []);
 
-  const closePdfPreview = () => {
-    setPdfPreviewOpen(false);
-    releasePdfPreviewUrl();
-  };
-
-  const handlePreviewPdf = () => {
+  const openPreview = useCallback((base64) => {
     try {
-      const merged = getMergedCert(child, cert);
-      const base64 = buildFieldPositionPdfBase64(merged);
-      if (!base64) {
-        toast.error('Could not generate PDF.');
-        return;
-      }
-      releasePdfPreviewUrl();
-      const binary = atob(base64);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-      const blob = new Blob([bytes], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      pdfPreviewObjectUrlRef.current = url;
-      setPdfPreviewUrl(url);
-      setPdfPreviewOpen(true);
-    } catch (e) {
-      toast.error(e?.message || 'Preview failed.');
+      releaseUrl();
+      const blobUrl = base64ToBlobUrl(base64);
+      objectUrlRef.current = blobUrl;
+      setUrl(blobUrl);
+      setIsOpen(true);
+    } catch (err) {
+      toast.error(err?.message || 'Preview failed.');
     }
-  };
+  }, [releaseUrl]);
 
-  const handleSavePdf = async () => {
+  const closePreview = useCallback(() => {
+    setIsOpen(false);
+    releaseUrl();
+  }, [releaseUrl]);
+
+  return { url, isOpen, openPreview, closePreview };
+}
+
+// ============================================================================
+// COMPONENTS
+// ============================================================================
+
+/**
+ * Calculate font size for attendant_address based on length (gradual shrinking)
+ */
+function getAttendantAddressFontPx(addressLength) {
+  const len = addressLength ?? 0;
+  if (len <= ATTENDANT_ADDRESS_SHRINK_MIN_CHARS) {
+    return PDF_LAYOUT.fieldFontSize;
+  }
+  if (len >= ATTENDANT_ADDRESS_SHRINK_MAX_CHARS) {
+    return ATTENDANT_ADDRESS_MIN_FONT_PX;
+  }
+  const range = ATTENDANT_ADDRESS_SHRINK_MAX_CHARS - ATTENDANT_ADDRESS_SHRINK_MIN_CHARS;
+  const progress = (len - ATTENDANT_ADDRESS_SHRINK_MIN_CHARS) / range;
+  const fontRange = PDF_LAYOUT.fieldFontSize - ATTENDANT_ADDRESS_MIN_FONT_PX;
+  return PDF_LAYOUT.fieldFontSize - Math.round(progress * fontRange);
+}
+
+function PositionedValue({ fieldKey, value, fontLenSource }) {
+  const field = FIELD_POSITIONS[fieldKey];
+  if (!field) return null;
+
+  const display = toCobDisplay(value);
+  const lenForFont =
+    fieldKey === 'informant_address' && fontLenSource != null
+      ? String(fontLenSource).trim().length
+      : String(value ?? '').trim().length;
+  
+  let fontPx = PDF_LAYOUT.fieldFontSize;
+  if (fieldKey === 'informant_address' && lenForFont >= INFORMANT_ADDRESS_COMPACT_LENGTH) {
+    fontPx = INFORMANT_ADDRESS_COMPACT_OVERLAY_PX;
+  } else if (fieldKey === 'attendant_address') {
+    fontPx = getAttendantAddressFontPx(lenForFont);
+  }
+  
+  const isCentered = CENTERED_FIELD_KEYS.includes(fieldKey);
+  const colW = getEffectiveColumnWidthPx(fieldKey);
+  const boxWidth = field.width ?? colW ?? undefined;
+  const useWrap = boxWidth != null;
+
+  return (
+    <span
+      className="absolute overflow-hidden"
+      style={{
+        left: field.x,
+        top: field.y,
+        width: boxWidth,
+        height: field.height,
+        maxHeight: field.height == null && useWrap ? PDF_LAYOUT.defaultWrapMaxHeight : undefined,
+        fontFamily: FONT_FAMILY,
+        fontSize: `${fontPx}px`,
+        padding: '2px 4px',
+        color: COLORS.black,
+        WebkitPrintColorAdjust: 'exact',
+        printColorAdjust: 'exact',
+        ...(isCentered && { textAlign: 'center' }),
+        ...(useWrap && {
+          display: 'block',
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
+          lineHeight: 1.15,
+        }),
+      }}
+    >
+      {display}
+    </span>
+  );
+}
+
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
+
+export function FieldPosition() {
+  const { id } = useParams();
+  const [child, setChild] = useState(null);
+  const [cert, setCert] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const { url: pdfPreviewUrl, isOpen: pdfPreviewOpen, openPreview, closePreview } = usePdfPreviewUrl();
+  usePrintStyles();
+
+  useEffect(() => {
+    childrenApi
+      .get(id)
+      .then((data) => {
+        setChild(data);
+        const raw = data.certificate_of_live_birth;
+        setCert(raw && typeof raw === 'object' ? raw : {});
+      })
+      .catch(setError)
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  const handlePreviewPdf = useCallback(() => {
+    const merged = buildMergedCertData(child, cert);
+    const base64 = buildFieldPositionPdfBase64(merged);
+    if (!base64) {
+      toast.error('Could not generate PDF.');
+      return;
+    }
+    openPreview(base64);
+  }, [child, cert, openPreview]);
+
+  const handleSavePdf = useCallback(async () => {
     if (!window.electron?.saveFieldPositionPdf) return;
     try {
-      const merged = getMergedCert(child, cert);
+      const merged = buildMergedCertData(child, cert);
       const base64 = buildFieldPositionPdfBase64(merged);
-      const suggested = buildFieldPositionPdfSuggestedFileName(child, cert);
-      const result = await window.electron.saveFieldPositionPdf(base64, suggested);
+      const suggestedFilename = buildPdfFilename(child, cert);
+      const result = await window.electron.saveFieldPositionPdf(base64, suggestedFilename);
       if (result?.ok) {
         toast.success('PDF saved.');
       }
-    } catch (e) {
-      toast.error(e?.message || 'Failed to save PDF.');
+    } catch (err) {
+      toast.error(err?.message || 'Failed to save PDF.');
     }
-  };
+  }, [child, cert]);
 
   if (loading) return <p className="text-slate-500 p-4">Loading…</p>;
   if (error) return <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">{error.message}</div>;
   if (cert === null) return null;
 
-  const merged = getMergedCert(child, cert);
-  const camelToSnake = (s) => s.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
-  const f = (camelKey) => merged[camelKey] ?? merged[camelToSnake(camelKey)];
-  const addr = (camelKey) => abbreviateAddressText(f(camelKey));
+  const merged = buildMergedCertData(child, cert);
+  const getVal = (key) => getMergedValue(merged, key);
+  const getAbbrevVal = (key) => abbreviateAddressText(getVal(key));
 
   return (
     <>
@@ -664,7 +794,7 @@ export function FieldPosition() {
           <button
             type="button"
             className="absolute inset-0 bg-black/50"
-            onClick={closePdfPreview}
+            onClick={closePreview}
             aria-label="Close PDF preview"
           />
           <div className="relative z-10 flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
@@ -674,7 +804,7 @@ export function FieldPosition() {
               </h2>
               <button
                 type="button"
-                onClick={closePdfPreview}
+                onClick={closePreview}
                 className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
               >
                 Close
@@ -688,8 +818,11 @@ export function FieldPosition() {
           </div>
         </div>
       )}
+
       <div className="mb-4 flex items-center justify-between print-hide">
-        <Link to={`/children/${id}`} className="text-sm text-slate-500 hover:text-slate-700">← Back to applicant</Link>
+        <Link to={`/children/${id}`} className="text-sm text-slate-500 hover:text-slate-700">
+          ← Back to applicant
+        </Link>
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -713,85 +846,114 @@ export function FieldPosition() {
           className="field-position-print-area bg-white shadow-sm print:shadow-none"
           style={{
             position: 'relative',
-            width: LAYOUT.document.width,
-            height: LAYOUT.document.height,
+            width: PDF_LAYOUT.document.width,
+            height: PDF_LAYOUT.document.height,
             boxSizing: 'border-box',
             fontFamily: FONT_FAMILY,
             fontSize: '14px',
             color: COLORS.black,
           }}
         >
-          <PositionedValue fieldKey="province" value={f('province')} />
-          <PositionedValue fieldKey="city_municipality" value={f('cityMunicipality')} />
-          <PositionedValue fieldKey="registry_no" value={f('registryNo')} />
-          <PositionedValue fieldKey="child_name_first" value={f('childFirst')} />
-          <PositionedValue fieldKey="child_name_middle" value={f('childMiddle')} />
-          <PositionedValue fieldKey="child_name_last" value={f('childLast')} />
-          <PositionedValue fieldKey="sex" value={f('sex')} />
-          <PositionedValue fieldKey="date_of_birth_day" value={f('birthDay')} />
-          <PositionedValue fieldKey="date_of_birth_month" value={f('birthMonth')} />
-          <PositionedValue fieldKey="date_of_birth_year" value={f('birthYear')} />
-          <PositionedValue fieldKey="place_of_birth_hospital" value={addr('placeOfBirthName')} />
-          <PositionedValue fieldKey="place_of_birth_city" value={f('placeOfBirthCity')} />
-          <PositionedValue fieldKey="place_of_birth_province" value={f('placeOfBirthProvince')} />
-          <PositionedValue fieldKey="type_of_birth" value={f('typeOfBirth')} />
-          <PositionedValue fieldKey="multiple_birth_order" value={f('multipleBirthOrder')} />
-          <PositionedValue fieldKey="birth_order" value={f('birthOrder')} />
-          <PositionedValue fieldKey="weight_at_birth" value={f('weightGrams')} />
-          <PositionedValue fieldKey="mother_maiden_first" value={f('motherFirst')} />
-          <PositionedValue fieldKey="mother_maiden_middle" value={f('motherMiddle')} />
-          <PositionedValue fieldKey="mother_maiden_last" value={f('motherLast')} />
-          <PositionedValue fieldKey="mother_citizenship" value={f('motherCitizenship')} />
-          <PositionedValue fieldKey="mother_religion" value={f('motherReligion')} />
-          <PositionedValue fieldKey="mother_children_born_alive" value={f('motherChildrenBornAlive')} />
-          <PositionedValue fieldKey="mother_children_living" value={f('motherChildrenLiving')} />
-          <PositionedValue fieldKey="mother_children_dead" value={f('motherChildrenDead')} />
-          <PositionedValue fieldKey="mother_occupation" value={f('motherOccupation')} />
-          <PositionedValue fieldKey="mother_age" value={f('motherAge')} />
-          <PositionedValue fieldKey="mother_residence_house" value={addr('motherResidenceLine1')} />
-          <PositionedValue fieldKey="mother_residence_city" value={f('motherResidenceCity')} />
-          <PositionedValue fieldKey="mother_residence_province" value={f('motherResidenceProvince')} />
-          <PositionedValue fieldKey="mother_country" value={f('motherCountry')} />
-          <PositionedValue fieldKey="father_name_first" value={f('fatherFirst')} />
-          <PositionedValue fieldKey="father_name_middle" value={f('fatherMiddle')} />
-          <PositionedValue fieldKey="father_name_last" value={f('fatherLast')} />
-          <PositionedValue fieldKey="father_citizenship" value={f('fatherCitizenship')} />
-          <PositionedValue fieldKey="father_religion" value={f('fatherReligion')} />
-          <PositionedValue fieldKey="father_occupation" value={f('fatherOccupation')} />
-          <PositionedValue fieldKey="father_age" value={f('fatherAge')} />
-          <PositionedValue fieldKey="father_residence_house" value={addr('fatherResidenceLine1')} />
-          <PositionedValue fieldKey="father_residence_city" value={f('fatherResidenceCity')} />
-          <PositionedValue fieldKey="father_residence_province" value={f('fatherResidenceProvince')} />
-          <PositionedValue fieldKey="father_country" value={f('fatherCountry')} />
+          {/* Province/City Registry */}
+          <PositionedValue fieldKey="province" value={getVal('province')} />
+          <PositionedValue fieldKey="city_municipality" value={getVal('cityMunicipality')} />
+          <PositionedValue fieldKey="registry_no" value={getVal('registryNo')} />
+
+          {/* Child Name */}
+          <PositionedValue fieldKey="child_name_first" value={getVal('childFirst')} />
+          <PositionedValue fieldKey="child_name_middle" value={getVal('childMiddle')} />
+          <PositionedValue fieldKey="child_name_last" value={getVal('childLast')} />
+
+          {/* Child Birth Info */}
+          <PositionedValue fieldKey="sex" value={getVal('sex')} />
+          <PositionedValue fieldKey="date_of_birth_day" value={getVal('birthDay')} />
+          <PositionedValue fieldKey="date_of_birth_month" value={getVal('birthMonth')} />
+          <PositionedValue fieldKey="date_of_birth_year" value={getVal('birthYear')} />
+          <PositionedValue fieldKey="place_of_birth_hospital" value={getAbbrevVal('placeOfBirthName')} />
+          <PositionedValue fieldKey="place_of_birth_city" value={getVal('placeOfBirthCity')} />
+          <PositionedValue fieldKey="place_of_birth_province" value={getVal('placeOfBirthProvince')} />
+          <PositionedValue fieldKey="type_of_birth" value={getVal('typeOfBirth')} />
+          <PositionedValue fieldKey="multiple_birth_order" value={getVal('multipleBirthOrder')} />
+          <PositionedValue fieldKey="birth_order" value={getVal('birthOrder')} />
+          <PositionedValue fieldKey="weight_at_birth" value={getVal('weightGrams')} />
+
+          {/* Mother Info */}
+          <PositionedValue fieldKey="mother_maiden_first" value={getVal('motherFirst')} />
+          <PositionedValue fieldKey="mother_maiden_middle" value={getVal('motherMiddle')} />
+          <PositionedValue fieldKey="mother_maiden_last" value={getVal('motherLast')} />
+          <PositionedValue fieldKey="mother_citizenship" value={getVal('motherCitizenship')} />
+          <PositionedValue fieldKey="mother_religion" value={getVal('motherReligion')} />
+          <PositionedValue fieldKey="mother_children_born_alive" value={getVal('motherChildrenBornAlive')} />
+          <PositionedValue fieldKey="mother_children_living" value={getVal('motherChildrenLiving')} />
+          <PositionedValue fieldKey="mother_children_dead" value={getVal('motherChildrenDead')} />
+          <PositionedValue fieldKey="mother_occupation" value={getVal('motherOccupation')} />
+          <PositionedValue fieldKey="mother_age" value={getVal('motherAge')} />
+          <PositionedValue fieldKey="mother_residence_house" value={getAbbrevVal('motherResidenceLine1')} />
+          <PositionedValue fieldKey="mother_residence_city" value={getVal('motherResidenceCity')} />
+          <PositionedValue fieldKey="mother_residence_province" value={getVal('motherResidenceProvince')} />
+          <PositionedValue fieldKey="mother_country" value={getVal('motherCountry')} />
+
+          {/* Father Info */}
+          <PositionedValue fieldKey="father_name_first" value={getVal('fatherFirst')} />
+          <PositionedValue fieldKey="father_name_middle" value={getVal('fatherMiddle')} />
+          <PositionedValue fieldKey="father_name_last" value={getVal('fatherLast')} />
+          <PositionedValue fieldKey="father_citizenship" value={getVal('fatherCitizenship')} />
+          <PositionedValue fieldKey="father_religion" value={getVal('fatherReligion')} />
+          <PositionedValue fieldKey="father_occupation" value={getVal('fatherOccupation')} />
+          <PositionedValue fieldKey="father_age" value={getVal('fatherAge')} />
+          <PositionedValue fieldKey="father_residence_house" value={getAbbrevVal('fatherResidenceLine1')} />
+          <PositionedValue fieldKey="father_residence_city" value={getVal('fatherResidenceCity')} />
+          <PositionedValue fieldKey="father_residence_province" value={getVal('fatherResidenceProvince')} />
+          <PositionedValue fieldKey="father_country" value={getVal('fatherCountry')} />
+
+          {/* Marriage */}
           <PositionedValue
             fieldKey="marriage_date"
-            value={[f('marriageMonth'), f('marriageDay'), f('marriageYear')].filter(Boolean).join(' / ')}
+            value={joinDateParts(getVal('marriageMonth'), getVal('marriageDay'), getVal('marriageYear'))}
           />
-          <PositionedValue fieldKey="marriage_place" value={addr('marriagePlace')} />
-          <PositionedValue fieldKey="attendant_type" value={f('attendantType')} />
-          <PositionedValue fieldKey="attendant_title" value={f('attendantTitle')} />
-          <PositionedValue fieldKey="attendant_name" value={f('attendantName')} />
-          <PositionedValue fieldKey="attendant_signature" value={f('attendantSignature') || f('attendantName')} />
-          <PositionedValue fieldKey="attendant_address" value={addr('attendantAddress')} />
-          <PositionedValue fieldKey="attendant_date" value={f('attendantDate')} />
-          <PositionedValue fieldKey="attendant_time" value={[f('attendantTime'), f('attendantAmpm')].filter(Boolean).join(' ')} />
-          <PositionedValue fieldKey="informant_signature" value={f('informantSignature') || f('informantName')} />
-          <PositionedValue fieldKey="informant_relation" value={f('informantRelationship')} />
+          <PositionedValue fieldKey="marriage_place" value={getAbbrevVal('marriagePlace')} />
+
+          {/* Attendant */}
+          <PositionedValue fieldKey="attendant_name" value={getVal('attendantName')} />
+          <PositionedValue fieldKey="attendant_title" value={getVal('attendantTitle')} />
+          <PositionedValue
+            fieldKey="attendant_signature"
+            value={getSignatureOrName(getVal('attendantSignature'), getVal('attendantName'))}
+          />
+          <PositionedValue
+            fieldKey="attendant_address"
+            value={getAbbrevVal('attendantAddress')}
+            fontLenSource={getVal('attendantAddress')}
+          />
+          <PositionedValue fieldKey="attendant_date" value={getVal('attendantDate')} />
+          <PositionedValue
+            fieldKey="attendant_time"
+            value={joinTimeParts(getVal('attendantTime'), getVal('attendantAmpm'))}
+          />
+
+          {/* Informant */}
+          <PositionedValue
+            fieldKey="informant_signature"
+            value={getSignatureOrName(getVal('informantSignature'), getVal('informantName'))}
+          />
+          <PositionedValue fieldKey="informant_relation" value={getVal('informantRelationship')} />
           <PositionedValue
             fieldKey="informant_address"
-            value={addr('informantAddress')}
-            fontLenSource={f('informantAddress')}
+            value={getAbbrevVal('informantAddress')}
+            fontLenSource={getVal('informantAddress')}
           />
-          <PositionedValue fieldKey="informant_date" value={f('informantDate')} />
-          <PositionedValue fieldKey="received_by" value={f('receivedBySignature') || f('receivedByName')} />
-          <PositionedValue fieldKey="received_by_title" value={f('receivedByTitle')} />
-          <PositionedValue fieldKey="received_by_date" value={f('receivedByDate')} />
-          <PositionedValue fieldKey="prepared_by" value={f('preparedBySignature') || f('preparedByName')} />
-          <PositionedValue fieldKey="prepared_by_title" value={f('preparedByTitle')} />
-          <PositionedValue fieldKey="prepared_by_date" value={f('preparedByDate')} />
-          <PositionedValue fieldKey="registered_by" value={f('registeredBySignature') || f('registeredByName')} />
-          <PositionedValue fieldKey="registered_by_title" value={f('registeredByTitle')} />
-          <PositionedValue fieldKey="registered_by_date" value={f('registeredByDate')} />
+          <PositionedValue fieldKey="informant_date" value={getVal('informantDate')} />
+
+          {/* Administrative */}
+          <PositionedValue fieldKey="prepared_by" value={getSignatureOrName(getVal('preparedBySignature'), getVal('preparedByName'))} />
+          <PositionedValue fieldKey="prepared_by_title" value={getVal('preparedByTitle')} />
+          <PositionedValue fieldKey="prepared_by_date" value={getVal('preparedByDate')} />
+          <PositionedValue fieldKey="received_by" value={getSignatureOrName(getVal('receivedBySignature'), getVal('receivedByName'))} />
+          <PositionedValue fieldKey="received_by_title" value={getVal('receivedByTitle')} />
+          <PositionedValue fieldKey="received_by_date" value={getVal('receivedByDate')} />
+          <PositionedValue fieldKey="registered_by" value={getSignatureOrName(getVal('registeredBySignature'), getVal('registeredByName'))} />
+          <PositionedValue fieldKey="registered_by_title" value={getVal('registeredByTitle')} />
+          <PositionedValue fieldKey="registered_by_date" value={getVal('registeredByDate')} />
         </div>
       </div>
     </>

@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "stack-overflow": {
+      "command": "npx",
+      "args": ["-y", "mcp-so"],
+      "env": {}
+    }
+  }
+}
