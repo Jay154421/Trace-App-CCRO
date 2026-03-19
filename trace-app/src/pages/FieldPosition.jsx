@@ -38,9 +38,9 @@ const FIELD_POSITIONS = {
   province: { x: 600, y: 447 },
   city_municipality: { x: 600, y: 519 },
   registry_no: { x: 1634, y: 477 },
-  child_name_first: { x: 531, y: 648 },
-  child_name_middle: { x: 1179, y: 648 },
-  child_name_last: { x: 1830, y: 648 },
+  child_name_first: { x: 531, y: 648, width: 531 },
+  child_name_middle: { x: 1179, y: 648, width: 543 },
+  child_name_last: { x: 1830, y: 648, width: 567 },
   sex: { x: 600, y: 753 },
   date_of_birth_day: { x: 1380, y: 753 },
   date_of_birth_month: { x: 1722, y: 753 },
@@ -52,41 +52,41 @@ const FIELD_POSITIONS = {
   multiple_birth_order: { x: 1056, y: 1038 },
   birth_order: { x: 1725, y: 1038 },
   weight_at_birth: { x: 2124, y: 1038 },
-  mother_maiden_first: { x: 531, y: 1167 },
-  mother_maiden_middle: { x: 1179, y: 1167 },
-  mother_maiden_last: { x: 1830, y: 1167 },
+  mother_maiden_first: { x: 531, y: 1167, width: 531 },
+  mother_maiden_middle: { x: 1179, y: 1167, width: 543},
+  mother_maiden_last: { x: 1830, y: 1167, width: 567 },
   mother_citizenship: { x: 543, y: 1275 },
-  mother_religion: { x: 1800, y: 1275 },
+  mother_religion: { x: 1557, y: 1275, width: 663 },
   mother_children_born_alive: { x: 459, y: 1440 },
   mother_children_living: { x: 786, y: 1440 },
   mother_children_dead: { x: 1056, y: 1440 },
-  mother_occupation: { x: 1392, y: 1440 },
+  mother_occupation: { x: 1392, y: 1440, width: 639 },
   mother_age: { x: 2175, y: 1440 },
-  mother_residence_house: { x: 336, y: 1557 },
-  mother_residence_city: { x: 1122, y: 1557 },
-  mother_residence_province: { x: 1605, y: 1557 },
-  mother_country: { x: 2070, y: 1557 },
-  father_name_first: { x: 531, y: 1677, width: 640 },
-  father_name_middle: { x: 1179, y: 1677, width: 640 },
-  father_name_last: { x: 1830, y: 1677, width: 640 },
+  mother_residence_house: { x: 336, y: 1557, width: 774  },
+  mother_residence_city: { x: 1215, y: 1557, width: 330 },
+  mother_residence_province: { x: 1605, y: 1557, width: 375 },
+  mother_country: { x: 2070, y: 1557, width: 315 },
+  father_name_first: { x: 531, y: 1677, width: 531 },
+  father_name_middle: { x: 1179, y: 1677, width: 543 },
+  father_name_last: { x: 1830, y: 167, width: 567 },
   father_citizenship: { x: 336, y: 1818 },
   father_religion: { x: 900, y: 1818 },
-  father_occupation: { x: 1509, y: 1818 },
+  father_occupation: { x: 1509, y: 1818, width: 510},
   father_age: { x: 2175, y: 1818 },
-  father_residence_house: { x: 336, y: 1959 },
-  father_residence_city: { x: 1122, y: 1959 },
-  father_residence_province: { x: 1605, y: 1959 },
-  father_country: { x: 2070, y: 1959 },
+  father_residence_house: { x: 336, y: 1959, width: 774 },
+  father_residence_city: { x: 1215, y: 1959, width: 330 },
+  father_residence_province: { x: 1605, y: 1959, width: 375},
+  father_country: { x: 2070, y: 1959, width: 315 },
   marriage_date: { x: 471, y: 2148 },
   marriage_place: { x: 1287, y: 2148 },
   attendant_title: { x: 507, y: 2643 },
-  attendant_name: { x: 483, y: 2562 },
-  attendant_address: { x: 1500, y: 2505, width: 944 },
+  attendant_name: { x: 483, y: 2562, width: 780 },
+  attendant_address: { x: 1500, y: 2505, width: 905},
   attendant_date: { x: 1512, y: 2643 },
   attendant_time: { x: 1533, y: 2409 },
-  informant_signature: { x: 507, y: 2856 },
+  informant_signature: { x: 483, y: 2916, width: 768},
   informant_relation: { x: 612, y: 3000 },
-  informant_address: { x: 399, y: 3057 },
+  informant_address: { x: 399, y: 3057, width: 864},
   informant_date: { x: 519, y: 3129 },
   received_by: { x: 519, y: 3306 },
   received_by_title: { x: 519, y: 3375 },
@@ -115,6 +115,8 @@ const PDF_MULTI_COLUMN_ROWS = [
   ['father_citizenship', 'father_religion', 'father_occupation', 'father_age'],
   ['father_residence_house', 'father_residence_city', 'father_residence_province', 'father_country'],
   ['marriage_date', 'marriage_place'],
+  ['informant_signature', 'informant_relation'],
+  ['prepared_by', 'received_by', 'registered_by'],
 ];
 
 /** Single fields with max width from x to logical right edge */
@@ -171,6 +173,11 @@ const ATTENDANT_ADDRESS_SHRINK_MIN_CHARS = 35;
 const ATTENDANT_ADDRESS_SHRINK_MAX_CHARS = 60;
 const ATTENDANT_ADDRESS_MIN_FONT_PX = 12;
 
+/** Attendant address shrinking threshold for PDF (characters) */
+const ATTENDANT_ADDRESS_SHRINK_MIN_CHARS_PDF = 35;
+const ATTENDANT_ADDRESS_SHRINK_MAX_CHARS_PDF = 60;
+const ATTENDANT_ADDRESS_MIN_FONT_PT = 7;
+
 // ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
@@ -199,14 +206,21 @@ function getEffectiveColumnWidthPx(fieldKey) {
   if (field.width != null && field.width > 0) return field.width;
 
   const docWidth = PDF_LAYOUT.document.width;
+  const y0 = field.y;
   for (const row of PDF_MULTI_COLUMN_ROWS) {
     const idx = row.indexOf(fieldKey);
     if (idx === -1) continue;
-    const x0 = FIELD_POSITIONS[row[idx]].x;
+    const x0 = field.x;
     if (idx + 1 < row.length) {
-      const x1 = FIELD_POSITIONS[row[idx + 1]].x;
-      return Math.max(48, x1 - x0 - PDF_COLUMN_GUTTER_PX);
+      const nextField = FIELD_POSITIONS[row[idx + 1]];
+      // Check if next field is on same row (similar y position)
+      if (nextField && Math.abs(nextField.y - y0) < 50) {
+        const x1 = nextField.x;
+        return Math.max(48, x1 - x0 - PDF_COLUMN_GUTTER_PX);
+      }
     }
+    // Same row: use document edge
+    // Different row alignment: use document edge for last item
     return Math.max(48, docWidth - x0 - PDF_COLUMN_GUTTER_PX);
   }
 
@@ -512,6 +526,8 @@ function buildFieldPositionPdfBase64(merged) {
       fontPt = INFORMANT_ADDRESS_COMPACT_PDF_PT;
     } else if (item.key === 'weight_at_birth') {
       fontPt = 8;
+    } else if (item.key === 'attendant_address') {
+      fontPt = getAttendantAddressFontPt(rawTrimLen);
     }
     doc.setFontSize(fontPt);
     const defaultLineHeightIn = (fontPt * PDF_LAYOUT.lineHeightRatio) / 72;
@@ -670,6 +686,23 @@ function getAttendantAddressFontPx(addressLength) {
   const progress = (len - ATTENDANT_ADDRESS_SHRINK_MIN_CHARS) / range;
   const fontRange = PDF_LAYOUT.fieldFontSize - ATTENDANT_ADDRESS_MIN_FONT_PX;
   return PDF_LAYOUT.fieldFontSize - Math.round(progress * fontRange);
+}
+
+/**
+ * Calculate PDF font pt for attendant_address based on length (gradual shrinking)
+ */
+function getAttendantAddressFontPt(addressLength) {
+  const len = addressLength ?? 0;
+  if (len <= ATTENDANT_ADDRESS_SHRINK_MIN_CHARS_PDF) {
+    return PDF_LAYOUT.pdfDefaultFontSize;
+  }
+  if (len >= ATTENDANT_ADDRESS_SHRINK_MAX_CHARS_PDF) {
+    return ATTENDANT_ADDRESS_MIN_FONT_PT;
+  }
+  const range = ATTENDANT_ADDRESS_SHRINK_MAX_CHARS_PDF - ATTENDANT_ADDRESS_SHRINK_MIN_CHARS_PDF;
+  const progress = (len - ATTENDANT_ADDRESS_SHRINK_MIN_CHARS_PDF) / range;
+  const fontRange = PDF_LAYOUT.pdfDefaultFontSize - ATTENDANT_ADDRESS_MIN_FONT_PT;
+  return Math.round((PDF_LAYOUT.pdfDefaultFontSize - progress * fontRange) * 10) / 10;
 }
 
 function PositionedValue({ fieldKey, value, fontLenSource }) {
