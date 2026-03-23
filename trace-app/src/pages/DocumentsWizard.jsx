@@ -41,6 +41,38 @@ function buildPhotoFilename(child) {
   return `${ownerName}_${month}-${day}-${year}.jpg`;
 }
 
+function buildOwnerDisplayName(child) {
+  const parts = [child?.first_name, child?.middle_name, child?.last_name]
+    .map((p) => String(p || '').trim())
+    .filter(Boolean);
+  return parts.join(' ') || 'Owner';
+}
+
+function buildPhotoOutputLabel(child, filename) {
+  const owner = buildOwnerDisplayName(child);
+  const now = new Date();
+  let month = now.toLocaleString('en-US', { month: 'long' });
+  let day = String(now.getDate()).padStart(2, '0');
+  let year = String(now.getFullYear());
+
+  const namedDateMatch = filename.match(/_(January|February|March|April|May|June|July|August|September|October|November|December)-(\d{2})-(\d{4})(?:_\d+)?\.[^.]+$/i);
+  if (namedDateMatch) {
+    [, month, day, year] = namedDateMatch;
+  } else {
+    const timestampMatch = filename.match(/_(\d{13})_\d+\.[^.]+$/);
+    if (timestampMatch) {
+      const dt = new Date(Number(timestampMatch[1]));
+      if (!Number.isNaN(dt.getTime())) {
+        month = dt.toLocaleString('en-US', { month: 'long' });
+        day = String(dt.getDate()).padStart(2, '0');
+        year = String(dt.getFullYear());
+      }
+    }
+  }
+
+  return `${owner} ${month} ${day}, ${year}`;
+}
+
 function buildChecklist(requirements, existing = []) {
   const byKey = new Map(existing.map((e) => [`${e.category}:${e.label}`, e]));
   return requirements.all.map((r) => {
@@ -331,10 +363,18 @@ export function DocumentsWizard() {
     }
   };
 
-  const openSavedAttachment = (filename) => {
+  const openSavedAttachment = async (filename) => {
     const fileUrl = apiUrl(`/children/${id}/attachments/${encodeURIComponent(filename)}`);
     if (isImageFilename(filename)) {
-      open2x2Preview(fileUrl);
+      try {
+        const res = await fetch(fileUrl);
+        if (!res.ok) throw new Error('Failed to load image');
+        const blob = await res.blob();
+        const localUrl = URL.createObjectURL(blob);
+        open2x2Preview(localUrl, true);
+      } catch {
+        open2x2Preview(fileUrl);
+      }
       return;
     }
     window.open(fileUrl, '_blank', 'noopener,noreferrer');
@@ -498,7 +538,7 @@ export function DocumentsWizard() {
                           onClick={() => openSavedAttachment(filename)}
                           className="text-sm text-emerald-600 hover:underline"
                         >
-                          View {filename}
+                          View {item.label === PHOTO_ID_LABEL ? buildPhotoOutputLabel(child, filename) : filename}
                         </button>
                       ))}
                     </div>

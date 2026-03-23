@@ -10,6 +10,16 @@ function safeAttachmentFilename(name) {
   return name.replace(/[^a-zA-Z0-9._-]/g, '_');
 }
 
+function buildStoredAttachmentFilename(rawFilename, fallbackBase, duplicateIndex) {
+  const parsed = path.parse(rawFilename || '');
+  const safeBase = safeAttachmentFilename(parsed.name || fallbackBase || 'attachment');
+  const safeExt = safeAttachmentFilename(parsed.ext || '.jpg');
+  if (duplicateIndex > 0) {
+    return `${safeBase}_${duplicateIndex}${safeExt}`;
+  }
+  return `${safeBase}${safeExt}`;
+}
+
 function list(req, res) {
   try {
     const rows = childModel.all();
@@ -75,14 +85,19 @@ function updateChecklist(req, res) {
       if (it.attachmentBase64 && it.attachmentFilename) {
         newFiles.push({ attachmentBase64: it.attachmentBase64, attachmentFilename: it.attachmentFilename });
       }
-      const base = `${childId}_${safeAttachmentFilename(it.category || 'general')}_${safeAttachmentFilename(it.label || 'doc')}`;
+      const fallbackBase = `${childId}_${safeAttachmentFilename(it.category || 'general')}_${safeAttachmentFilename(it.label || 'doc')}`;
       const savedFilenames = [];
       for (let i = 0; i < newFiles.length; i++) {
         const f = newFiles[i];
         if (!f.attachmentBase64 || !f.attachmentFilename) continue;
-        const ext = path.extname(f.attachmentFilename) || '';
-        const filename = `${base}_${Date.now()}_${i}${ext}`;
-        const filePath = path.join(ATTACHMENTS_DIR, filename);
+        let duplicateIndex = 0;
+        let filename = buildStoredAttachmentFilename(f.attachmentFilename, fallbackBase, duplicateIndex);
+        let filePath = path.join(ATTACHMENTS_DIR, filename);
+        while (fs.existsSync(filePath)) {
+          duplicateIndex += 1;
+          filename = buildStoredAttachmentFilename(f.attachmentFilename, fallbackBase, duplicateIndex);
+          filePath = path.join(ATTACHMENTS_DIR, filename);
+        }
         const buf = Buffer.from(f.attachmentBase64, 'base64');
         fs.writeFileSync(filePath, buf);
         savedFilenames.push(filename);
