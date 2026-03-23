@@ -1,8 +1,10 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { childrenApi } from '../services/api';
 import { apiUrl } from '../config/api';
+
+const PHOTO_ID_LABEL = '2x2 Photo I.D. with white background (studio copy: 1, out-of-town: 2)';
 
 function parseAttachments(attachment) {
   if (!attachment) return [];
@@ -16,6 +18,29 @@ function parseAttachments(attachment) {
   return [attachment];
 }
 
+function hasAnyAttachments(item) {
+  return (item.attachmentFiles?.length ?? 0) > 0 || (item.attachmentFilenames?.length ?? 0) > 0;
+}
+
+function toSafeFilenamePart(value) {
+  return String(value || '')
+    .trim()
+    .replace(/\s+/g, '_')
+    .replace(/[^a-zA-Z0-9_-]/g, '');
+}
+
+function buildPhotoFilename(child) {
+  const firstName = toSafeFilenamePart(child?.first_name);
+  const middleName = toSafeFilenamePart(child?.middle_name);
+  const lastName = toSafeFilenamePart(child?.last_name);
+  const ownerName = [firstName, middleName, lastName].filter(Boolean).join('_') || 'owner';
+  const now = new Date();
+  const month = now.toLocaleString('en-US', { month: 'long' });
+  const day = String(now.getDate()).padStart(2, '0');
+  const year = now.getFullYear();
+  return `${ownerName}_${month}-${day}-${year}.jpg`;
+}
+
 function buildChecklist(requirements, existing = []) {
   const byKey = new Map(existing.map((e) => [`${e.category}:${e.label}`, e]));
   return requirements.all.map((r) => {
@@ -26,7 +51,7 @@ function buildChecklist(requirements, existing = []) {
       label: r.label,
       id: r.id,
       required: true,
-      checked: existingItem?.checked ?? 0,
+      checked: attachmentList.length > 0 ? 1 : 0,
       notes: existingItem?.notes ?? '',
       attachmentFilenames: attachmentList,
       attachmentFiles: [],
@@ -45,6 +70,17 @@ export function DocumentsWizard() {
   const [step, setStep] = useState(0);
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
   const [initialChecklist, setInitialChecklist] = useState(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraBusy, setCameraBusy] = useState(false);
+  const [cameraError, setCameraError] = useState('');
+  const [cameraTargetIndex, setCameraTargetIndex] = useState(null);
+  const [capturedPhotoFile, setCapturedPhotoFile] = useState(null);
+  const [capturedPhotoUrl, setCapturedPhotoUrl] = useState('');
+  const [photoPreviewOpen, setPhotoPreviewOpen] = useState(false);
+  const [photoPreviewSrc, setPhotoPreviewSrc] = useState('');
+  const [photoPreviewLocalUrl, setPhotoPreviewLocalUrl] = useState('');
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
 
   useEffect(() => {
     childrenApi
@@ -76,14 +112,6 @@ export function DocumentsWizard() {
     }
   };
 
-  const toggle = (index) => {
-    setChecklist((prev) => {
-      const next = [...prev];
-      next[index] = { ...next[index], checked: next[index].checked ? 0 : 1 };
-      return next;
-    });
-  };
-
   const updateNotes = (index, notes) => {
     setChecklist((prev) => {
       const next = [...prev];
@@ -100,6 +128,7 @@ export function DocumentsWizard() {
       next[index] = {
         ...next[index],
         attachmentFiles: [...(next[index].attachmentFiles || []), ...fileList],
+        checked: 1,
       };
       return next;
     });
@@ -108,10 +137,14 @@ export function DocumentsWizard() {
   const removeAttachmentFile = (index, fileIndex) => {
     setChecklist((prev) => {
       const next = [...prev];
-      const current = next[index].attachmentFiles || [];
+      const currentItem = next[index];
+      const current = currentItem.attachmentFiles || [];
+      const updatedFiles = current.filter((_, i) => i !== fileIndex);
+      const hasAnyAttachment = updatedFiles.length > 0 || (currentItem.attachmentFilenames?.length ?? 0) > 0;
       next[index] = {
-        ...next[index],
-        attachmentFiles: current.filter((_, i) => i !== fileIndex),
+        ...currentItem,
+        attachmentFiles: updatedFiles,
+        checked: hasAnyAttachment ? 1 : 0,
       };
       return next;
     });
@@ -129,7 +162,7 @@ export function DocumentsWizard() {
           category: c.category || 'general',
           label: c.label || '',
           required: Boolean(c.required),
-          checked: !!c.checked,
+          checked: hasAnyAttachments(c),
           notes: c.notes ?? '',
           attachmentFilenames: c.attachmentFilenames || [],
         };
@@ -147,11 +180,13 @@ export function DocumentsWizard() {
     );
     return childrenApi
       .updateChecklist(id, items)
-      .then(() => {
+      .then(async () => {
+        const refreshed = await childrenApi.get(id);
+        setChild(refreshed);
+        const rebuilt = buildChecklist(refreshed.requirements || { all: [] }, refreshed.checklist || []);
+        setChecklist(rebuilt);
+        setInitialChecklist(rebuilt);
         toast.success('Checklist saved.');
-        const cleared = checklist.map((c) => ({ ...c, attachmentFiles: [] }));
-        setChecklist(cleared);
-        setInitialChecklist(cleared);
       })
       .catch((err) => {
         toast.error(err?.message || 'Failed to save checklist.');
@@ -163,6 +198,153 @@ export function DocumentsWizard() {
   const saveAndLeave = () => {
     save().then(() => navigate(`/children/${id}`));
   };
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  };
+
+  const startCamera = async () => {
+    setCameraBusy(true);
+    setCameraError('');
+    if (capturedPhotoUrl) {
+      URL.revokeObjectURL(capturedPhotoUrl);
+      setCapturedPhotoUrl('');
+      setCapturedPhotoFile(null);
+    }
+    try {
+      stopCamera();
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user' },
+        audio: false,
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+    } catch (err) {
+      setCameraError(err?.message || 'Unable to access camera.');
+    } finally {
+      setCameraBusy(false);
+    }
+  };
+
+  const openCameraForItem = async (index) => {
+    setCameraTargetIndex(index);
+    setCameraOpen(true);
+    await startCamera();
+  };
+
+  const closeCamera = () => {
+    stopCamera();
+    if (capturedPhotoUrl) {
+      URL.revokeObjectURL(capturedPhotoUrl);
+    }
+    setCameraOpen(false);
+    setCameraBusy(false);
+    setCameraError('');
+    setCameraTargetIndex(null);
+    setCapturedPhotoFile(null);
+    setCapturedPhotoUrl('');
+  };
+
+  const capturePhoto = async () => {
+    if (cameraTargetIndex === null || !videoRef.current) return;
+    const video = videoRef.current;
+    const width = video.videoWidth;
+    const height = video.videoHeight;
+    if (!width || !height) {
+      setCameraError('Camera not ready. Please retry.');
+      return;
+    }
+    const side = Math.min(width, height);
+    const sx = Math.floor((width - side) / 2);
+    const sy = Math.floor((height - side) / 2);
+    const outputSize = 600;
+    const canvas = document.createElement('canvas');
+    canvas.width = outputSize;
+    canvas.height = outputSize;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      setCameraError('Unable to process captured image.');
+      return;
+    }
+    ctx.drawImage(video, sx, sy, side, side, 0, 0, outputSize, outputSize);
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92));
+    if (!blob) {
+      setCameraError('Failed to capture image.');
+      return;
+    }
+    const file = new File([blob], buildPhotoFilename(child), { type: 'image/jpeg' });
+    if (capturedPhotoUrl) URL.revokeObjectURL(capturedPhotoUrl);
+    setCapturedPhotoFile(file);
+    setCapturedPhotoUrl(URL.createObjectURL(file));
+    stopCamera();
+  };
+
+  const attachCapturedPhoto = () => {
+    if (cameraTargetIndex === null || !capturedPhotoFile) return;
+    addAttachmentFiles(cameraTargetIndex, [capturedPhotoFile]);
+    toast.success('Photo attached.');
+    closeCamera();
+  };
+
+  const retakePhoto = async () => {
+    await startCamera();
+  };
+
+  const isImageFilename = (filename = '') => /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(filename);
+
+  const open2x2Preview = (src, isLocal = false) => {
+    if (photoPreviewLocalUrl) {
+      URL.revokeObjectURL(photoPreviewLocalUrl);
+      setPhotoPreviewLocalUrl('');
+    }
+    if (isLocal) {
+      setPhotoPreviewLocalUrl(src);
+    }
+    setPhotoPreviewSrc(src);
+    setPhotoPreviewOpen(true);
+  };
+
+  const closePhotoPreview = () => {
+    setPhotoPreviewOpen(false);
+    setPhotoPreviewSrc('');
+    if (photoPreviewLocalUrl) {
+      URL.revokeObjectURL(photoPreviewLocalUrl);
+      setPhotoPreviewLocalUrl('');
+    }
+  };
+
+  const openLocalAttachment = (file) => {
+    const objectUrl = URL.createObjectURL(file);
+    if (file.type.startsWith('image/')) open2x2Preview(objectUrl, true);
+    else {
+      window.open(objectUrl, '_blank', 'noopener,noreferrer');
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 30000);
+    }
+  };
+
+  const openSavedAttachment = (filename) => {
+    const fileUrl = apiUrl(`/children/${id}/attachments/${encodeURIComponent(filename)}`);
+    if (isImageFilename(filename)) {
+      open2x2Preview(fileUrl);
+      return;
+    }
+    window.open(fileUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  useEffect(() => () => {
+    stopCamera();
+    if (capturedPhotoUrl) URL.revokeObjectURL(capturedPhotoUrl);
+    if (photoPreviewLocalUrl) URL.revokeObjectURL(photoPreviewLocalUrl);
+  }, [capturedPhotoUrl, photoPreviewLocalUrl]);
 
   function fileToBase64(file) {
     return new Promise((resolve, reject) => {
@@ -237,17 +419,22 @@ export function DocumentsWizard() {
       <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <h2 className="sr-only">{currentStep?.name}</h2>
         <ul className="divide-y divide-slate-200">
-          {(currentStep?.items || []).map((item, idx) => {
+          {(currentStep?.items || []).map((item) => {
             const globalIndex = checklist.findIndex((c) => c.label === item.label && c.category === item.category);
+            const allowCameraCapture = item.label === PHOTO_ID_LABEL;
             return (
               <li key={`${item.category}-${item.id}`} className="px-5 py-4">
                 <div className="flex gap-3">
                   <input
                     type="checkbox"
                     id={`check-${globalIndex}`}
-                    checked={!!item.checked}
-                    onChange={() => toggle(globalIndex)}
-                    className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                    checked={hasAnyAttachments(item)}
+                    onChange={() => {}}
+                    readOnly
+                    tabIndex={-1}
+                    aria-disabled="true"
+                    style={{ accentColor: '#2563eb' }}
+                    className="mt-1 h-4 w-4 rounded border-slate-300 accent-blue-600 pointer-events-none"
                     aria-label={`Mark ${item.label} as provided`}
                   />
                   <div className="flex-1 min-w-0">
@@ -275,9 +462,25 @@ export function DocumentsWizard() {
                         />
                         Attach file(s)
                       </label>
+                      {allowCameraCapture && (
+                        <button
+                          type="button"
+                          onClick={() => openCameraForItem(globalIndex)}
+                          className="inline-flex items-center gap-1 rounded border border-blue-300 bg-blue-50 px-2 py-1.5 text-sm text-blue-700 hover:bg-blue-100"
+                        >
+                          Take Picture
+                        </button>
+                      )}
                       {(item.attachmentFiles || []).map((file, fi) => (
                         <span key={fi} className="inline-flex items-center gap-1 rounded bg-slate-100 px-2 py-1 text-sm">
-                          {file.name}
+                          <button
+                            type="button"
+                            onClick={() => openLocalAttachment(file)}
+                            className="text-blue-700 hover:underline"
+                            aria-label={`Open ${file.name}`}
+                          >
+                            {file.name}
+                          </button>
                           <button
                             type="button"
                             onClick={() => removeAttachmentFile(globalIndex, fi)}
@@ -289,15 +492,14 @@ export function DocumentsWizard() {
                         </span>
                       ))}
                       {(item.attachmentFilenames || []).map((filename, fi) => (
-                        <a
+                        <button
+                          type="button"
                           key={fi}
-                          href={apiUrl(`/children/${id}/attachments/${encodeURIComponent(filename)}`)}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                          onClick={() => openSavedAttachment(filename)}
                           className="text-sm text-emerald-600 hover:underline"
                         >
                           View {filename}
-                        </a>
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -371,6 +573,130 @@ export function DocumentsWizard() {
                 className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
               >
                 Discard Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {cameraOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60"
+          onClick={closeCamera}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="camera-modal-title"
+        >
+          <div
+            className="bg-white rounded-xl border border-slate-200 shadow-lg w-full max-w-xl p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 id="camera-modal-title" className="text-lg font-semibold text-slate-800">
+              Capture 2x2 Photo I.D.
+            </h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Capture first, preview it, then attach if clear.
+            </p>
+            <div className="mt-3 overflow-hidden rounded-lg border border-slate-200 bg-black">
+              {capturedPhotoUrl ? (
+                <img src={capturedPhotoUrl} alt="Captured preview" className="w-full aspect-square object-cover" />
+              ) : (
+                <video ref={videoRef} className="w-full aspect-square object-cover" playsInline muted />
+              )}
+            </div>
+            {cameraError && <p className="mt-2 text-sm text-red-600">{cameraError}</p>}
+            <div className="mt-4 flex flex-wrap gap-2">
+              {capturedPhotoUrl ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={attachCapturedPhoto}
+                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                  >
+                    Attach Photo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={retakePhoto}
+                    disabled={cameraBusy}
+                    className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    Retake Photo
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={capturePhoto}
+                    disabled={cameraBusy}
+                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    Capture Preview
+                  </button>
+                  <button
+                    type="button"
+                    onClick={startCamera}
+                    disabled={cameraBusy}
+                    className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    Retry Camera
+                  </button>
+                </>
+              )}
+              <button
+                type="button"
+                onClick={closeCamera}
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {photoPreviewOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60"
+          onClick={closePhotoPreview}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="photo-preview-title"
+        >
+          <div
+            className="bg-white rounded-xl border border-slate-200 shadow-lg w-full max-w-xl p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 id="photo-preview-title" className="text-lg font-semibold text-slate-800">
+              2x2 Photo Preview
+            </h2>
+            <div className="mt-4 flex justify-center">
+              <div className="relative rounded-lg border border-slate-300 bg-white p-6">
+                <span className="absolute left-1/2 top-2 -translate-x-1/2 rounded border border-slate-400 bg-indigo-50 px-1.5 py-0.5 text-xs font-semibold text-slate-700">
+                  2 in
+                </span>
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 rounded border border-slate-400 bg-indigo-50 px-1.5 py-0.5 text-xs font-semibold text-slate-700">
+                  2 in
+                </span>
+                <img
+                  src={photoPreviewSrc}
+                  alt="2x2 uploaded preview"
+                  className="block border border-slate-300 bg-white object-cover"
+                  style={{ width: '2in', height: '2in' }}
+                />
+              </div>
+            </div>
+            <p className="mt-4 text-center text-sm text-slate-600">
+              2in x 2in (51 x 51 mm / 5.1 x 5.1 cm)
+            </p>
+            <div className="mt-4 flex justify-center">
+              <button
+                type="button"
+                onClick={closePhotoPreview}
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Close Preview
               </button>
             </div>
           </div>
