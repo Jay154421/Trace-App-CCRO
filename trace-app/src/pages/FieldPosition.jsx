@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { jsPDF } from 'jspdf';
 import { childrenApi } from '../services/api';
@@ -68,7 +68,7 @@ const FIELD_POSITIONS = {
   mother_country: { x: 2070, y: 1557, width: 315 },
   father_name_first: { x: 531, y: 1677, width: 531 },
   father_name_middle: { x: 1179, y: 1677, width: 543 },
-  father_name_last: { x: 1830, y: 167, width: 567 },
+  father_name_last: { x: 1830, y: 1677, width: 567 },
   father_citizenship: { x: 336, y: 1818 },
   father_religion: { x: 900, y: 1818 },
   father_occupation: { x: 1509, y: 1818, width: 510},
@@ -84,11 +84,12 @@ const FIELD_POSITIONS = {
   marriage_place_province: { x: 1667, y: 2148 , width: 397},
   marriage_place_country: { x: 2112, y: 2148, width: 342 },
   // Attendant type radio button positions
-  attendant_radio_physician: { x: 234, y: 2227 },
-  attendant_radio_nurse: { x: 555, y: 2277 },
-  attendant_radio_hilot: { x: 1131, y: 2277 },
-  attendant_radio_other: { x: 1758, y: 2277 },
-  attendant_type_specify: { x: 2148, y: 2277 },
+  attendant_radio_physician: { x: 282, y: 2227 },
+  attendant_radio_nurse: { x: 600, y: 2277 },
+  attendant_radio_midwife: { x: 875, y: 2277 },
+  attendant_radio_hilot: { x: 1179, y: 2277 },
+  attendant_radio_other: { x: 1794, y: 2277 },
+  attendant_type_specify: { x: 2148, y: 2277, width: 249 },
   attendant_title: { x: 507, y: 2643 },
   attendant_name: { x: 483, y: 2562, width: 780 },
   attendant_address: { x: 1500, y: 2505, width: 905},
@@ -107,6 +108,7 @@ const FIELD_POSITIONS = {
   registered_by: { x: 1665, y: 3306 },
   registered_by_title: { x: 1665, y: 3375 },
   registered_by_date: { x: 1665, y: 3447 },
+  remarks: { x: 246, y: 3600, width: 2292, height: 210 },
 };
 
 /** Space between form columns to prevent text bleeding into next box */
@@ -186,7 +188,7 @@ const ATTENDANT_ADDRESS_MIN_FONT_PX = 12;
 /** Attendant address shrinking threshold for PDF (characters) */
 const ATTENDANT_ADDRESS_SHRINK_MIN_CHARS_PDF = 35;
 const ATTENDANT_ADDRESS_SHRINK_MAX_CHARS_PDF = 60;
-const ATTENDANT_ADDRESS_MIN_FONT_PT = 7;
+const ATTENDANT_ADDRESS_MIN_FONT_PT = 9;
 
 // ============================================================================
 // UTILITY FUNCTIONS
@@ -306,7 +308,7 @@ function countryDisplayFromCodeOrText(codeOrText) {
       const displayNames = new Intl.DisplayNames(['en'], { type: 'region' });
       const name = displayNames.of(text.toUpperCase());
       if (name && name !== text.toUpperCase()) return name;
-    } catch (_) { /* ignore */ }
+    } catch (_) { /* ignore */ }  
   }
   return text;
 }
@@ -337,7 +339,10 @@ function normalizeAttendantType(value) {
   if (normalized === 'nurse' || normalized === 'rn') {
     return 'nurse';
   }
-  if (normalized === 'hilot' || normalized === 'traditional birth attendant' || normalized === 'tba' || normalized === 'midwife') {
+  if (normalized === 'midwife') {
+    return 'midwife';
+  }
+  if (normalized === 'hilot' || normalized === 'traditional birth attendant' || normalized === 'tba' || normalized.includes('hilot')) {
     return 'hilot';
   }
   if (normalized === 'other' || normalized === 'others') {
@@ -422,6 +427,7 @@ const FIELD_VALUE_MAP = [
   { key: 'registered_by', getValue: (getVal) => getSignatureOrName(getVal('registeredBySignature'), getVal('registeredByName')) },
   { key: 'registered_by_title', valueKey: 'registeredByTitle' },
   { key: 'registered_by_date', valueKey: 'registeredByDate' },
+  { key: 'remarks', valueKey: 'remarks' },
 ];
 
 // ============================================================================
@@ -532,15 +538,14 @@ function base64ToBlobUrl(base64) {
 }
 
 /**
- * Draw radio button mark (small filled box) at specified position
- * Matches CertificateOfLiveBirth style - small 4x4 pixel box
+ * Draw radio button mark (Bold Check Mark ✔) at specified position
+ * Uses Unicode U+2714 (✔) character
  */
 function drawRadioMark(doc, x, y) {
-  // Check mark for radio button selection
-  doc.setFillColor(0, 0, 0);
+  // Draw Bold Check Mark ✔ (Unicode U+2714)
   doc.setTextColor(0, 0, 0);
-  doc.setFontSize(20);
-  doc.text('•', x, y, { align: 'center', baseline: 'middle' });
+  doc.setFontSize(14);
+  doc.text('✔', x, y, { align: 'center', baseline: 'middle' });
 }
 
 /**
@@ -612,10 +617,11 @@ function buildFieldPositionPdfBase64(merged) {
 
   // Draw attendant type radio button marks
   const radioPositions = {
-    physician: { x: 234, y: 2227 },
-    nurse: { x: 555, y: 2277 },
-    hilot: { x: 1131, y: 2277 },
-    other: { x: 1758, y: 2277 },
+    physician: { x: 282, y: 2227 },
+    nurse: { x: 600, y: 2277 },
+    midwife: { x: 875, y: 2277 },
+    hilot: { x: 1179, y: 2277 },
+    other: { x: 1794, y: 2277 },
   };
 
   if (attendantType && radioPositions[attendantType]) {
@@ -643,163 +649,338 @@ function buildFieldPositionPdfBase64(merged) {
   return dataUri.indexOf(',') >= 0 ? dataUri.split(',')[1] : '';
 }
 
-// ============================================================================
-// CUSTOM HOOKS
-// ============================================================================
-
 /**
- * Hook to manage print styles injection/cleanup
+ * Get attendant address font size for PDF based on character count
  */
-function usePrintStyles() {
-  useEffect(() => {
-    const style = document.createElement('style');
-    style.id = PRINT_STYLES_ID;
-    style.textContent = `
-      @media print {
-        @page { size: 8.5in 14in; margin: 0; }
-        html, body {
-          margin: 0; padding: 0;
-          width: 8.5in; height: 14in;
-          overflow: hidden !important;
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
-        }
-        body * { visibility: hidden; }
-        .field-position-print-wrapper {
-          position: absolute !important;
-          left: 0 !important; top: 0 !important;
-          width: 8.5in !important; height: 14in !important;
-          min-height: 0 !important;
-          overflow: hidden !important;
-        }
-        .field-position-print-wrapper,
-        .field-position-print-area,
-        .field-position-print-area * { visibility: visible !important; }
-        .field-position-print-area {
-          position: absolute !important;
-          left: 0 !important; top: 0 !important;
-          margin: 0 !important; padding: 0 !important;
-          transform-origin: top left;
-          transform: scale(${PDF_LAYOUT.renderScale});
-          width: ${PDF_LAYOUT.document.width}px; height: ${PDF_LAYOUT.document.height}px;
-        }
-        aside[aria-label="Main navigation"],
-        .print-hide { display: none !important; visibility: hidden !important; }
-      }
-    `;
-    document.head.appendChild(style);
-    return () => {
-      const el = document.getElementById(PRINT_STYLES_ID);
-      if (el) el.remove();
-    };
-  }, []);
-}
-
-/**
- * Hook to manage PDF preview URL lifecycle
- */
-function usePdfPreviewUrl() {
-  const objectUrlRef = useRef(null);
-  const [url, setUrl] = useState(null);
-  const [isOpen, setIsOpen] = useState(false);
-
-  useEffect(() => {
-    return () => {
-      if (objectUrlRef.current) {
-        URL.revokeObjectURL(objectUrlRef.current);
-        objectUrlRef.current = null;
-      }
-    };
-  }, []);
-
-  const releaseUrl = useCallback(() => {
-    if (objectUrlRef.current) {
-      URL.revokeObjectURL(objectUrlRef.current);
-      objectUrlRef.current = null;
-    }
-    setUrl(null);
-  }, []);
-
-  const openPreview = useCallback((base64) => {
-    try {
-      releaseUrl();
-      const blobUrl = base64ToBlobUrl(base64);
-      objectUrlRef.current = blobUrl;
-      setUrl(blobUrl);
-      setIsOpen(true);
-    } catch (err) {
-      toast.error(err?.message || 'Preview failed.');
-    }
-  }, [releaseUrl]);
-
-  const closePreview = useCallback(() => {
-    setIsOpen(false);
-    releaseUrl();
-  }, [releaseUrl]);
-
-  return { url, isOpen, openPreview, closePreview };
-}
-
-// ============================================================================
-// COMPONENTS
-// ============================================================================
-
-/**
- * Calculate font size for attendant_address based on length (gradual shrinking)
- */
-function getAttendantAddressFontPx(addressLength) {
-  const len = addressLength ?? 0;
-  if (len <= ATTENDANT_ADDRESS_SHRINK_MIN_CHARS) {
-    return PDF_LAYOUT.fieldFontSize;
-  }
-  if (len >= ATTENDANT_ADDRESS_SHRINK_MAX_CHARS) {
-    return ATTENDANT_ADDRESS_MIN_FONT_PX;
-  }
-  const range = ATTENDANT_ADDRESS_SHRINK_MAX_CHARS - ATTENDANT_ADDRESS_SHRINK_MIN_CHARS;
-  const progress = (len - ATTENDANT_ADDRESS_SHRINK_MIN_CHARS) / range;
-  const fontRange = PDF_LAYOUT.fieldFontSize - ATTENDANT_ADDRESS_MIN_FONT_PX;
-  return PDF_LAYOUT.fieldFontSize - Math.round(progress * fontRange);
-}
-
-/**
- * Calculate PDF font pt for attendant_address based on length (gradual shrinking)
- */
-function getAttendantAddressFontPt(addressLength) {
-  const len = addressLength ?? 0;
-  if (len <= ATTENDANT_ADDRESS_SHRINK_MIN_CHARS_PDF) {
+function getAttendantAddressFontPt(charCount) {
+  if (charCount < ATTENDANT_ADDRESS_SHRINK_MIN_CHARS_PDF) {
     return PDF_LAYOUT.pdfDefaultFontSize;
   }
-  if (len >= ATTENDANT_ADDRESS_SHRINK_MAX_CHARS_PDF) {
+  if (charCount > ATTENDANT_ADDRESS_SHRINK_MAX_CHARS_PDF) {
     return ATTENDANT_ADDRESS_MIN_FONT_PT;
   }
+  // Linear interpolation between min and max chars
   const range = ATTENDANT_ADDRESS_SHRINK_MAX_CHARS_PDF - ATTENDANT_ADDRESS_SHRINK_MIN_CHARS_PDF;
-  const progress = (len - ATTENDANT_ADDRESS_SHRINK_MIN_CHARS_PDF) / range;
+  const position = charCount - ATTENDANT_ADDRESS_SHRINK_MIN_CHARS_PDF;
   const fontRange = PDF_LAYOUT.pdfDefaultFontSize - ATTENDANT_ADDRESS_MIN_FONT_PT;
-  return Math.round((PDF_LAYOUT.pdfDefaultFontSize - progress * fontRange) * 10) / 10;
+  return PDF_LAYOUT.pdfDefaultFontSize - (position / range) * fontRange;
 }
 
 /**
- * Radio mark component - matches CertificateOfLiveBirth style
- * Small 4x4 box with border, filled black when selected
+ * Get attendant address font size for overlay based on character count
+ */
+function getAttendantAddressFontPx(charCount) {
+  if (charCount < ATTENDANT_ADDRESS_SHRINK_MIN_CHARS) {
+    return PDF_LAYOUT.fieldFontSize;
+  }
+  if (charCount > ATTENDANT_ADDRESS_SHRINK_MAX_CHARS) {
+    return ATTENDANT_ADDRESS_MIN_FONT_PX;
+  }
+  // Linear interpolation between min and max chars
+  const range = ATTENDANT_ADDRESS_SHRINK_MAX_CHARS - ATTENDANT_ADDRESS_SHRINK_MIN_CHARS;
+  const position = charCount - ATTENDANT_ADDRESS_SHRINK_MIN_CHARS;
+  const fontRange = PDF_LAYOUT.fieldFontSize - ATTENDANT_ADDRESS_MIN_FONT_PX;
+  return PDF_LAYOUT.fieldFontSize - (position / range) * fontRange;
+}
+
+/**
+ * Build a combined PDF with field positioning AND requirements checklist with checkmarks
+ */
+function buildCombinedPdfBase64(merged) {
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'in', format: 'legal' });
+  doc.setFont('helvetica');
+  doc.setFontSize(PDF_LAYOUT.pdfDefaultFontSize);
+  doc.setTextColor(0, 0, 0);
+
+  const { width: docWidth, height: docHeight, pageWidthInches, pageHeightInches } = PDF_LAYOUT.document;
+
+  // Get attendant type for radio button logic
+  const attendantType = normalizeAttendantType(merged.attendantType ?? merged.attendant_type);
+
+  // Draw the field position form (same as original function)
+  for (const item of FIELD_VALUE_MAP) {
+    const field = FIELD_POSITIONS[item.key];
+    if (!field) continue;
+
+    const getVal = (key) => getMergedValue(merged, key);
+    const raw = item.getValue ? item.getValue(getVal) : getVal(item.valueKey);
+    const rawTrimLen = String(raw ?? '').trim().length;
+
+    let fontPt = PDF_LAYOUT.pdfDefaultFontSize;
+    if (item.key === 'informant_address' && rawTrimLen >= INFORMANT_ADDRESS_COMPACT_LENGTH) {
+      fontPt = INFORMANT_ADDRESS_COMPACT_PDF_PT;
+    } else if (item.key === 'weight_at_birth') {
+      fontPt = 9;
+    } else if (item.key === 'attendant_address') {
+      fontPt = getAttendantAddressFontPt(rawTrimLen);
+    }
+    doc.setFontSize(fontPt);
+    const defaultLineHeightIn = (fontPt * PDF_LAYOUT.lineHeightRatio) / 72;
+
+    const value = ADDRESS_ABBREV_FIELD_KEYS.has(item.key) ? abbreviateAddressText(raw) : raw;
+    const str = toCobDisplay(value);
+    const xIn = (field.x / docWidth) * pageWidthInches;
+    let yIn = ((field.y + 25) / docHeight) * pageHeightInches;
+    const widthPx = getEffectiveColumnWidthPx(item.key);
+    const maxWidthIn = widthPx != null && widthPx > 0 ? (widthPx / docWidth) * pageWidthInches : null;
+    const inputLines = str.split(/\r?\n/);
+
+    for (let i = 0; i < inputLines.length; i++) {
+      const line = inputLines[i];
+      if (maxWidthIn != null && maxWidthIn > 0) {
+        const chosenPt = pickPdfFontPtForColumn(doc, line, maxWidthIn, fontPt);
+        doc.setFontSize(chosenPt);
+        const lineHeightIn = (chosenPt * PDF_LAYOUT.lineHeightRatio) / 72;
+        const opts = { maxWidth: maxWidthIn };
+        doc.text(line, xIn, yIn, opts);
+        let lineHeightUsed = lineHeightIn;
+        if (typeof doc.getTextDimensions === 'function') {
+          try {
+            const dims = doc.getTextDimensions(line, opts);
+            if (dims && typeof dims.h === 'number' && dims.h > 0) {
+              lineHeightUsed = dims.h;
+            }
+          } catch (_) { /* ignore */ }
+        }
+        yIn += lineHeightUsed;
+      } else {
+        doc.setFontSize(fontPt);
+        doc.text(line, xIn, yIn);
+        yIn += defaultLineHeightIn;
+      }
+    }
+  }
+
+  // Draw attendant type radio button marks
+  const radioPositions = {
+    physician: { x: 282, y: 2227 },
+    nurse: { x: 600, y: 2277 },
+    midwife: { x: 875, y: 2277 },
+    hilot: { x: 1179, y: 2277 },
+    other: { x: 1794, y: 2277 },
+  };
+
+  if (attendantType && radioPositions[attendantType]) {
+    const pos = radioPositions[attendantType];
+    const xIn = (pos.x / docWidth) * pageWidthInches;
+    const yIn = ((pos.y + 10) / docHeight) * pageHeightInches;
+    drawRadioMark(doc, xIn, yIn);
+  }
+
+  // Draw "other" specify text if applicable
+  if (attendantType === 'other') {
+    const specifyField = FIELD_POSITIONS['attendant_type_specify'];
+    if (specifyField) {
+      const specifyValue = merged.attendantTypeSpecify ?? merged.attendantOthersSpecify ?? merged.attendant_type_specify ?? '';
+      if (specifyValue) {
+        const xIn = (specifyField.x / docWidth) * pageWidthInches;
+        const yIn = ((specifyField.y + 25) / docHeight) * pageHeightInches;
+        doc.setFontSize(PDF_LAYOUT.pdfDefaultFontSize);
+        doc.text(toCobDisplay(specifyValue), xIn, yIn);
+      }
+    }
+  }
+
+  // Add a requirements checklist table with checkmarks below the form
+  // Add some space after the form
+  const checklistStartY = 12; // Start checklist at 12 inches from top
+
+  // Add checklist title
+  doc.setFontSize(14);
+  doc.text('Document Requirements Checklist', 0.5, checklistStartY);
+  
+  // Add child info
+  doc.setFontSize(10);
+  const childName = `${merged.childFirst || ''} ${merged.childMiddle || ''} ${merged.childLast || ''}`.trim();
+  doc.text(`Applicant: ${childName}`, 0.5, checklistStartY + 0.3);
+  doc.text(`Date of Birth: ${merged.birthMonth || ''}/${merged.birthDay || ''}/${merged.birthYear || ''}`, 0.5, checklistStartY + 0.5);
+
+  // Sample requirements data with checkmarks
+  const requirementsData = [
+    { requirement: 'Birth Certificate', status: true, priority: 'High' },
+    { requirement: 'Parent IDs', status: false, priority: 'High' },
+    { requirement: 'Marriage Contract', status: true, priority: 'Medium' },
+    { requirement: 'Medical Certificate', status: false, priority: 'Low' },
+    { requirement: 'Affidavit', status: true, priority: 'Medium' },
+    { requirement: 'School Records', status: false, priority: 'Low' }
+  ];
+
+  const columns = [
+    { header: 'Requirement', key: 'requirement' },
+    { header: 'Priority', key: 'priority' },
+    { header: 'Status', key: 'status' }
+  ];
+
+  // Configure checkmark column with conditional styling
+  const checkmarkColumns = {
+    status: {
+      style: 'unicode',
+      size: 'large',
+      color: 'success',
+      cellStyle: {
+        halign: 'center',
+        valign: 'middle',
+        cellWidth: 0.8
+      }
+    }
+  };
+
+  // Generate the table with checkmarks using our utility
+  generateTableWithCheckmarks(doc, requirementsData, columns, {
+    startY: checklistStartY + 0.8,
+    margin: { top: 0.5, right: 0.5, left: 0.5, bottom: 0.5 }
+  }, checkmarkColumns);
+
+  const dataUri = doc.output('datauristring');
+  return dataUri.indexOf(',') >= 0 ? dataUri.split(',')[1] : '';
+}
+
+/**
+ * Radio button mark component for attendant type selection
  */
 function RadioMark({ x, y, show }) {
   return (
     <span
-      className="absolute inline-block"
+      className="absolute"
       style={{
         left: x,
         top: y,
-        width: 2,
-        height: 2,
-        fontSize: '10px',
-        lineHeight: '1',
-        color: show ? '#000000' : 'transparent',
-        textAlign: 'center',
+        width: 20,
+        height: 20,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontFamily: FONT_FAMILY,
+        fontSize: '14px',
+        color: COLORS.black,
+        WebkitPrintColorAdjust: 'exact',
+        printColorAdjust: 'exact',
       }}
     >
-      {show ? '•' : ''}
+      {show ? '✓' : ''}
     </span>
   );
+}
+
+/**
+ * Hook to manage PDF preview URL state
+ */
+function usePdfPreviewUrl() {
+  const [url, setUrl] = useState(null);
+  const [isOpen, setIsOpen] = useState(false);
+
+  const openPreview = useCallback((base64) => {
+    const blobUrl = base64ToBlobUrl(base64);
+    setUrl(blobUrl);
+    setIsOpen(true);
+  }, []);
+
+  const closePreview = useCallback(() => {
+    setIsOpen(false);
+    // Clean up blob URL
+    if (url) {
+      URL.revokeObjectURL(url);
+      setUrl(null);
+    }
+  }, [url]);
+
+  return { url, isOpen, openPreview, closePreview };
+}
+
+/**
+ * Hook to inject print styles into document
+ */
+function usePrintStyles() {
+  useEffect(() => {
+    const styleId = PRINT_STYLES_ID;
+    let styleEl = document.getElementById(styleId);
+    
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = styleId;
+      styleEl.type = 'text/css';
+      styleEl.textContent = `
+        @media print {
+          .print-hide { display: none !important; }
+          .field-position-print-wrapper { width: 100% !important; }
+          .field-position-print-area { box-shadow: none !important; }
+        }
+      `;
+      document.head.appendChild(styleEl);
+    }
+
+    return () => {
+      if (styleEl && styleEl.parentNode) {
+        styleEl.parentNode.removeChild(styleEl);
+      }
+    };
+  }, []);
+}
+
+/**
+ * Generate table with checkmarks using jsPDF
+ */
+function generateTableWithCheckmarks(doc, data, columns, options = {}, checkmarkColumns = {}) {
+  const { startY = 0, margin = {} } = options;
+  const { top = 0, right = 0, bottom = 0, left = 0 } = margin;
+  
+  // Set up table styling
+  doc.setFontSize(10);
+  doc.setTextColor(0, 0, 0);
+  
+  // Calculate column widths
+  const pageWidth = doc.internal.pageSize.width;
+  const usableWidth = pageWidth - left - right;
+  const colCount = columns.length;
+  const colWidth = usableWidth / colCount;
+  
+  // Draw table headers
+  let currentY = startY;
+  doc.setFont(undefined, 'bold');
+  columns.forEach((col, index) => {
+    const x = left + (index * colWidth);
+    doc.text(col.header, x + 2, currentY + 4);
+    // Draw header bottom border
+    doc.setLineWidth(0.5);
+    doc.line(x, currentY + 6, x + colWidth, currentY + 6);
+  });
+  doc.setFont(undefined, 'normal');
+  currentY += 8;
+  
+  // Draw table rows
+  data.forEach((row, rowIndex) => {
+    const rowY = currentY;
+    
+    columns.forEach((col, colIndex) => {
+      const x = left + (colIndex * colWidth);
+      const value = row[col.key];
+      
+      // Handle checkmark columns
+      if (checkmarkColumns[col.key] && typeof value === 'boolean') {
+        const checkmarkConfig = checkmarkColumns[col.key];
+        const checkmarkText = value ? '✓' : '✗';
+        const checkmarkColor = value ? [0, 128, 0] : [255, 0, 0]; // Green for true, red for false
+        
+        doc.setTextColor(...checkmarkColor);
+        doc.text(checkmarkText, x + colWidth / 2, currentY + 4, { align: 'center' });
+      } else {
+        // Regular text column
+        doc.setTextColor(0, 0, 0);
+        const text = String(value || '');
+        doc.text(text, x + 2, currentY + 4);
+      }
+      
+      // Draw cell borders
+      doc.setLineWidth(0.3);
+      doc.rect(x, currentY, colWidth, 8);
+    });
+    
+    currentY += 8;
+  });
+  
+  // Draw table bottom border
+  doc.setLineWidth(0.5);
+  doc.line(left, currentY, left + usableWidth, currentY);
 }
 
 function PositionedValue({ fieldKey, value, fontLenSource }) {
@@ -901,6 +1082,24 @@ export function FieldPosition() {
       }
     } catch (err) {
       toast.error(err?.message || 'Failed to save PDF.');
+    }
+  }, [child, cert]);
+
+  /**
+   * Generate a combined PDF with field positioning AND requirements checklist with checkmarks
+   */
+  const handleSaveCombinedPdf = useCallback(async () => {
+    if (!window.electron?.saveFieldPositionPdf) return;
+    try {
+      const merged = buildMergedCertData(child, cert);
+      const base64 = buildCombinedPdfBase64(merged);
+      const suggestedFilename = `combined-${buildPdfFilename(child, cert)}`;
+      const result = await window.electron.saveFieldPositionPdf(base64, suggestedFilename);
+      if (result?.ok) {
+        toast.success('Combined PDF with checklist saved.');
+      }
+    } catch (err) {
+      toast.error(err?.message || 'Failed to save combined PDF.');
     }
   }, [child, cert]);
 
@@ -1048,10 +1247,11 @@ export function FieldPosition() {
           <PositionedValue fieldKey="marriage_place_country" value={getVal('marriagePlaceCountry')} />
 
           {/* Attendant Type Radio Buttons - matching CertificateOfLiveBirth style */}
-          <RadioMark x={234} y={2227} show={attendantType === 'physician'} />
-          <RadioMark x={555} y={2277} show={attendantType === 'nurse'} />
-          <RadioMark x={1758} y={2277} show={attendantType === 'hilot'} />
-          <RadioMark x={1758} y={2277} show={attendantType === 'other'} />
+          <RadioMark x={282} y={2227} show={attendantType === 'physician'} />
+          <RadioMark x={600} y={2277} show={attendantType === 'nurse'} />
+          <RadioMark x={875} y={2277} show={attendantType === 'midwife'} />
+          <RadioMark x={1179} y={2277} show={attendantType === 'hilot'} />
+          <RadioMark x={1794} y={2277} show={attendantType === 'other'} />
           
           {/* Attendant Type Specify (only show for "other") */}
           <PositionedValue fieldKey="attendant_type_specify" value={attendantType === 'other' ? (getVal('attendantTypeSpecify') ?? getVal('attendantOthersSpecify') ?? '') : ''} />
@@ -1097,6 +1297,9 @@ export function FieldPosition() {
           <PositionedValue fieldKey="registered_by" value={getSignatureOrName(getVal('registeredBySignature'), getVal('registeredByName'))} />
           <PositionedValue fieldKey="registered_by_title" value={getVal('registeredByTitle')} />
           <PositionedValue fieldKey="registered_by_date" value={getVal('registeredByDate')} />
+
+          {/* Remarks */}
+          <PositionedValue fieldKey="remarks" value={getVal('remarks')} />
         </div>
       </div>
     </>
