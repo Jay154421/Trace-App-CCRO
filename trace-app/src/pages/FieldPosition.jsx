@@ -33,6 +33,16 @@ const PDF_LAYOUT = {
   defaultWrapMaxHeight: 120,
 };
 
+/** Tunable size for attendant-type radio check marks in PDF output (unit: inches). */
+const ATTENDANT_RADIO_CHECK_MARK = {
+  widthIn: 12 / 96,
+  heightIn: 12 / 96,
+  lineWidthIn: 0.024,
+};
+
+/** Extent factors for the two-segment check shape (matches line endpoint offsets). */
+const RADIO_CHECK_SHAPE_EXTENT = { horizontal: 0.95, vertical: 0.7 };
+
 // Field position coordinates (layout pixels)
 const FIELD_POSITIONS = {
   province: { x: 600, y: 447 },
@@ -537,15 +547,17 @@ function base64ToBlobUrl(base64) {
   return URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
 }
 
-/**
- * Draw radio button mark (Bold Check Mark ✔) at specified position
- * Uses Unicode U+2714 (✔) character
- */
+
 function drawRadioMark(doc, x, y) {
-  // Draw Bold Check Mark ✔ (Unicode U+2714)
-  doc.setTextColor(0, 0, 0);
-  doc.setFontSize(14);
-  doc.text('✔', x, y, { align: 'center', baseline: 'middle' });
+  const { widthIn, heightIn, lineWidthIn } = ATTENDANT_RADIO_CHECK_MARK;
+  const wX = widthIn / RADIO_CHECK_SHAPE_EXTENT.horizontal;
+  const wY = heightIn / RADIO_CHECK_SHAPE_EXTENT.vertical;
+  doc.setDrawColor(0, 0, 0);
+  doc.setLineWidth(lineWidthIn);
+  doc.setLineCap('round');
+  doc.setLineJoin('round');
+  doc.line(x - wX * 0.4, y + wY * 0.32, x - wX * 0.02, y + wY * 0.42);
+  doc.line(x - wX * 0.02, y + wY * 0.42, x + wX * 0.55, y - wY * 0.28);
 }
 
 /**
