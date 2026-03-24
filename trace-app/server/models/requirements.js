@@ -1,5 +1,3 @@
-const { getAgeGroup } = require('./child');
-
 const GENERAL_DOCS = [
   { id: 'national_id', label: 'National I.D' },
   { id: 'psa_negative', label: 'PSA Negative' },
@@ -62,8 +60,21 @@ const CONDITIONAL_DOCS = {
   foreign_parent_id: { id: 'foreign_parent_id', label: 'Passport or Bureau of Immigration cert. (foreign parent)' },
 };
 
+const PHOTO_ID_SCANNER_CAPTURE_SIZE = { width: 600, height: 600, label: '2 x 2 in' };
+
+function withScannerCaptureSize(document) {
+  if (document.id !== 'photo_2x2') {
+    return { ...document };
+  }
+
+  return {
+    ...document,
+    scannerCaptureSize: { ...PHOTO_ID_SCANNER_CAPTURE_SIZE },
+  };
+}
+
 function getRequirementsForAgeGroup(ageGroup) {
-  const allGeneral = GENERAL_DOCS.map(d => ({ ...d, category: 'general' }));
+  const allGeneral = GENERAL_DOCS.map(d => ({ ...withScannerCaptureSize(d), category: 'general' }));
   let ageSpecific = [];
   switch (ageGroup) {
     case '1m1d_to_6': ageSpecific = AGE_1M_TO_6; break;
@@ -74,8 +85,8 @@ function getRequirementsForAgeGroup(ageGroup) {
   }
   return {
     general: allGeneral,
-    ageSpecific: ageSpecific.map(d => ({ ...d, category: 'age_specific' })),
-    all: [...allGeneral, ...ageSpecific.map(d => ({ ...d, category: 'age_specific' }))],
+    ageSpecific: ageSpecific.map(d => ({ ...withScannerCaptureSize(d), category: 'age_specific' })),
+    all: [...allGeneral, ...ageSpecific.map(d => ({ ...withScannerCaptureSize(d), category: 'age_specific' }))],
   };
 }
 
@@ -83,14 +94,14 @@ function getRequirementsForChild(child) {
   const base = getRequirementsForAgeGroup(child.age_group || '1m1d_to_6');
   const conditional = [];
   if (child.registrant_deceased) {
-    conditional.push({ ...CONDITIONAL_DOCS.death_cert_registrant, category: 'conditional' });
+    conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.death_cert_registrant), category: 'conditional' });
   }
   const age = typeof child.age === 'number' ? child.age : (child.date_of_birth ? require('./child').calculateAge(child.date_of_birth) : 0);
   if (child.hilot_deceased && age <= 5) {
-    conditional.push({ ...CONDITIONAL_DOCS.death_cert_hilot, category: 'conditional' });
+    conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.death_cert_hilot), category: 'conditional' });
   }
   if (child.parent_foreigner) {
-    conditional.push({ ...CONDITIONAL_DOCS.foreign_parent_id, category: 'conditional' });
+    conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.foreign_parent_id), category: 'conditional' });
   }
   const all = [...base.all, ...conditional];
   return {

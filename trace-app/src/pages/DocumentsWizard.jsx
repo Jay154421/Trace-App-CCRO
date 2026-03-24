@@ -1,10 +1,37 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useLayoutEffect, useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import { childrenApi } from '../services/api';
 import { apiUrl } from '../config/api';
 
-const PHOTO_ID_LABEL = '2x2 Photo I.D. with white background (studio copy: 1, out-of-town: 2)';
+const PHOTO_ID_REQUIREMENT_ID = 'photo_2x2';
+const FALLBACK_CAPTURE_SIZE = { width: 600, height: 600, label: '2 x 2 in' };
+const FALLBACK_DOCUMENT_SCAN_SIZE = { width: 1240, height: 1754, label: 'Document scan' };
+
+/** How long the red loading toast stays visible before auto-dismiss. */
+const REMOVE_ATTACHMENT_LOADING_MS = 5000;
+
+/** Custom red loading toast with animated spinner (auto-dismisses). */
+function showRemoveAttachmentLoadingToast() {
+  return toast.custom(
+    (t) => (
+      <div
+        className={`flex max-w-md items-center gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-900 shadow-lg transition-opacity duration-300 ease-out ${
+          t.visible ? 'opacity-100' : 'opacity-0'
+        }`}
+        role="status"
+        aria-live="polite"
+      >
+        <span
+          className="inline-block h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-red-600 border-t-transparent"
+          aria-hidden
+        />
+        <span>Removing attachment…</span>
+      </div>
+    ),
+    { duration: REMOVE_ATTACHMENT_LOADING_MS }
+  );
+}
 
 function parseAttachments(attachment) {
   if (!attachment) return [];
@@ -39,6 +66,18 @@ function buildPhotoFilename(child) {
   const day = String(now.getDate()).padStart(2, '0');
   const year = now.getFullYear();
   return `${ownerName}_${month}-${day}-${year}.jpg`;
+}
+
+function buildRequirementPhotoFilename(child, requirement) {
+  if (requirement?.id === PHOTO_ID_REQUIREMENT_ID) {
+    return buildPhotoFilename(child);
+  }
+  const owner = buildOwnerDisplayName(child)
+    .trim()
+    .replace(/\s+/g, '_')
+    .replace(/[^a-zA-Z0-9_-]/g, '') || 'owner';
+  const requirementId = toSafeFilenamePart(requirement?.id) || 'requirement';
+  return `${requirementId}_${owner}_${Date.now()}.jpg`;
 }
 
 function buildOwnerDisplayName(child) {
@@ -87,8 +126,157 @@ function buildChecklist(requirements, existing = []) {
       notes: existingItem?.notes ?? '',
       attachmentFilenames: attachmentList,
       attachmentFiles: [],
+      scannerCaptureSize: r.scannerCaptureSize || null,
     };
   });
+}
+
+function getNormalizedCaptureSize(item) {
+  const width = Number(item?.scannerCaptureSize?.width);
+  const height = Number(item?.scannerCaptureSize?.height);
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+    return item?.id === PHOTO_ID_REQUIREMENT_ID ? FALLBACK_CAPTURE_SIZE : FALLBACK_DOCUMENT_SCAN_SIZE;
+  }
+  return {
+    width: Math.round(width),
+    height: Math.round(height),
+    label: item?.scannerCaptureSize?.label || `${Math.round(width)} x ${Math.round(height)} px`,
+  };
+}
+
+const MIN_CROP_NATURAL = 48;
+
+function computeMaxCenteredCrop(iw, ih, targetAspect) {
+  const srcAspect = iw / ih;
+  let sw;
+  let sh;
+  if (srcAspect > targetAspect) {
+    sh = ih;
+    sw = sh * targetAspect;
+  } else {
+    sw = iw;
+    sh = sw / targetAspect;
+  }
+  const sx = (iw - sw) / 2;
+  const sy = (ih - sh) / 2;
+  return { sx, sy, sw, sh };
+}
+
+function naturalRectToCropOverlayPx(rect, natural, layout) {
+  const { sx, sy, sw, sh } = rect;
+  const { w: iw, h: ih } = natural;
+  return {
+    left: layout.left + (sx / iw) * layout.width,
+    top: layout.top + (sy / ih) * layout.height,
+    width: (sw / iw) * layout.width,
+    height: (sh / ih) * layout.height,
+  };
+}
+
+function clampCropRect({ sx, sy, sw, sh }, iw, ih, targetAspect) {
+  let w = Math.max(MIN_CROP_NATURAL, sw);
+  let h = w / targetAspect;
+  if (h > ih) {
+    h = ih;
+    w = h * targetAspect;
+  }
+  if (w > iw) {
+    w = iw;
+    h = w / targetAspect;
+  }
+  let x = Math.min(Math.max(0, sx), iw - w);
+  let y = Math.min(Math.max(0, sy), ih - h);
+  if (x + w > iw) x = iw - w;
+  if (y + h > ih) y = ih - h;
+  return { sx: x, sy: y, sw: w, sh: h };
+}
+
+/**
+ * Fixed-aspect resize from pointer (natural image coords). mode: nw | ne | sw | se | n | s | e | w
+ */
+function cropRectFromResize(mode, mx, my, rect, iw, ih, k) {
+  const mxC = Math.min(Math.max(0, mx), iw);
+  const myC = Math.min(Math.max(0, my), ih);
+  const { sx, sy, sw, sh } = rect;
+  const brx = sx + sw;
+  const bry = sy + sh;
+  let next = { ...rect };
+
+  switch (mode) {
+    case 'move':
+      return rect;
+    case 'se': {
+      let nw = mxC - sx;
+      let nh = nw / k;
+      next = { sx, sy, sw: nw, sh: nh };
+      break;
+    }
+    case 'nw': {
+      let nw = brx - mxC;
+      let nh = nw / k;
+      next = { sx: mxC, sy: bry - nh, sw: nw, sh: nh };
+      break;
+    }
+    case 'ne': {
+      let nw = mxC - sx;
+      let nh = nw / k;
+      next = { sx, sy: bry - nh, sw: nw, sh: nh };
+      break;
+    }
+    case 'sw': {
+      let nw = brx - mxC;
+      let nh = nw / k;
+      next = { sx: mxC, sy, sw: nw, sh: nh };
+      break;
+    }
+    case 'n': {
+      let nh = bry - myC;
+      let nw = nh * k;
+      next = {
+        sx: sx + (sw - nw) / 2,
+        sy: myC,
+        sw: nw,
+        sh: nh,
+      };
+      break;
+    }
+    case 's': {
+      let nh = myC - sy;
+      let nw = nh * k;
+      next = {
+        sx: sx + (sw - nw) / 2,
+        sy,
+        sw: nw,
+        sh: nh,
+      };
+      break;
+    }
+    case 'e': {
+      let nw = mxC - sx;
+      let nh = nw / k;
+      next = {
+        sx,
+        sy: sy + (sh - nh) / 2,
+        sw: nw,
+        sh: nh,
+      };
+      break;
+    }
+    case 'w': {
+      let nw = brx - mxC;
+      let nh = nw / k;
+      next = {
+        sx: mxC,
+        sy: sy + (sh - nh) / 2,
+        sw: nw,
+        sh: nh,
+      };
+      break;
+    }
+    default:
+      return rect;
+  }
+  return clampCropRect(next, iw, ih, k);
 }
 
 export function DocumentsWizard() {
@@ -101,18 +289,28 @@ export function DocumentsWizard() {
   const [error, setError] = useState(null);
   const [step, setStep] = useState(0);
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
+  /** Pending confirmation before removing an attachment (pending upload or saved file). */
+  const [removeAttachmentModal, setRemoveAttachmentModal] = useState(null);
   const [initialChecklist, setInitialChecklist] = useState(null);
   const [cameraOpen, setCameraOpen] = useState(false);
   const [cameraBusy, setCameraBusy] = useState(false);
   const [cameraError, setCameraError] = useState('');
   const [cameraTargetIndex, setCameraTargetIndex] = useState(null);
+  const [rawCapturedFile, setRawCapturedFile] = useState(null);
+  const [rawCapturedUrl, setRawCapturedUrl] = useState('');
   const [capturedPhotoFile, setCapturedPhotoFile] = useState(null);
   const [capturedPhotoUrl, setCapturedPhotoUrl] = useState('');
+  const [cropRectNatural, setCropRectNatural] = useState(null);
+  const [naturalImageSize, setNaturalImageSize] = useState(null);
+  const [cropImageLayout, setCropImageLayout] = useState(null);
   const [photoPreviewOpen, setPhotoPreviewOpen] = useState(false);
   const [photoPreviewSrc, setPhotoPreviewSrc] = useState('');
   const [photoPreviewLocalUrl, setPhotoPreviewLocalUrl] = useState('');
   const videoRef = useRef(null);
   const streamRef = useRef(null);
+  const cropStageRef = useRef(null);
+  const cropImageRef = useRef(null);
+  const cropDragRef = useRef(null);
 
   useEffect(() => {
     childrenApi
@@ -182,6 +380,36 @@ export function DocumentsWizard() {
     });
   };
 
+  const removeSavedAttachmentFilename = (index, filename) => {
+    setChecklist((prev) => {
+      const next = [...prev];
+      const currentItem = next[index];
+      const names = (currentItem.attachmentFilenames || []).filter((f) => f !== filename);
+      const hasAnyAttachment =
+        (currentItem.attachmentFiles?.length ?? 0) > 0 || names.length > 0;
+      next[index] = {
+        ...currentItem,
+        attachmentFilenames: names,
+        checked: hasAnyAttachment ? 1 : 0,
+      };
+      return next;
+    });
+  };
+
+  const confirmRemoveAttachment = () => {
+    const m = removeAttachmentModal;
+    if (!m) return;
+    // Ensure old success/error toasts are not lingering on repeated deletes.
+    toast.dismiss();
+    showRemoveAttachmentLoadingToast();
+    setRemoveAttachmentModal(null);
+    if (m.kind === 'pending' && m.fileIndex !== undefined) {
+      removeAttachmentFile(m.index, m.fileIndex);
+    } else if (m.kind === 'saved' && m.filename) {
+      removeSavedAttachmentFilename(m.index, m.filename);
+    }
+  };
+
   const save = async () => {
     if (!id) {
       toast.error('Missing applicant ID.');
@@ -244,6 +472,11 @@ export function DocumentsWizard() {
   const startCamera = async () => {
     setCameraBusy(true);
     setCameraError('');
+    if (rawCapturedUrl) {
+      URL.revokeObjectURL(rawCapturedUrl);
+      setRawCapturedUrl('');
+      setRawCapturedFile(null);
+    }
     if (capturedPhotoUrl) {
       URL.revokeObjectURL(capturedPhotoUrl);
       setCapturedPhotoUrl('');
@@ -275,6 +508,9 @@ export function DocumentsWizard() {
 
   const closeCamera = () => {
     stopCamera();
+    if (rawCapturedUrl) {
+      URL.revokeObjectURL(rawCapturedUrl);
+    }
     if (capturedPhotoUrl) {
       URL.revokeObjectURL(capturedPhotoUrl);
     }
@@ -282,8 +518,13 @@ export function DocumentsWizard() {
     setCameraBusy(false);
     setCameraError('');
     setCameraTargetIndex(null);
+    setRawCapturedFile(null);
+    setRawCapturedUrl('');
     setCapturedPhotoFile(null);
     setCapturedPhotoUrl('');
+    setCropRectNatural(null);
+    setNaturalImageSize(null);
+    setCropImageLayout(null);
   };
 
   const capturePhoto = async () => {
@@ -295,29 +536,76 @@ export function DocumentsWizard() {
       setCameraError('Camera not ready. Please retry.');
       return;
     }
-    const side = Math.min(width, height);
-    const sx = Math.floor((width - side) / 2);
-    const sy = Math.floor((height - side) / 2);
-    const outputSize = 600;
     const canvas = document.createElement('canvas');
-    canvas.width = outputSize;
-    canvas.height = outputSize;
+    canvas.width = width;
+    canvas.height = height;
     const ctx = canvas.getContext('2d');
     if (!ctx) {
       setCameraError('Unable to process captured image.');
       return;
     }
-    ctx.drawImage(video, sx, sy, side, side, 0, 0, outputSize, outputSize);
+    ctx.drawImage(video, 0, 0, width, height);
     const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92));
     if (!blob) {
       setCameraError('Failed to capture image.');
       return;
     }
-    const file = new File([blob], buildPhotoFilename(child), { type: 'image/jpeg' });
+    const file = new File([blob], `raw_capture_${Date.now()}.jpg`, { type: 'image/jpeg' });
+    if (rawCapturedUrl) URL.revokeObjectURL(rawCapturedUrl);
+    if (capturedPhotoUrl) URL.revokeObjectURL(capturedPhotoUrl);
+    setRawCapturedFile(file);
+    setRawCapturedUrl(URL.createObjectURL(file));
+    setCapturedPhotoFile(null);
+    setCapturedPhotoUrl('');
+    setCropRectNatural(null);
+    setNaturalImageSize(null);
+    setCropImageLayout(null);
+    setCameraError('');
+    stopCamera();
+  };
+
+  const saveCroppedPhoto = async () => {
+    if (!rawCapturedFile || cameraTargetIndex === null || !cropRectNatural || !naturalImageSize) return;
+    const targetItem = checklist[cameraTargetIndex];
+    const captureSize = getNormalizedCaptureSize(targetItem);
+
+    const image = await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('Failed to load captured image.'));
+      img.src = rawCapturedUrl;
+    });
+
+    const imageWidth = image.naturalWidth || image.width;
+    const imageHeight = image.naturalHeight || image.height;
+    const targetAspect = captureSize.width / captureSize.height;
+    const r = clampCropRect(cropRectNatural, imageWidth, imageHeight, targetAspect);
+    const sx = Math.floor(r.sx);
+    const sy = Math.floor(r.sy);
+    const cropWidth = Math.max(1, Math.floor(r.sw));
+    const cropHeight = Math.max(1, Math.floor(r.sh));
+
+    const canvas = document.createElement('canvas');
+    canvas.width = captureSize.width;
+    canvas.height = captureSize.height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      setCameraError('Unable to process cropped image.');
+      return;
+    }
+
+    ctx.drawImage(image, sx, sy, cropWidth, cropHeight, 0, 0, captureSize.width, captureSize.height);
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92));
+    if (!blob) {
+      setCameraError('Failed to save cropped image.');
+      return;
+    }
+
+    const file = new File([blob], buildRequirementPhotoFilename(child, targetItem), { type: 'image/jpeg' });
     if (capturedPhotoUrl) URL.revokeObjectURL(capturedPhotoUrl);
     setCapturedPhotoFile(file);
     setCapturedPhotoUrl(URL.createObjectURL(file));
-    stopCamera();
+    setCameraError('');
   };
 
   const attachCapturedPhoto = () => {
@@ -329,6 +617,168 @@ export function DocumentsWizard() {
 
   const retakePhoto = async () => {
     await startCamera();
+  };
+
+  const cameraTargetAspect = useMemo(() => {
+    if (cameraTargetIndex === null || !checklist[cameraTargetIndex]) return 1;
+    const s = getNormalizedCaptureSize(checklist[cameraTargetIndex]);
+    return s.width / s.height;
+  }, [cameraTargetIndex, checklist]);
+
+  const updateCropLayout = useCallback(() => {
+    const stage = cropStageRef.current;
+    const img = cropImageRef.current;
+    if (!stage || !img || !naturalImageSize) return;
+    const sr = stage.getBoundingClientRect();
+    const ir = img.getBoundingClientRect();
+    setCropImageLayout({
+      left: ir.left - sr.left,
+      top: ir.top - sr.top,
+      width: ir.width,
+      height: ir.height,
+    });
+  }, [naturalImageSize]);
+
+  useEffect(() => {
+    if (!rawCapturedUrl || cameraTargetIndex === null) {
+      setNaturalImageSize(null);
+      setCropRectNatural(null);
+      return;
+    }
+    const targetItem = checklist[cameraTargetIndex];
+    const captureSize = getNormalizedCaptureSize(targetItem);
+    const targetAspect = captureSize.width / captureSize.height;
+    const img = new Image();
+    img.onload = () => {
+      const iw = img.naturalWidth;
+      const ih = img.naturalHeight;
+      setNaturalImageSize({ w: iw, h: ih });
+      setCropRectNatural(computeMaxCenteredCrop(iw, ih, targetAspect));
+    };
+    img.src = rawCapturedUrl;
+    return () => {
+      img.onload = null;
+    };
+  }, [rawCapturedUrl, cameraTargetIndex, checklist]);
+
+  useLayoutEffect(() => {
+    updateCropLayout();
+  }, [rawCapturedUrl, naturalImageSize, cropRectNatural, updateCropLayout]);
+
+  useEffect(() => {
+    const stage = cropStageRef.current;
+    if (!stage) return;
+    const ro = new ResizeObserver(() => updateCropLayout());
+    ro.observe(stage);
+    return () => ro.disconnect();
+  }, [updateCropLayout]);
+
+  const clientToNatural = useCallback(
+    (clientX, clientY) => {
+      const stage = cropStageRef.current;
+      if (!stage || !naturalImageSize || !cropImageLayout) return { nx: 0, ny: 0 };
+      const { width: lw, height: lh } = cropImageLayout;
+      if (lw <= 0 || lh <= 0) return { nx: 0, ny: 0 };
+      const sr = stage.getBoundingClientRect();
+      const relX = Math.min(Math.max(0, clientX - sr.left - cropImageLayout.left), lw);
+      const relY = Math.min(Math.max(0, clientY - sr.top - cropImageLayout.top), lh);
+      const { w: iw, h: ih } = naturalImageSize;
+      return {
+        nx: (relX / lw) * iw,
+        ny: (relY / lh) * ih,
+      };
+    },
+    [naturalImageSize, cropImageLayout]
+  );
+
+  const endCropDrag = useCallback(() => {
+    const d = cropDragRef.current;
+    if (d?.captureEl && d.pointerId != null) {
+      try {
+        d.captureEl.releasePointerCapture(d.pointerId);
+      } catch {
+        /* ignore */
+      }
+    }
+    cropDragRef.current = null;
+  }, []);
+
+  const onCropPointerMove = useCallback(
+    (e) => {
+      const d = cropDragRef.current;
+      if (!d || !naturalImageSize || !cropImageLayout) return;
+      const { w: iw, h: ih } = naturalImageSize;
+      const k = cameraTargetAspect;
+      const { nx, ny } = clientToNatural(e.clientX, e.clientY);
+
+      if (d.mode === 'move') {
+        const dx = (e.clientX - d.startClientX) * (iw / cropImageLayout.width);
+        const dy = (e.clientY - d.startClientY) * (ih / cropImageLayout.height);
+        setCropRectNatural(
+          clampCropRect(
+            {
+              sx: d.startRect.sx + dx,
+              sy: d.startRect.sy + dy,
+              sw: d.startRect.sw,
+              sh: d.startRect.sh,
+            },
+            iw,
+            ih,
+            k
+          )
+        );
+        return;
+      }
+
+      setCropRectNatural(cropRectFromResize(d.mode, nx, ny, d.startRect, iw, ih, k));
+    },
+    [naturalImageSize, cropImageLayout, clientToNatural, cameraTargetAspect]
+  );
+
+  const onCropPointerUp = useCallback(
+    (e) => {
+      if (cropDragRef.current?.pointerId === e.pointerId) {
+        endCropDrag();
+      }
+    },
+    [endCropDrag]
+  );
+
+  useEffect(() => {
+    const onMove = (e) => onCropPointerMove(e);
+    const onUp = (e) => onCropPointerUp(e);
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+    };
+  }, [onCropPointerMove, onCropPointerUp]);
+
+  const cropOverlayPx = useMemo(() => {
+    if (!cropRectNatural || !naturalImageSize || !cropImageLayout) return null;
+    return naturalRectToCropOverlayPx(cropRectNatural, naturalImageSize, cropImageLayout);
+  }, [cropRectNatural, naturalImageSize, cropImageLayout]);
+
+  const startCropDrag = (mode, e) => {
+    if (!cropRectNatural || e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    cropDragRef.current = {
+      mode,
+      pointerId: e.pointerId,
+      startClientX: e.clientX,
+      startClientY: e.clientY,
+      startRect: { ...cropRectNatural },
+      captureEl: e.currentTarget,
+    };
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
   };
 
   const isImageFilename = (filename = '') => /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(filename);
@@ -382,9 +832,10 @@ export function DocumentsWizard() {
 
   useEffect(() => () => {
     stopCamera();
+    if (rawCapturedUrl) URL.revokeObjectURL(rawCapturedUrl);
     if (capturedPhotoUrl) URL.revokeObjectURL(capturedPhotoUrl);
     if (photoPreviewLocalUrl) URL.revokeObjectURL(photoPreviewLocalUrl);
-  }, [capturedPhotoUrl, photoPreviewLocalUrl]);
+  }, [rawCapturedUrl, capturedPhotoUrl, photoPreviewLocalUrl]);
 
   function fileToBase64(file) {
     return new Promise((resolve, reject) => {
@@ -413,6 +864,10 @@ export function DocumentsWizard() {
   const progress = checklist.length
     ? checklist.filter((c) => c.checked).length / checklist.length
     : 0;
+  const cameraTargetItem = cameraTargetIndex !== null ? checklist[cameraTargetIndex] : null;
+  const activeCaptureSize = getNormalizedCaptureSize(cameraTargetItem);
+  const activeCaptureAspect = `${activeCaptureSize.width} / ${activeCaptureSize.height}`;
+  const isPhotoCameraTarget = cameraTargetItem?.id === PHOTO_ID_REQUIREMENT_ID;
 
   return (
     <div>
@@ -461,7 +916,7 @@ export function DocumentsWizard() {
         <ul className="divide-y divide-slate-200">
           {(currentStep?.items || []).map((item) => {
             const globalIndex = checklist.findIndex((c) => c.label === item.label && c.category === item.category);
-            const allowCameraCapture = item.label === PHOTO_ID_LABEL;
+            const allowCameraCapture = item.id === PHOTO_ID_REQUIREMENT_ID;
             return (
               <li key={`${item.category}-${item.id}`} className="px-5 py-4">
                 <div className="flex gap-3">
@@ -502,7 +957,7 @@ export function DocumentsWizard() {
                         />
                         Attach file(s)
                       </label>
-                      {allowCameraCapture && (
+                      {allowCameraCapture ? (
                         <button
                           type="button"
                           onClick={() => openCameraForItem(globalIndex)}
@@ -510,36 +965,77 @@ export function DocumentsWizard() {
                         >
                           Take Picture
                         </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => openCameraForItem(globalIndex)}
+                          className="inline-flex items-center gap-1 rounded border border-sky-300 bg-sky-50 px-2 py-1.5 text-sm text-sky-700 hover:bg-sky-100"
+                        >
+                          Scan Document
+                        </button>
                       )}
                       {(item.attachmentFiles || []).map((file, fi) => (
-                        <span key={fi} className="inline-flex items-center gap-1 rounded bg-slate-100 px-2 py-1 text-sm">
+                        <span
+                          key={`${file.name}-${fi}`}
+                          className="inline-flex items-center gap-2 rounded border border-slate-200 bg-slate-50 px-2 py-1 text-sm"
+                        >
                           <button
                             type="button"
                             onClick={() => openLocalAttachment(file)}
-                            className="text-blue-700 hover:underline"
+                            className="max-w-[12rem] truncate text-left text-blue-700 hover:underline"
                             aria-label={`Open ${file.name}`}
                           >
                             {file.name}
                           </button>
                           <button
                             type="button"
-                            onClick={() => removeAttachmentFile(globalIndex, fi)}
-                            className="text-slate-500 hover:text-red-600"
+                            onClick={() =>
+                              setRemoveAttachmentModal({
+                                kind: 'pending',
+                                index: globalIndex,
+                                fileIndex: fi,
+                                displayName: file.name,
+                              })
+                            }
+                            className="shrink-0 rounded border border-red-200 bg-white px-2 py-0.5 text-xs font-medium text-red-700 hover:bg-red-50"
                             aria-label={`Remove ${file.name}`}
                           >
-                            ×
+                            Remove
                           </button>
                         </span>
                       ))}
                       {(item.attachmentFilenames || []).map((filename, fi) => (
-                        <button
-                          type="button"
-                          key={fi}
-                          onClick={() => openSavedAttachment(filename)}
-                          className="text-sm text-emerald-600 hover:underline"
+                        <span
+                          key={`${filename}-${fi}`}
+                          className="inline-flex items-center gap-2 rounded border border-slate-200 bg-slate-50 px-2 py-1 text-sm"
                         >
-                          View {item.label === PHOTO_ID_LABEL ? buildPhotoOutputLabel(child, filename) : filename}
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() => openSavedAttachment(filename)}
+                            className="max-w-[12rem] truncate text-left text-emerald-700 hover:underline"
+                          >
+                            View{' '}
+                            {item.id === PHOTO_ID_REQUIREMENT_ID ? buildPhotoOutputLabel(child, filename) : filename}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setRemoveAttachmentModal({
+                                kind: 'saved',
+                                index: globalIndex,
+                                filename,
+                                displayName:
+                                  item.id === PHOTO_ID_REQUIREMENT_ID
+                                    ? buildPhotoOutputLabel(child, filename)
+                                    : filename,
+                              })
+                            }
+                            className="shrink-0 rounded border border-red-200 bg-white px-2 py-0.5 text-xs font-medium text-red-700 hover:bg-red-50"
+                            aria-label={`Remove attachment ${filename}`}
+                          >
+                            Remove
+                          </button>
+                        </span>
                       ))}
                     </div>
                   </div>
@@ -567,6 +1063,47 @@ export function DocumentsWizard() {
           Back to applicant
         </button>
       </div>
+
+      {removeAttachmentModal && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50"
+          onClick={() => setRemoveAttachmentModal(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="remove-attachment-modal-title"
+        >
+          <div
+            className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-5 shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 id="remove-attachment-modal-title" className="text-lg font-semibold text-slate-800">
+              Remove attachment?
+            </h2>
+            <p className="mt-2 text-sm text-slate-600">
+              <span className="font-medium text-slate-800">{removeAttachmentModal.displayName}</span>
+              {removeAttachmentModal.kind === 'pending'
+                ? ' will be removed from this requirement. It is not saved until you save the checklist.'
+                : ' will be removed from this requirement. Save the checklist to apply this change permanently.'}
+            </p>
+            <div className="mt-5 flex flex-wrap justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setRemoveAttachmentModal(null)}
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmRemoveAttachment}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {leaveModalOpen && (
         <div
@@ -621,29 +1158,182 @@ export function DocumentsWizard() {
 
       {cameraOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60"
+          className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 ${
+            isPhotoCameraTarget ? 'overflow-y-auto' : 'overflow-hidden'
+          }`}
           onClick={closeCamera}
           role="dialog"
           aria-modal="true"
           aria-labelledby="camera-modal-title"
         >
           <div
-            className="bg-white rounded-xl border border-slate-200 shadow-lg w-full max-w-xl p-5"
+            className={`my-4 w-full rounded-xl border border-slate-200 bg-white p-5 shadow-lg ${
+              isPhotoCameraTarget
+                ? 'max-h-[90vh] max-w-xl overflow-y-auto'
+                : 'flex h-[min(90vh,780px)] max-w-4xl flex-col'
+            }`}
             onClick={(e) => e.stopPropagation()}
           >
             <h2 id="camera-modal-title" className="text-lg font-semibold text-slate-800">
-              Capture 2x2 Photo I.D.
+              Capture {cameraTargetItem?.label || 'Requirement Photo'}
             </h2>
             <p className="mt-1 text-sm text-slate-600">
-              Capture first, preview it, then attach if clear.
+              Scanner capture size: {activeCaptureSize.label} ({activeCaptureSize.width} x {activeCaptureSize.height} px)
             </p>
-            <div className="mt-3 overflow-hidden rounded-lg border border-slate-200 bg-black">
+            <div
+              className={`mt-3 overflow-hidden rounded-lg border border-slate-200 bg-black ${
+                isPhotoCameraTarget ? '' : 'h-[min(62vh,560px)] min-h-[300px]'
+              }`}
+            >
               {capturedPhotoUrl ? (
-                <img src={capturedPhotoUrl} alt="Captured preview" className="w-full aspect-square object-cover" />
+                <img
+                  src={capturedPhotoUrl}
+                  alt="Captured preview"
+                  className={isPhotoCameraTarget ? 'w-full object-cover' : 'h-full w-full object-contain'}
+                  style={isPhotoCameraTarget ? { aspectRatio: activeCaptureAspect } : undefined}
+                />
+              ) : rawCapturedUrl ? (
+                <div
+                  ref={cropStageRef}
+                  className={`relative flex w-full items-center justify-center bg-neutral-900 ${
+                    isPhotoCameraTarget ? 'min-h-[280px] max-h-[min(60vh,520px)]' : 'h-full'
+                  }`}
+                >
+                  <img
+                    ref={cropImageRef}
+                    src={rawCapturedUrl}
+                    alt="Crop source"
+                    draggable={false}
+                    className={`w-full select-none object-contain pointer-events-none ${
+                      isPhotoCameraTarget ? 'max-h-[min(60vh,520px)]' : 'h-full'
+                    }`}
+                    onLoad={updateCropLayout}
+                  />
+                  {cropOverlayPx && (
+                    <div className="absolute inset-0 z-10 pointer-events-none">
+                      <div
+                        role="presentation"
+                        className="absolute z-20 touch-none border-2 border-white shadow-[0_0_0_9999px_rgba(0,0,0,0.55)] pointer-events-auto cursor-move"
+                        style={{
+                          left: cropOverlayPx.left,
+                          top: cropOverlayPx.top,
+                          width: cropOverlayPx.width,
+                          height: cropOverlayPx.height,
+                        }}
+                        onPointerDown={(e) => startCropDrag('move', e)}
+                      >
+                        <svg
+                          className="pointer-events-none absolute inset-0 h-full w-full"
+                          aria-hidden
+                        >
+                          <line x1="33.33%" y1="0" x2="33.33%" y2="100%" stroke="rgba(255,255,255,0.85)" strokeWidth="1" />
+                          <line x1="66.67%" y1="0" x2="66.67%" y2="100%" stroke="rgba(255,255,255,0.85)" strokeWidth="1" />
+                          <line x1="0" y1="33.33%" x2="100%" y2="33.33%" stroke="rgba(255,255,255,0.85)" strokeWidth="1" />
+                          <line x1="0" y1="66.67%" x2="100%" y2="66.67%" stroke="rgba(255,255,255,0.85)" strokeWidth="1" />
+                        </svg>
+                        <div
+                          className="pointer-events-none absolute left-1/2 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2"
+                          aria-hidden
+                        >
+                          <div className="absolute left-1/2 top-0 h-2 w-px -translate-x-1/2 bg-white/90" />
+                          <div className="absolute left-0 top-1/2 h-px w-2 -translate-y-1/2 bg-white/90" />
+                          <div className="absolute bottom-0 left-1/2 h-2 w-px -translate-x-1/2 bg-white/90" />
+                          <div className="absolute right-0 top-1/2 h-px w-2 -translate-y-1/2 bg-white/90" />
+                        </div>
+                        {/* Corner L-handles */}
+                        <button
+                          type="button"
+                          aria-label="Resize crop north-west"
+                          className="absolute -left-1 -top-1 z-30 h-8 w-8 cursor-nwse-resize border-l-[3px] border-t-[3px] border-white bg-transparent p-0 pointer-events-auto"
+                          onPointerDown={(e) => {
+                            e.stopPropagation();
+                            startCropDrag('nw', e);
+                          }}
+                        />
+                        <button
+                          type="button"
+                          aria-label="Resize crop north-east"
+                          className="absolute -right-1 -top-1 z-30 h-8 w-8 cursor-nesw-resize border-r-[3px] border-t-[3px] border-white bg-transparent p-0 pointer-events-auto"
+                          onPointerDown={(e) => {
+                            e.stopPropagation();
+                            startCropDrag('ne', e);
+                          }}
+                        />
+                        <button
+                          type="button"
+                          aria-label="Resize crop south-west"
+                          className="absolute -bottom-1 -left-1 z-30 h-8 w-8 cursor-nesw-resize border-b-[3px] border-l-[3px] border-white bg-transparent p-0 pointer-events-auto"
+                          onPointerDown={(e) => {
+                            e.stopPropagation();
+                            startCropDrag('sw', e);
+                          }}
+                        />
+                        <button
+                          type="button"
+                          aria-label="Resize crop south-east"
+                          className="absolute -bottom-1 -right-1 z-30 h-8 w-8 cursor-nwse-resize border-b-[3px] border-r-[3px] border-white bg-transparent p-0 pointer-events-auto"
+                          onPointerDown={(e) => {
+                            e.stopPropagation();
+                            startCropDrag('se', e);
+                          }}
+                        />
+                        {/* Edge handles */}
+                        <button
+                          type="button"
+                          aria-label="Resize crop top edge"
+                          className="absolute -top-1.5 left-1/2 z-30 h-4 w-10 -translate-x-1/2 cursor-ns-resize border-2 border-white bg-white/20 pointer-events-auto"
+                          onPointerDown={(e) => {
+                            e.stopPropagation();
+                            startCropDrag('n', e);
+                          }}
+                        />
+                        <button
+                          type="button"
+                          aria-label="Resize crop bottom edge"
+                          className="absolute -bottom-1.5 left-1/2 z-30 h-4 w-10 -translate-x-1/2 cursor-ns-resize border-2 border-white bg-white/20 pointer-events-auto"
+                          onPointerDown={(e) => {
+                            e.stopPropagation();
+                            startCropDrag('s', e);
+                          }}
+                        />
+                        <button
+                          type="button"
+                          aria-label="Resize crop left edge"
+                          className="absolute -left-1.5 top-1/2 z-30 h-10 w-4 -translate-y-1/2 cursor-ew-resize border-2 border-white bg-white/20 pointer-events-auto"
+                          onPointerDown={(e) => {
+                            e.stopPropagation();
+                            startCropDrag('w', e);
+                          }}
+                        />
+                        <button
+                          type="button"
+                          aria-label="Resize crop right edge"
+                          className="absolute -right-1.5 top-1/2 z-30 h-10 w-4 -translate-y-1/2 cursor-ew-resize border-2 border-white bg-white/20 pointer-events-auto"
+                          onPointerDown={(e) => {
+                            e.stopPropagation();
+                            startCropDrag('e', e);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
               ) : (
-                <video ref={videoRef} className="w-full aspect-square object-cover" playsInline muted />
+                <video
+                  ref={videoRef}
+                  className={isPhotoCameraTarget ? 'w-full object-cover' : 'h-full w-full object-contain'}
+                  style={isPhotoCameraTarget ? { aspectRatio: activeCaptureAspect } : undefined}
+                  playsInline
+                  muted
+                />
               )}
             </div>
+            {rawCapturedUrl && !capturedPhotoUrl && (
+              <p className="mt-2 text-xs text-slate-600">
+                Drag the frame to move, or drag corners and edges to resize. Output keeps scanner aspect (
+                {activeCaptureSize.width}×{activeCaptureSize.height} px). Then tap <strong>Crop</strong>.
+              </p>
+            )}
             {cameraError && <p className="mt-2 text-sm text-red-600">{cameraError}</p>}
             <div className="mt-4 flex flex-wrap gap-2">
               {capturedPhotoUrl ? (
@@ -654,6 +1344,25 @@ export function DocumentsWizard() {
                     className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
                   >
                     Attach Photo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={retakePhoto}
+                    disabled={cameraBusy}
+                    className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    Retake Photo
+                  </button>
+                </>
+              ) : rawCapturedUrl ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={saveCroppedPhoto}
+                    disabled={cameraBusy || !cropRectNatural || !naturalImageSize}
+                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    Crop
                   </button>
                   <button
                     type="button"
@@ -698,46 +1407,39 @@ export function DocumentsWizard() {
 
       {photoPreviewOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60"
+          className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60"
           onClick={closePhotoPreview}
           role="dialog"
           aria-modal="true"
           aria-labelledby="photo-preview-title"
         >
-          <div
-            className="bg-white rounded-xl border border-slate-200 shadow-lg w-full max-w-xl p-5"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 id="photo-preview-title" className="text-lg font-semibold text-slate-800">
-              2x2 Photo Preview
-            </h2>
-            <div className="mt-4 flex justify-center">
-              <div className="relative rounded-lg border border-slate-300 bg-white p-6">
-                <span className="absolute left-1/2 top-2 -translate-x-1/2 rounded border border-slate-400 bg-indigo-50 px-1.5 py-0.5 text-xs font-semibold text-slate-700">
-                  2 in
-                </span>
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 rounded border border-slate-400 bg-indigo-50 px-1.5 py-0.5 text-xs font-semibold text-slate-700">
-                  2 in
-                </span>
-                <img
-                  src={photoPreviewSrc}
-                  alt="2x2 uploaded preview"
-                  className="block border border-slate-300 bg-white object-cover"
-                  style={{ width: '2in', height: '2in' }}
-                />
+          <div className="flex min-h-full items-center justify-center p-4">
+            <div
+              className="my-auto w-full max-w-xl max-h-[min(90vh,calc(100vh-2rem))] overflow-y-auto rounded-xl border border-slate-200 bg-white p-5 shadow-lg"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 id="photo-preview-title" className="text-lg font-semibold text-slate-800">
+                Preview
+              </h2>
+              <div className="mt-4 flex justify-center">
+                <div className="relative rounded-lg border border-slate-300 bg-white p-6">
+                  <img
+                    src={photoPreviewSrc}
+                    alt="2x2 uploaded preview"
+                    className="block border border-slate-300 bg-white object-cover"
+                  />
+                </div>
               </div>
-            </div>
-            <p className="mt-4 text-center text-sm text-slate-600">
-              2in x 2in (51 x 51 mm / 5.1 x 5.1 cm)
-            </p>
-            <div className="mt-4 flex justify-center">
-              <button
-                type="button"
-                onClick={closePhotoPreview}
-                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-              >
-                Close Preview
-              </button>
+
+              <div className="mt-4 flex justify-center">
+                <button
+                  type="button"
+                  onClick={closePhotoPreview}
+                  className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  Close Preview
+                </button>
+              </div>
             </div>
           </div>
         </div>
