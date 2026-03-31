@@ -1,8 +1,9 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { childrenApi } from '../services/api';
 import { formatDateDDMMYYYY } from '../utils/date';
+import { buildFieldPositionPdfBase64, buildMergedCertData, buildPdfFilename } from '../utils/pdfUtils';
 
 const emptyEditForm = {
   first_name: '',
@@ -95,6 +96,24 @@ export function ChildDetail() {
       .finally(() => setDeleteDeleting(false));
   };
 
+  const handleSavePdf = useCallback(async () => {
+    if (!window.electron?.saveFieldPositionPdf) return;
+    try {
+      const cert = child?.certificate_of_live_birth && typeof child.certificate_of_live_birth === 'object'
+        ? child.certificate_of_live_birth
+        : {};
+      const merged = buildMergedCertData(child, cert);
+      const base64 = buildFieldPositionPdfBase64(merged);
+      const suggestedFilename = buildPdfFilename(child, cert);
+      const result = await window.electron.saveFieldPositionPdf(base64, suggestedFilename);
+      if (result?.ok) {
+        toast.success('PDF saved.');
+      }
+    } catch (err) {
+      toast.error(err?.message || 'Failed to save PDF.');
+    }
+  }, [child]);
+
   if (loading) return <p className="text-slate-500">Loading…</p>;
   if (error) return <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">{error.message}</div>;
   if (!child) return null;
@@ -121,12 +140,13 @@ export function ChildDetail() {
           >
             Document checklist
           </Link>
-          <Link
-            to={`/children/${id}/field-position`}
+          <button
+            type="button"
+            onClick={handleSavePdf}
             className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
-            Field position
-          </Link>
+            Save as PDF
+          </button>
           <button
             type="button"
             onClick={openEditModal}

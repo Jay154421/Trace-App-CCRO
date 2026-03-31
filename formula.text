@@ -1,0 +1,95 @@
+PDF FORMULAS USED IN trace-app/src/pages/FieldPosition.jsx
+
+1) Informant compact overlay font size conversion (pt -> px-like scale)
+INFORMANT_ADDRESS_COMPACT_OVERLAY_PX =
+  (INFORMANT_ADDRESS_COMPACT_PDF_PT / 10) * PDF_LAYOUT.fieldFontSize
+
+2) Effective column width inference (layout px)
+If there is a next field on the same row:
+  widthPx = max(48, nextField.x - currentField.x - PDF_COLUMN_GUTTER_PX)
+Otherwise (to document edge):
+  widthPx = max(48, docWidth - currentField.x - PDF_COLUMN_GUTTER_PX)
+If explicit right edge is configured:
+  widthPx = max(48, rightEdge - currentField.x - PDF_COLUMN_GUTTER_PX)
+
+3) Coordinate mapping from layout pixels to PDF inches
+xIn = (field.x / docWidth) * pageWidthInches
+yIn = ((field.y + 25) / docHeight) * pageHeightInches
+
+4) Column width mapping from layout pixels to PDF inches
+maxWidthIn = (widthPx / docWidth) * pageWidthInches
+
+5) Default PDF line height in inches
+defaultLineHeightIn = (fontPt * PDF_LAYOUT.lineHeightRatio) / 72
+
+6) Dynamic line height in inches (after fitting font)
+lineHeightIn = (chosenPt * PDF_LAYOUT.lineHeightRatio) / 72
+
+7) Font-size fitting sweep for wrapped PDF text
+For pt from preferredPt down to PDF_LAYOUT.pdfMinShrinkSize
+step PDF_LAYOUT.pdfShrinkStep:
+  count = splitTextToSize(text, maxWidthIn).length
+Choose pt with minimum count (fewest wrapped lines).
+If tied on count, choose larger pt.
+
+8) Attendant radio-mark shape scaling
+wX = widthIn / RADIO_CHECK_SHAPE_EXTENT.horizontal
+wY = heightIn / RADIO_CHECK_SHAPE_EXTENT.vertical
+
+9) Radio-mark line endpoints (inches)
+Line 1:
+  (x - wX * 0.4,  y + wY * 0.32) -> (x - wX * 0.02, y + wY * 0.42)
+Line 2:
+  (x - wX * 0.02, y + wY * 0.42) -> (x + wX * 0.55, y - wY * 0.28)
+
+10) Radio position mapping (layout px -> PDF inches)
+xIn = (radioX / docWidth) * pageWidthInches
+yIn = ((radioY + 10) / docHeight) * pageHeightInches
+
+11) "Other" attendant specify text mapping (layout px -> PDF inches)
+xIn = (specifyField.x / docWidth) * pageWidthInches
+yIn = ((specifyField.y + 25) / docHeight) * pageHeightInches
+
+12) Attendant address font shrink (PDF points, linear interpolation)
+Given:
+  minChars = ATTENDANT_ADDRESS_SHRINK_MIN_CHARS_PDF
+  maxChars = ATTENDANT_ADDRESS_SHRINK_MAX_CHARS_PDF
+  defaultPt = PDF_LAYOUT.pdfDefaultFontSize
+  minPt = ATTENDANT_ADDRESS_MIN_FONT_PT
+
+If charCount < minChars:
+  fontPt = defaultPt
+Else if charCount > maxChars:
+  fontPt = minPt
+Else:
+  range = maxChars - minChars
+  position = charCount - minChars
+  fontRange = defaultPt - minPt
+  fontPt = defaultPt - (position / range) * fontRange
+
+13) Attendant address font shrink (overlay pixels, linear interpolation)
+Given:
+  minChars = ATTENDANT_ADDRESS_SHRINK_MIN_CHARS
+  maxChars = ATTENDANT_ADDRESS_SHRINK_MAX_CHARS
+  defaultPx = PDF_LAYOUT.fieldFontSize
+  minPx = ATTENDANT_ADDRESS_MIN_FONT_PX
+
+If charCount < minChars:
+  fontPx = defaultPx
+Else if charCount > maxChars:
+  fontPx = minPx
+Else:
+  range = maxChars - minChars
+  position = charCount - minChars
+  fontRange = defaultPx - minPx
+  fontPx = defaultPx - (position / range) * fontRange
+
+14) Checklist table width calculations
+usableWidth = pageWidth - leftMargin - rightMargin
+colWidth = usableWidth / columns.length
+
+15) Checklist column X position per index
+x = leftMargin + (index * colWidth)
+
+16) Checklist checkmark centered X
+checkmarkX = x + (colWidth / 2)

@@ -159,8 +159,8 @@ function countryCodeToDisplayName(value) {
   return t;
 }
 
-const SECTION_IDS = ['header', 'child', 'mother', 'father', 'marriage', 'attendant', 'signatures', 'remarks'];
-const SECTION_LABELS = ['Header', 'Child', 'Mother', 'Father', 'Marriage', 'Attendant', 'Signatures', 'Remarks'];
+const SECTION_IDS = ['header', 'child', 'mother', 'father', 'marriage', 'attendant', 'signatures'];
+const SECTION_LABELS = ['Header', 'Child', 'Mother', 'Father', 'Marriage', 'Attendant', 'Signatures'];
 
 function parseDateOfBirth(dateStr) {
   if (!dateStr || typeof dateStr !== 'string') return { day: '', month: '', year: '' };
@@ -1022,33 +1022,6 @@ export function CertificateOfLiveBirth() {
         </div>
           </div>
 
-          <div className={`certificate-tab-panel certificate-card ${activeTabIndex === 7 ? 'active' : ''}`} id="remarks" style={{ marginTop: 0 }}>
-        <div style={{ marginTop: '8px', border: `1px solid ${COLORS.borderGray}`, borderRadius: 0 }}>
-          <div style={{ backgroundColor: COLORS.sectionStripe, padding: '6px 8px', borderBottom: `1px solid ${COLORS.borderGray}` }}>
-            <span style={{ fontFamily: FONT_FAMILY, fontWeight: 700, fontSize: '15px', color: COLORS.black }}>REMARKS/ANNOTATIONS (For LCRO/OCRG Use Only)</span>
-          </div>
-          <textarea
-            value={form.remarks}
-            onChange={(e) => update('remarks', e.target.value)}
-            rows={4}
-            className="w-full focus:outline-none focus:ring-0 p-2"
-            style={{ fontFamily: FONT_FAMILY, fontSize: '14px', backgroundColor: COLORS.white, border: 'none', borderTop: `1px solid ${COLORS.borderGray}`, borderRadius: 0, color: COLORS.black }}
-          />
-        </div>
-        <div style={{ marginTop: '12px', paddingTop: '8px', borderTop: `1px solid ${COLORS.borderGray}`, fontFamily: FONT_FAMILY, fontSize: '16px', color: COLORS.black }}>
-          <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '8px' }}>TO BE FILLED-UP AT THE OFFICE OF THE CIVIL REGISTRAR</p>
-          <div className="flex flex-wrap gap-3 items-end">
-            {[8, 9, 11, 13, 15, 16, 17, 19].map((n) => (
-              <span key={n} className="inline-flex flex-col items-center">
-                <span style={{ fontWeight: 400, fontSize: '14px', marginBottom: '2px' }}>{n}</span>
-                <span className="inline-block w-8 h-8" style={{ border: `1px solid ${COLORS.accentLightGreen}`, backgroundColor: COLORS.white, borderRadius: 0 }} />
-              </span>
-            ))}
-          </div>
-        </div>
-          </div>
-        </div>
-
         <div className="certificate-step-nav print:hidden">
           <button
             type="button"
@@ -1072,6 +1045,7 @@ export function CertificateOfLiveBirth() {
         </div>
 
         <p className="mt-4 text-sm text-slate-600 print:hidden">Switch tabs or use Previous/Next. Changes save automatically.</p>
+      </div>
     </div>
   );
 }
