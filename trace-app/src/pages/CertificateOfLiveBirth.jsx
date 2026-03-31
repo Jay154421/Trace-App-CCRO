@@ -7,6 +7,8 @@ import { childrenApi } from '../services/api';
 
 const DEFAULT_PROVINCE = 'Lanao Del Norte';
 const DEFAULT_CITY_MUNICIPALITY = 'Iligan City';
+const DEFAULT_COUNTRY_CODE = 'PH';
+const DEFAULT_COUNTRY_TEXT = 'PHILIPPINES';
 
 const DEFAULT_CERT = {
   registryNo: '',
@@ -39,8 +41,8 @@ const DEFAULT_CERT = {
   motherResidenceLine1: '',
   motherResidenceCity: '',
   motherResidenceProvince: '',
-  motherResidenceCountry: '',
-  motherCountry: '',
+  motherResidenceCountry: DEFAULT_COUNTRY_CODE,
+  motherCountry: DEFAULT_COUNTRY_TEXT,
   fatherFirst: '',
   fatherMiddle: '',
   fatherLast: '',
@@ -51,14 +53,14 @@ const DEFAULT_CERT = {
   fatherResidenceLine1: '',
   fatherResidenceCity: '',
   fatherResidenceProvince: '',
-  fatherResidenceCountry: '',
-  fatherCountry: '',
+  fatherResidenceCountry: DEFAULT_COUNTRY_CODE,
+  fatherCountry: DEFAULT_COUNTRY_TEXT,
   marriageMonth: '',
   marriageDay: '',
   marriageYear: '',
   marriagePlaceCity: '',
   marriagePlaceProvince: '',
-  marriagePlaceCountry: '',
+  marriagePlaceCountry: DEFAULT_COUNTRY_TEXT,
   attendantType: '',
   attendantOthersSpecify: '',
   attendantTime: '',
@@ -321,11 +323,22 @@ export function CertificateOfLiveBirth() {
         const base = { ...DEFAULT_CERT, ...cert };
         base.motherResidenceCountry = normalizeStoredCountry(base.motherResidenceCountry);
         base.fatherResidenceCountry = normalizeStoredCountry(base.fatherResidenceCountry);
+        if (!String(base.motherResidenceCountry || '').trim()) {
+          base.motherResidenceCountry = DEFAULT_COUNTRY_CODE;
+        }
+        if (!String(base.fatherResidenceCountry || '').trim()) {
+          base.fatherResidenceCountry = DEFAULT_COUNTRY_CODE;
+        }
+        if (!String(base.marriagePlaceCountry || '').trim()) {
+          base.marriagePlaceCountry = DEFAULT_COUNTRY_TEXT;
+        }
         if (!String(base.motherCountry || '').trim()) {
-          base.motherCountry = countryCodeToDisplayName(base.motherResidenceCountry);
+          const motherCountryName = countryCodeToDisplayName(base.motherResidenceCountry);
+          base.motherCountry = motherCountryName ? motherCountryName.toUpperCase() : DEFAULT_COUNTRY_TEXT;
         }
         if (!String(base.fatherCountry || '').trim()) {
-          base.fatherCountry = countryCodeToDisplayName(base.fatherResidenceCountry);
+          const fatherCountryName = countryCodeToDisplayName(base.fatherResidenceCountry);
+          base.fatherCountry = fatherCountryName ? fatherCountryName.toUpperCase() : DEFAULT_COUNTRY_TEXT;
         }
         const fromChild = {
           province: base.province || DEFAULT_PROVINCE,
