@@ -97,6 +97,16 @@ export function ChildDetail() {
   };
 
   const handleSavePdf = useCallback(async () => {
+    const checklist = child?.checklist ?? [];
+    const checklistTotal = checklist.length;
+    const checklistChecked = checklist.filter((item) => item.checked).length;
+    const isChecklistComplete = checklistTotal > 0 && checklistChecked === checklistTotal;
+
+    if (!isChecklistComplete) {
+      toast.error('Complete the document checklist before saving PDF.');
+      return;
+    }
+
     if (!window.electron?.saveFieldPositionPdf) return;
     try {
       const cert = child?.certificate_of_live_birth && typeof child.certificate_of_live_birth === 'object'
@@ -120,6 +130,7 @@ export function ChildDetail() {
 
   const checklistTotal = child.checklist?.length ?? 0;
   const checklistChecked = child.checklist?.filter((i) => i.checked).length ?? 0;
+  const isChecklistComplete = checklistTotal > 0 && checklistChecked === checklistTotal;
 
   return (
     <div>
@@ -143,7 +154,9 @@ export function ChildDetail() {
           <button
             type="button"
             onClick={handleSavePdf}
-            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            disabled={!isChecklistComplete}
+            title={!isChecklistComplete ? 'Complete the document checklist first' : undefined}
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white"
           >
             Save as PDF
           </button>
@@ -249,10 +262,6 @@ export function ChildDetail() {
           </div>
         </dl>
       </section>
-
-      <p className="text-slate-600">
-        Use the <Link to={`/children/${id}/documents`} className="text-emerald-600 hover:underline">Document checklist</Link> to see required documents for this age group and track progress.
-      </p>
 
       {editModalOpen && (
         <div

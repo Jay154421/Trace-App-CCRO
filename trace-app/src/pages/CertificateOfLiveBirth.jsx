@@ -65,25 +65,20 @@ const DEFAULT_CERT = {
   attendantOthersSpecify: '',
   attendantTime: '',
   attendantAmpm: 'am',
-  attendantSignature: '',
   attendantName: '',
   attendantAddress: '',
   attendantTitle: '',
   attendantDate: '',
-  informantSignature: '',
   informantName: '',
   informantAddress: '',
   informantRelationship: '',
   informantDate: '',
-  preparedBySignature: '',
   preparedByName: '',
   preparedByTitle: '',
   preparedByDate: '',
-  receivedBySignature: '',
   receivedByName: '',
   receivedByTitle: '',
   receivedByDate: '',
-  registeredBySignature: '',
   registeredByName: '',
   registeredByTitle: '',
   registeredByDate: '',
@@ -206,15 +201,6 @@ function CalendarIcon() {
   );
 }
 
-function QuillIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0 }} aria-hidden>
-      <path d="M2 12l2-2 6-6 2 2-6 6-2 2z" stroke={COLORS.iconGray} strokeWidth="1.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M10 4l2 2" stroke={COLORS.iconGray} strokeWidth="1.2" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 function DropdownArrowIcon() {
   return (
     <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0 }} aria-hidden>
@@ -298,6 +284,26 @@ function SectionStripe({ title, caption, children }) {
 
 function GreenRule() {
   return <hr className="border-0 my-2" style={{ height: 2, backgroundColor: COLORS.accentGreen }} />;
+}
+
+function SectionPanel({ title, children }) {
+  return (
+    <>
+      <GreenRule />
+      <section
+        className="rounded-none border-b-2 pb-3"
+        style={{ borderColor: COLORS.accentGreen, fontFamily: FONT_FAMILY, color: COLORS.black }}
+      >
+        <h2
+          className="mb-4 border-b pb-2 text-lg font-bold uppercase"
+          style={{ borderColor: COLORS.accentGreen, fontSize: '18px' }}
+        >
+          {title}
+        </h2>
+        {children}
+      </section>
+    </>
+  );
 }
 
 export function CertificateOfLiveBirth() {
@@ -385,7 +391,10 @@ export function CertificateOfLiveBirth() {
       .certificate-step-nav span { font-size: 0.8125rem; color: #64748b; }
       .certificate-tab-panel { display: none; }
       .certificate-tab-panel.active { display: block; }
-      .certificate-card { border-radius: 10px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow: hidden; background: #fff; padding: 1.5rem; margin-bottom: 0; }
+      .certificate-card { border-radius: 10px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow: hidden; background: #fff; padding: 1.25rem; margin-bottom: 0; }
+      @media (min-width: 768px) {
+        .certificate-card { padding: 1.5rem; }
+      }
       @media print {
         @page { size: 8.5in 14in; margin: 0.25in; }
         aside[aria-label="Main navigation"] { display: none !important; }
@@ -445,10 +454,10 @@ export function CertificateOfLiveBirth() {
   const canNext = activeTabIndex < totalSteps - 1;
 
   return (
-    <div className="mx-auto pb-8 print:pb-0" style={{ width: '8.5in', maxWidth: '100%' }}>
-      <div className="certificate-sticky-bar sticky top-0 z-10 mb-4 flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm print:hidden">
+    <div className="mx-auto w-full max-w-5xl px-2 pb-8 sm:px-4 print:max-w-none print:px-0 print:pb-0">
+      <div className="certificate-sticky-bar sticky top-0 z-10 mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-3 shadow-sm sm:gap-4 sm:px-4 print:hidden">
         <Link to={`/children/${id}`} className="text-sm font-medium text-slate-600 hover:text-slate-900">← Back to applicant</Link>
-        <span className="truncate text-sm font-medium text-slate-700">
+        <span className="order-3 w-full truncate text-sm font-medium text-slate-700 sm:order-none sm:w-auto">
           {child.first_name} {child.last_name}
         </span>
         {saving && <span className="text-sm text-emerald-600">Saving…</span>}
@@ -472,10 +481,10 @@ export function CertificateOfLiveBirth() {
 
       <div
         ref={certContentRef}
-        className="certificate-of-live-birth-form mt-4"
+        className="certificate-of-live-birth-form mt-4 space-y-4"
         style={{
           fontFamily: FONT_FAMILY,
-          width: '8.5in',
+          width: '100%',
           maxWidth: '100%',
           fontSize: '15px',
           color: COLORS.black,
@@ -508,9 +517,7 @@ export function CertificateOfLiveBirth() {
           </div>
 
           <div className={`certificate-tab-panel certificate-card ${activeTabIndex === 1 ? 'active' : ''}`} id="child">
-        <GreenRule />
-        <div style={{ borderBottom: `2px solid ${COLORS.accentGreen}`, fontFamily: FONT_FAMILY, color: COLORS.black }}>
-          <h2 className="text-lg font-bold uppercase mb-4 pb-2" style={{ borderBottom: `1px solid ${COLORS.accentGreen}`, fontSize: '18px' }}>Child</h2>
+        <SectionPanel title="Child">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4" style={{ fontSize: '16px' }}>
             <div className="md:col-span-2">
               <label className="block mb-1 font-normal">1. NAME</label>
@@ -567,13 +574,11 @@ export function CertificateOfLiveBirth() {
               </div>
             </div>
           </div>
-        </div>
+        </SectionPanel>
           </div>
 
           <div className={`certificate-tab-panel certificate-card ${activeTabIndex === 2 ? 'active' : ''}`} id="mother">
-        <GreenRule />
-        <div style={{ borderBottom: `2px solid ${COLORS.accentGreen}`, fontFamily: FONT_FAMILY, color: COLORS.black }}>
-          <h2 className="text-lg font-bold uppercase mb-4 pb-2" style={{ borderBottom: `1px solid ${COLORS.accentGreen}`, fontSize: '18px' }}>Mother</h2>
+        <SectionPanel title="Mother">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4" style={{ fontSize: '16px' }}>
             <div className="md:col-span-2">
               <label className="block mb-1 font-normal">7. MAIDEN NAME</label>
@@ -652,13 +657,11 @@ export function CertificateOfLiveBirth() {
               </div>
             </div>
           </div>
-        </div>
+        </SectionPanel>
           </div>
 
           <div className={`certificate-tab-panel certificate-card ${activeTabIndex === 3 ? 'active' : ''}`} id="father">
-        <GreenRule />
-        <div style={{ borderBottom: `2px solid ${COLORS.accentGreen}`, fontFamily: FONT_FAMILY, color: COLORS.black }}>
-          <h2 className="text-lg font-bold uppercase mb-4 pb-2" style={{ borderBottom: `1px solid ${COLORS.accentGreen}`, fontSize: '18px' }}>Father</h2>
+        <SectionPanel title="Father">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4" style={{ fontSize: '16px' }}>
             <div className="md:col-span-2">
               <label className="block mb-1 font-normal">14. NAME</label>
@@ -723,100 +726,77 @@ export function CertificateOfLiveBirth() {
               </div>
             </div>
           </div>
-        </div>
+        </SectionPanel>
           </div>
 
           <div className={`certificate-tab-panel certificate-card ${activeTabIndex === 4 ? 'active' : ''}`} id="marriage">
-        <div
-          style={{
-            fontFamily: FONT_FAMILY,
-            color: COLORS.black,
-            border: `1px solid ${COLORS.borderGray}`,
-            borderRadius: 8,
-            boxShadow: '0 2px 10px rgba(0,0,0,0.07)',
-            overflow: 'hidden',
-            backgroundColor: COLORS.white,
-          }}
-        >
-          <div style={{ height: 2, backgroundColor: COLORS.accentGreen, width: '100%' }} />
-          <div style={{ padding: '14px 16px 18px' }}>
-            <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '6px', letterSpacing: '0.02em' }}>MARRIAGE OF PARENTS</p>
-            <p style={{ fontSize: '14px', fontWeight: 400, marginBottom: 0, lineHeight: 1.45 }}>
-              (If not married, accomplish Affidavit of Acknowledgement/Admission of Paternity at the back.)
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 mt-5 items-start" style={{ fontSize: '16px' }}>
-              <div>
-                <label className="block mb-2" style={{ fontWeight: 700 }}>
-                  20a. DATE
-                </label>
-                <div className="flex flex-wrap items-center gap-2">
-                  <FormLine
-                    value={form.marriageMonth}
-                    onChange={(v) => update('marriageMonth', v)}
-                    placeholder="(Month)"
-                    className="min-w-[7rem] flex-1 sm:flex-none sm:w-[7.5rem]"
-                    width="min-w-[7rem] flex-1 sm:flex-none sm:w-[7.5rem]"
-                    useLowerStyle
-                  />
-                  <FormLine
-                    value={form.marriageDay}
-                    onChange={(v) => update('marriageDay', v)}
-                    placeholder="(Day)"
-                    className="w-14 flex-shrink-0"
-                    width="w-14"
-                    useLowerStyle
-                  />
-                  <FormLine
-                    value={form.marriageYear}
-                    onChange={(v) => update('marriageYear', v)}
-                    placeholder="(Year)"
-                    className="w-[4.5rem] flex-shrink-0"
-                    width="w-[4.5rem]"
-                    useLowerStyle
-                  />
-                  <CalendarIcon />
-                </div>
+        <SectionPanel title="Marriage of Parents">
+          <p className="mb-4 text-sm text-slate-700">
+            (If not married, accomplish Affidavit of Acknowledgement/Admission of Paternity at the back.)
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4" style={{ fontSize: '16px' }}>
+            <div>
+              <label className="block mb-1 font-normal">20a. DATE</label>
+              <div className="flex flex-wrap items-center gap-2">
+                <FormLine
+                  value={form.marriageMonth}
+                  onChange={(v) => update('marriageMonth', v)}
+                  placeholder="(Month)"
+                  className="w-28"
+                  width="w-28"
+                />
+                <FormLine
+                  value={form.marriageDay}
+                  onChange={(v) => update('marriageDay', v)}
+                  placeholder="(Day)"
+                  className="w-14"
+                  width="w-14"
+                />
+                <FormLine
+                  value={form.marriageYear}
+                  onChange={(v) => update('marriageYear', v)}
+                  placeholder="(Year)"
+                  className="w-20"
+                  width="w-20"
+                />
+                <CalendarIcon />
               </div>
-              <div className="min-w-0">
-                <label className="block mb-2" style={{ fontWeight: 700 }}>
-                  20b. PLACE
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <FormLine
-                    value={form.marriagePlaceCity}
-                    onChange={(v) => update('marriagePlaceCity', v)}
-                    placeholder="(City/Municipality)"
-                    className="w-full"
-                    width="w-full"
-                    useLowerStyle
-                  />
-                  <FormLine
-                    value={form.marriagePlaceProvince}
-                    onChange={(v) => update('marriagePlaceProvince', v)}
-                    placeholder="(Province)"
-                    className="w-full"
-                    width="w-full"
-                    useLowerStyle
-                  />
-                  <FormLine
-                    value={form.marriagePlaceCountry}
-                    onChange={(v) => update('marriagePlaceCountry', v)}
-                    placeholder="(Country)"
-                    className="w-full"
-                    width="w-full"
-                    useLowerStyle
-                  />
-                </div>
+            </div>
+            <div>
+              <label className="block mb-1 font-normal">20b. PLACE</label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <FormLine
+                  value={form.marriagePlaceCity}
+                  onChange={(v) => update('marriagePlaceCity', v)}
+                  placeholder="(City/Municipality)"
+                  className="w-full"
+                  width="w-full"
+                />
+                <FormLine
+                  value={form.marriagePlaceProvince}
+                  onChange={(v) => update('marriagePlaceProvince', v)}
+                  placeholder="(Province)"
+                  className="w-full"
+                  width="w-full"
+                />
+                <FormLine
+                  value={form.marriagePlaceCountry}
+                  onChange={(v) => update('marriagePlaceCountry', v)}
+                  placeholder="(Country)"
+                  className="w-full"
+                  width="w-full"
+                />
               </div>
             </div>
           </div>
-        </div>
+        </SectionPanel>
           </div>
 
           <div className={`certificate-tab-panel certificate-card ${activeTabIndex === 5 ? 'active' : ''}`} id="attendant">
-        <GreenRule />
-        <SectionStripe title="21a. ATTENDANT">
-          <div className="flex flex-wrap gap-4 items-center" style={{ fontFamily: FONT_FAMILY, fontSize: '14px', color: COLORS.black }}>
+        <SectionPanel title="Attendant">
+          <div className="mb-4">
+            <h3 className="mb-2 text-base font-bold">21a. ATTENDANT</h3>
+            <div className="flex flex-wrap gap-4 items-center" style={{ fontFamily: FONT_FAMILY, fontSize: '14px', color: COLORS.black }}>
             {[
               '1 Physician',
               '2 Nurse',
@@ -836,24 +816,29 @@ export function CertificateOfLiveBirth() {
                   />
                   <span
                     className="inline-block w-4 h-4 flex-shrink-0"
-                    style={{ border: `1px solid ${COLORS.borderGray}`, borderRadius: 0, backgroundColor: form.attendantType === opt ? COLORS.black : COLORS.white }}
+                    style={{ border: `1px solid ${COLORS.accentGreen}`, borderRadius: 0, backgroundColor: form.attendantType === opt ? COLORS.black : COLORS.white }}
                   />
                   <span>{label}</span>
                   {opt === 'Others' && (
-                    <FormLine value={form.attendantOthersSpecify} onChange={(v) => update('attendantOthersSpecify', v)} className="w-24 inline-block ml-0" width="w-24" useLowerStyle />
+                    <FormLine value={form.attendantOthersSpecify} onChange={(v) => update('attendantOthersSpecify', v)} className="w-24 inline-block ml-0" width="w-24" />
                   )}
                 </label>
               );
             })}
+            </div>
           </div>
-        </SectionStripe>
-
-        <SectionStripe title="21b. CERTIFICATION OF ATTENDANT AT BIRTH" caption="(Physician, Nurse, Midwife, Traditional Birth Attendant/Hilot, etc.)">
-          <p style={{ fontFamily: FONT_FAMILY, fontSize: '14px', color: COLORS.black, marginBottom: '8px' }}>
+          <div className="mt-4">
+            <h3 className="mb-2 text-base font-bold">
+              21b. CERTIFICATION OF ATTENDANT AT BIRTH
+              <span className="block text-sm font-normal normal-case">
+                (Physician, Nurse, Midwife, Traditional Birth Attendant/Hilot, etc.)
+              </span>
+            </h3>
+            <p style={{ fontFamily: FONT_FAMILY, fontSize: '14px', color: COLORS.black, marginBottom: '8px' }}>
             I hereby certify that I attended the birth of the child who was born alive at
             <span className="inline-flex items-baseline gap-1 mx-1 align-middle">
-              <FormLine value={form.attendantTime} onChange={(v) => update('attendantTime', v)} placeholder="_ _ : _ _" className="w-16" width="w-16" useLowerStyle />
-              <select value={form.attendantAmpm} onChange={(e) => update('attendantAmpm', e.target.value)} style={{ fontFamily: FONT_FAMILY, fontSize: '14px', backgroundColor: COLORS.white, border: `1px solid ${COLORS.borderGray}`, borderRadius: 0, padding: '2px 4px', color: COLORS.black }}>
+              <FormLine value={form.attendantTime} onChange={(v) => update('attendantTime', v)} placeholder="_ _ : _ _" className="w-16" width="w-16" />
+              <select value={form.attendantAmpm} onChange={(e) => update('attendantAmpm', e.target.value)} style={{ fontFamily: FONT_FAMILY, fontSize: '14px', backgroundColor: COLORS.white, border: `1px solid ${COLORS.accentGreen}`, borderRadius: 0, padding: '2px 4px', color: COLORS.black }}>
                 <option value="am">am</option>
                 <option value="pm">pm</option>
               </select>
@@ -864,93 +849,73 @@ export function CertificateOfLiveBirth() {
             className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4"
             style={{ fontSize: '14px' }}
           >
-            <div>
-              <p className="mb-1" style={{ fontWeight: 400 }}>Signature</p>
-              <div className="flex items-center gap-1">
-                <QuillIcon />
-                <FormLine value={form.attendantSignature} onChange={(v) => update('attendantSignature', v)} placeholder="Signature" className="flex-1 min-w-0" useLowerStyle />
-              </div>
-            </div>
+           
             <div>
               <p className="mb-1" style={{ fontWeight: 400 }}>Address</p>
-              <FormLine value={form.attendantAddress} onChange={(v) => update('attendantAddress', v)} className="w-full" useLowerStyle />
+              <FormLine value={form.attendantAddress} onChange={(v) => update('attendantAddress', v)} className="w-full" />
             </div>
             <div>
               <p className="mb-1" style={{ fontWeight: 400 }}>Name in Print</p>
-              <FormLine value={form.attendantName} onChange={(v) => update('attendantName', v)} useLowerStyle />
+              <FormLine value={form.attendantName} onChange={(v) => update('attendantName', v)} />
             </div>
             <div>
               <p className="mb-1" style={{ fontWeight: 400 }}>Date</p>
               <div className="flex items-center gap-1">
-                <FormLine value={form.attendantDate} onChange={(v) => update('attendantDate', v)} className="flex-1 min-w-0" useLowerStyle />
+                <FormLine value={form.attendantDate} onChange={(v) => update('attendantDate', v)} className="flex-1 min-w-0" />
                 <CalendarIcon />
               </div>
             </div>
             <div className="sm:col-span-2">
               <p className="mb-1" style={{ fontWeight: 400 }}>Title or Position</p>
-              <FormLine value={form.attendantTitle} onChange={(v) => update('attendantTitle', v)} useLowerStyle />
+              <FormLine value={form.attendantTitle} onChange={(v) => update('attendantTitle', v)} />
             </div>
           </div>
-        </SectionStripe>
+          </div>
+        </SectionPanel>
           </div>
 
           <div className={`certificate-tab-panel certificate-card ${activeTabIndex === 6 ? 'active' : ''}`} id="signatures">
-        <GreenRule />
-        <div className="grid grid-cols-2 gap-4" style={{ fontFamily: FONT_FAMILY, color: COLORS.black }}>
-          <SectionStripe title="22. CERTIFICATION OF INFORMANT">
+        <SectionPanel title="Signatures">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2" style={{ fontFamily: FONT_FAMILY, color: COLORS.black }}>
+          <div>
+            <h3 className="mb-2 text-base font-bold">22. CERTIFICATION OF INFORMANT</h3>
             <p style={{ fontSize: '14px', marginBottom: '8px' }}>I hereby certify that all information supplied are true and correct to my own knowledge and belief.</p>
             <div className="space-y-2" style={{ fontSize: '14px' }}>
-              <div>
-                <p className="mb-1" style={{ fontWeight: 400 }}>Signature</p>
-                <div className="flex items-center gap-1">
-                  <QuillIcon />
-                  <FormLine value={form.informantSignature} onChange={(v) => update('informantSignature', v)} placeholder="Signature" className="flex-1" useLowerStyle />
-                </div>
-              </div>
-              <div><p className="mb-1" style={{ fontWeight: 400 }}>Name in Print</p><FormLine value={form.informantName} onChange={(v) => update('informantName', v)} useLowerStyle /></div>
-              <div><p className="mb-1" style={{ fontWeight: 400 }}>Relationship to the Child</p><FormLine value={form.informantRelationship} onChange={(v) => update('informantRelationship', v)} placeholder="(e.g. Mother, Father)" useLowerStyle /></div>
+              
+              <div><p className="mb-1" style={{ fontWeight: 400 }}>Name in Print</p><FormLine value={form.informantName} onChange={(v) => update('informantName', v)} /></div>
+              <div><p className="mb-1" style={{ fontWeight: 400 }}>Relationship to the Child</p><FormLine value={form.informantRelationship} onChange={(v) => update('informantRelationship', v)} placeholder="(e.g. Mother, Father)" /></div>
               <div><p className="mb-1" style={{ fontWeight: 400 }}>Address</p><textarea value={form.informantAddress} onChange={(e) => update('informantAddress', e.target.value)} rows={2} className="w-full focus:outline-none" style={{ fontFamily: FONT_FAMILY, fontSize: '14px', backgroundColor: COLORS.white, border: `1px solid ${COLORS.borderGray}`, borderRadius: 0, padding: '4px' }} /></div>
               <div>
                 <p className="mb-1" style={{ fontWeight: 400 }}>Date</p>
                 <div className="flex items-center gap-1">
-                  <FormLine value={form.informantDate} onChange={(v) => update('informantDate', v)} useLowerStyle />
+                  <FormLine value={form.informantDate} onChange={(v) => update('informantDate', v)} />
                   <CalendarIcon />
                 </div>
               </div>
             </div>
-          </SectionStripe>
-          <SectionStripe title="23. PREPARED BY">
+          </div>
+          <div>
+            <h3 className="mb-2 text-base font-bold">23. PREPARED BY</h3>
             <div className="space-y-2" style={{ fontSize: '14px' }}>
-              <div>
-                <p className="mb-1" style={{ fontWeight: 400 }}>Signature</p>
-                <div className="flex items-center gap-1">
-                  <QuillIcon />
-                  <FormLine value={form.preparedBySignature} onChange={(v) => update('preparedBySignature', v)} placeholder="Signature" className="flex-1" useLowerStyle />
-                </div>
-              </div>
-              <div><p className="mb-1" style={{ fontWeight: 400 }}>Name in Print</p><FormLine value={form.preparedByName} onChange={(v) => update('preparedByName', v)} useLowerStyle /></div>
-              <div><p className="mb-1" style={{ fontWeight: 400 }}>Title or Position</p><FormLine value={form.preparedByTitle} onChange={(v) => update('preparedByTitle', v)} useLowerStyle /></div>
+              
+              <div><p className="mb-1" style={{ fontWeight: 400 }}>Name in Print</p><FormLine value={form.preparedByName} onChange={(v) => update('preparedByName', v)} /></div>
+              <div><p className="mb-1" style={{ fontWeight: 400 }}>Title or Position</p><FormLine value={form.preparedByTitle} onChange={(v) => update('preparedByTitle', v)} /></div>
               <div>
                 <p className="mb-1" style={{ fontWeight: 400 }}>Date</p>
                 <div className="flex items-center gap-1">
-                  <FormLine value={form.preparedByDate} onChange={(v) => update('preparedByDate', v)} useLowerStyle />
+                  <FormLine value={form.preparedByDate} onChange={(v) => update('preparedByDate', v)} />
                   <CalendarIcon />
                 </div>
               </div>
             </div>
-          </SectionStripe>
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 mt-2">
-          <SectionStripe title="24. RECEIVED BY">
+        <div className="mt-2 grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div>
+            <h3 className="mb-2 text-base font-bold">24. RECEIVED BY</h3>
             <div className="space-y-2" style={{ fontSize: '14px' }}>
-              <div>
-                <p className="mb-1" style={{ fontWeight: 400 }}>Signature</p>
-                <div className="flex items-center gap-1">
-                  <QuillIcon />
-                  <FormLine value={form.receivedBySignature} onChange={(v) => update('receivedBySignature', v)} placeholder="Signature" className="flex-1" useLowerStyle />
-                </div>
-              </div>
+              
               <div>
                 <p className="mb-1" style={{ fontWeight: 400 }}>Name in Print</p>
                 <select
@@ -977,25 +942,20 @@ export function CertificateOfLiveBirth() {
                   ))}
                 </select>
               </div>
-              <div><p className="mb-1" style={{ fontWeight: 400 }}>Title or Position</p><FormLine value={form.receivedByTitle} onChange={(v) => update('receivedByTitle', v)} useLowerStyle /></div>
+              <div><p className="mb-1" style={{ fontWeight: 400 }}>Title or Position</p><FormLine value={form.receivedByTitle} onChange={(v) => update('receivedByTitle', v)} /></div>
               <div>
                 <p className="mb-1" style={{ fontWeight: 400 }}>Date</p>
                 <div className="flex items-center gap-1">
-                  <FormLine value={form.receivedByDate} onChange={(v) => update('receivedByDate', v)} useLowerStyle />
+                  <FormLine value={form.receivedByDate} onChange={(v) => update('receivedByDate', v)} />
                   <CalendarIcon />
                 </div>
               </div>
             </div>
-          </SectionStripe>
-          <SectionStripe title="25. REGISTERED BY THE CIVIL REGISTRAR">
+          </div>
+          <div>
+            <h3 className="mb-2 text-base font-bold">25. REGISTERED BY THE CIVIL REGISTRAR</h3>
             <div className="space-y-2" style={{ fontSize: '14px' }}>
-              <div>
-                <p className="mb-1" style={{ fontWeight: 400 }}>Signature</p>
-                <div className="flex items-center gap-1">
-                  <QuillIcon />
-                  <FormLine value={form.registeredBySignature} onChange={(v) => update('registeredBySignature', v)} placeholder="Signature" className="flex-1" useLowerStyle />
-                </div>
-              </div>
+              
               <div>
                 <p className="mb-1" style={{ fontWeight: 400 }}>Name in Print</p>
                 <select
@@ -1022,17 +982,18 @@ export function CertificateOfLiveBirth() {
                   ))}
                 </select>
               </div>
-              <div><p className="mb-1" style={{ fontWeight: 400 }}>Title or Position</p><FormLine value={form.registeredByTitle} onChange={(v) => update('registeredByTitle', v)} useLowerStyle /></div>
+              <div><p className="mb-1" style={{ fontWeight: 400 }}>Title or Position</p><FormLine value={form.registeredByTitle} onChange={(v) => update('registeredByTitle', v)} /></div>
               <div>
                 <p className="mb-1" style={{ fontWeight: 400 }}>Date</p>
                 <div className="flex items-center gap-1">
-                  <FormLine value={form.registeredByDate} onChange={(v) => update('registeredByDate', v)} useLowerStyle />
+                  <FormLine value={form.registeredByDate} onChange={(v) => update('registeredByDate', v)} />
                   <CalendarIcon />
                 </div>
               </div>
             </div>
-          </SectionStripe>
+          </div>
         </div>
+        </SectionPanel>
           </div>
 
         <div className="certificate-step-nav print:hidden">
