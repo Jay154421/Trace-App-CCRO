@@ -12,7 +12,8 @@
     "start": "npm run dev",
     "electron:dev": "cross-env PORT=3001 ELECTRON_STRICT_PORTS=1 concurrently \"npm run dev:server\" \"npm run dev:vite\" \"wait-on tcp:5174 tcp:3001 && cross-env ELECTRON_DEV=1 electron .\"",
     "electron:build": "vite build --mode electron && electron-builder",
-    "electron:start": "electron ."
+    "electron:start": "electron .",
+    "seed:applicants": "node server/factory/seeder.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -25,9 +26,11 @@
     "react-dom": "^18.2.0",
     "react-hot-toast": "^2.4.1",
     "react-router-dom": "^6.20.0",
+    "recharts": "^3.8.1",
     "sql.js": "^1.10.0"
   },
   "devDependencies": {
+    "@faker-js/faker": "^10.4.0",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.16",
     "concurrently": "^8.2.2",
@@ -42,13 +45,31 @@
   "build": {
     "appId": "com.trace.app",
     "productName": "TRACE System",
-    "directories": { "output": "release" },
+    "directories": {
+      "output": "release"
+    },
     "extraResources": [
-      { "from": "server", "to": "server" },
-      { "from": "dist", "to": "dist" }
+      {
+        "from": "server",
+        "to": "server"
+      },
+      {
+        "from": "dist",
+        "to": "dist"
+      }
     ],
-    "files": ["electron/**/*", "package.json"],
-    "win": { "target": ["nsis"] },
-    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true }
+    "files": [
+      "electron/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
   }
 }
