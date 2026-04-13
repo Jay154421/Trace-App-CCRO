@@ -42,7 +42,6 @@ const DEFAULT_CERT = {
   motherResidenceCity: '',
   motherResidenceProvince: '',
   motherResidenceCountry: DEFAULT_COUNTRY_CODE,
-  motherCountry: DEFAULT_COUNTRY_TEXT,
   fatherFirst: '',
   fatherMiddle: '',
   fatherLast: '',
@@ -54,7 +53,6 @@ const DEFAULT_CERT = {
   fatherResidenceCity: '',
   fatherResidenceProvince: '',
   fatherResidenceCountry: DEFAULT_COUNTRY_CODE,
-  fatherCountry: DEFAULT_COUNTRY_TEXT,
   marriageMonth: '',
   marriageDay: '',
   marriageYear: '',
@@ -642,18 +640,6 @@ export function CertificateOfLiveBirth() {
                     width="w-full"
                   />
                 </div>
-                <div>
-                  <label className="block mb-1 font-normal text-slate-600" style={{ fontSize: '14px' }}>
-                    Country (printed on certificate)
-                  </label>
-                  <FormLine
-                    value={form.motherCountry}
-                    onChange={(v) => update('motherCountry', v)}
-                    placeholder="e.g. PHILIPPINES"
-                    className="w-full"
-                    width="w-full"
-                  />
-                </div>
               </div>
             </div>
           </div>
@@ -707,18 +693,6 @@ export function CertificateOfLiveBirth() {
                         fatherCountry: countryCodeToDisplayName(n) || '',
                       }));
                     }}
-                    className="w-full"
-                    width="w-full"
-                  />
-                </div>
-                <div>
-                  <label className="block mb-1 font-normal text-slate-600" style={{ fontSize: '14px' }}>
-                    Country (printed on certificate)
-                  </label>
-                  <FormLine
-                    value={form.fatherCountry}
-                    onChange={(v) => update('fatherCountry', v)}
-                    placeholder="e.g. PHILIPPINES"
                     className="w-full"
                     width="w-full"
                   />

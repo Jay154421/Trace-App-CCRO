@@ -29,6 +29,9 @@ export function Sidebar() {
         <img src="/icon.jpg" alt="" className="w-10 h-10 rounded-full object-cover shrink-0" />
         <div className="min-w-0 text-left">
           <h1 className="font-semibold text-lg tracking-tight text-slate-800">TRACE</h1>
+          <p className="text-[10px] text-slate-500 leading-tight">
+            (TRacking, on Application for CErtificates)
+          </p>
           <p className="text-slate-500 text-xs mt-0.5">Document requirements</p>
         </div>
       </div>

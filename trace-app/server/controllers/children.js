@@ -37,7 +37,13 @@ function get(req, res) {
   const reqs = requirementsModel.getRequirementsForChild(row);
   const db = getDb();
   const checklist = db.prepare('SELECT * FROM checklist_items WHERE child_id = ? ORDER BY category, id').all(id);
-  res.json({ ...row, requirements: reqs, checklist });
+  const allowedChecklistKeys = new Set(
+    (reqs?.all || []).map((requirement) => `${requirement.category}:${requirement.label}`)
+  );
+  const filteredChecklist = checklist.filter((item) =>
+    allowedChecklistKeys.has(`${item.category}:${item.label}`)
+  );
+  res.json({ ...row, requirements: reqs, checklist: filteredChecklist });
 }
 
 function create(req, res) {

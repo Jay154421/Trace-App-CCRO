@@ -112,9 +112,29 @@ function buildPhotoOutputLabel(child, filename) {
   return `${owner} ${month} ${day}, ${year}`;
 }
 
-function buildChecklist(requirements, existing = []) {
+const OUT_OF_TOWN_AFFIDAVIT_LABEL = 'Affidavit w/ Corroboration for Out-of-Town Applicant (Legal Office)';
+
+function isIliganApplicant(child) {
+  const placeOfBirth = typeof child?.place_of_birth === 'string' ? child.place_of_birth : '';
+  const certificateCity = typeof child?.certificate_of_live_birth?.placeOfBirthCity === 'string'
+    ? child.certificate_of_live_birth
+      .placeOfBirthCity
+    : '';
+  const normalized = `${placeOfBirth} ${certificateCity}`
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return /\biligan\b/.test(normalized);
+}
+
+function buildChecklist(requirements, existing = [], child = null) {
   const byKey = new Map(existing.map((e) => [`${e.category}:${e.label}`, e]));
-  return requirements.all.map((r) => {
+  const allRequirements = Array.isArray(requirements?.all) ? requirements.all : [];
+  const normalizedRequirements = isIliganApplicant(child)
+    ? allRequirements.filter((requirement) => requirement.label !== OUT_OF_TOWN_AFFIDAVIT_LABEL)
+    : allRequirements;
+  return normalizedRequirements.map((r) => {
     const existingItem = byKey.get(`${r.category}:${r.label}`);
     const attachmentList = parseAttachments(existingItem?.attachment);
     return {
@@ -317,7 +337,7 @@ export function DocumentsWizard() {
       .get(id)
       .then((data) => {
         setChild(data);
-        const built = buildChecklist(data.requirements || { all: [] }, data.checklist || []);
+        const built = buildChecklist(data.requirements || { all: [] }, data.checklist || [], data);
         setChecklist(built);
         setInitialChecklist(built);
       })
@@ -443,7 +463,7 @@ export function DocumentsWizard() {
       .then(async () => {
         const refreshed = await childrenApi.get(id);
         setChild(refreshed);
-        const rebuilt = buildChecklist(refreshed.requirements || { all: [] }, refreshed.checklist || []);
+        const rebuilt = buildChecklist(refreshed.requirements || { all: [] }, refreshed.checklist || [], refreshed);
         setChecklist(rebuilt);
         setInitialChecklist(rebuilt);
         toast.success('Checklist saved.');
