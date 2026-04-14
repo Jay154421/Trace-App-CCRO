@@ -31,6 +31,12 @@ function exportDatabase(req, res) {
     flushToDisk();
     const dbFile = getDbPath();
     const attachmentsDir = getAttachmentsDir();
+    const db = getDb();
+    const totals = db.prepare('SELECT COUNT(*) AS total FROM children').get();
+    const applicantCount = Number(totals?.total || 0);
+    if (applicantCount === 0) {
+      return res.status(400).json({ error: 'Nothing to export yet. No applicants found in the system.' });
+    }
     if (!fs.existsSync(dbFile)) {
       return res.status(404).json({
         error: 'No database file found to export.',

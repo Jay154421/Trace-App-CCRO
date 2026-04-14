@@ -1,72 +1,156 @@
 # TRACE System
 
-Document requirements tracking for birth certificate (COLB) applications. Tracks child identification info, general documents, and age-specific requirements per Philippine civil registry guidelines.
+TRACE System is a birth certificate (COLB) application tracker focused on document completeness. It manages applicant records, age-group-based requirements, checklist compliance, attachments, and database backup/restore for local office workflows.
 
-## Tech stack
+## Features
 
-- **Frontend:** React 18, Vite, Tailwind CSS, react-hot-toast
-- **Backend:** Node.js, Express, SQLite (better-sqlite3)
-- **Desktop:** Electron 28 (optional), electron-builder
-- **Security:** Helmet, CORS, express-validator (server-side validation/sanitization)
+- Applicant management: create, view, update, and delete child/applicant records.
+- Dynamic requirements: requirement checklist adapts by age group and applicant conditions.
+- Document checklist tracking: required/optional flags, checked state, and notes per item.
+- Attachment support: upload and store checklist attachments per applicant.
+- Certificate and field workflows: dedicated pages for certificate-of-live-birth details and field position handling.
+- Dashboard and navigation: quick access to records and workflow pages.
+- Backup and restore: export SQLite database and attachments to zip, then import with safe merge behavior.
+- Optional desktop app: Electron packaging for a desktop deployment target.
+
+## Tech Stack
+
+- Frontend: React 18, Vite, React Router, Tailwind CSS, react-hot-toast
+- Backend: Node.js, Express, Helmet, CORS, express-validator
+- Data: SQLite (local file-based storage)
+- Utilities: JSZip, multer, html2canvas, jsPDF
+- Desktop: Electron + electron-builder
 
 ## Prerequisites
 
-- Node.js 18+
-- npm or yarn
+- Node.js 18 or newer
+- npm 9 or newer (recommended)
 
-## Setup
+## Installation
 
-1. Copy `.env.example` to `.env` and adjust if needed (e.g. `VITE_API_URL`, `PORT`).
-2. Install dependencies:
+1. Open a terminal in the project root:
 
    ```bash
    cd trace-app
+   ```
+
+2. Install dependencies:
+
+   ```bash
    npm install
    ```
 
-3. Start the API server (required for data):
+3. Create environment file:
 
    ```bash
-   npm run dev:server
+   copy .env.example .env
    ```
 
-4. In another terminal, start the React app:
+4. Optional: adjust `.env` values before running.
 
-   ```bash
-   npm run dev:vite
-   ```
+## Environment Variables
 
-   Open http://localhost:5173.
+Default values are already suitable for local development.
 
-## Scripts
+| Variable | Purpose | Default |
+|---|---|---|
+| `VITE_API_URL` | Frontend API base URL | `http://localhost:3001/api` |
+| `PORT` | Express server port | `3001` |
+| `DATA_DIR` | Location of SQLite data and attachments | `trace-app/data` |
+
+For Electron builds, `.env.electron` sets:
+
+- `VITE_API_URL=/api` (same-origin API route for packaged desktop flow)
+
+## Usage
+
+### Run in Web Development Mode
+
+Start frontend and backend together:
+
+```bash
+npm run dev
+```
+
+Then open `http://localhost:5173`.
+
+Alternative split-terminal mode:
+
+```bash
+npm run dev:server
+```
+
+```bash
+npm run dev:vite
+```
+
+### Typical Workflow
+
+1. Create a new applicant from the child form.
+2. Open the applicant details and proceed to document checklist.
+3. Mark requirements, add notes, and upload attachments.
+4. Complete Certificate of Live Birth / Field Position pages as needed.
+5. Return to dashboard or list pages to monitor status.
+6. Export database backup regularly from database tools/endpoints.
+
+### API Health Check
+
+Verify backend status:
+
+- `GET /api/health`
+
+## Data Storage and Backups
+
+- Database file: `trace-app/data/trace.db`
+- Attachments directory: `trace-app/data/attachments`
+
+Backup endpoints:
+
+- `GET /api/database/info` - show active database and attachment paths
+- `GET /api/database/export` - download backup zip (`trace.db` + attachments)
+- `POST /api/database/import` - import backup zip via `file` form field
+
+Import behavior is non-destructive and merges records/checklist attachments when possible.
+
+## Available Scripts
 
 | Script | Description |
-|--------|-------------|
-| `npm run dev` | Run server and Vite dev in parallel |
-| `npm run dev:server` | Run API only (port 3000) |
-| `npm run dev:vite` | Run Vite dev server only (port 5173) |
-| `npm run build` | Build React app for production |
-| `npm run electron:dev` | Run Vite, then Electron (dev) |
-| `npm run electron:build` | Build React app and package with Electron |
+|---|---|
+| `npm run dev` | Run backend and Vite dev server in parallel |
+| `npm run dev:server` | Run Express API server |
+| `npm run dev:vite` | Run Vite frontend dev server |
+| `npm run build` | Build frontend assets |
+| `npm run preview` | Preview built frontend |
+| `npm run start` | Alias for `npm run dev` |
+| `npm run electron:dev` | Start desktop development workflow |
+| `npm run electron:build` | Build frontend in electron mode and package installer |
+| `npm run electron:start` | Launch Electron entry directly |
+| `npm run seed:applicants` | Seed sample applicant data |
 
-## Electron (desktop)
+## Electron Notes
 
-- **Development:** Run `npm run dev:server` in one terminal, then `npm run electron:dev` in another. Electron loads http://localhost:5173.
-- **Production build:** Run `npm run electron:build`. Output is in `dist-electron/`. The packaged app still needs the API server running (or run the server from the app) for data.
-- **Versions:** Node 18+, Electron 28. See `package.json` for exact versions.
+- `npm run electron:dev` runs server, Vite, and Electron concurrently.
+- `npm run electron:build` creates distributables in the configured `release` directory.
+- App metadata and packaging options are defined in `package.json` under `build`.
 
-## Data
+## Security and Validation
 
-SQLite database is created at `trace-app/data/trace.db`. Tables: `children`, `documents`, `checklist_items`.
+- HTTP hardening via Helmet
+- Controlled CORS origins for local development hosts
+- Server-side request validation using express-validator
+- Attachment filename sanitization before writing to disk
 
-## Requirements covered
+## Project Structure (High Level)
 
-- Child identification: name, DOB, age, place of birth, contact
-- General documents (all ages): National I.D, PSA Negative, affidavits, Brgy. certification, 2x2 photo, etc.
-- Age-specific: 1 month 1 day–6 yrs, 7–17, 18–59, 60+ with the required documents per group
-- UI: responsive layout, sidebar nav, toasts, step/wizard for document checklist
-- Security: validation/sanitization on server, escape utilities for UI, no secrets in frontend
+- `src/` - React app, pages, routing, UI logic
+- `server/` - Express API, controllers, routes, DB logic
+- `data/` - SQLite database file and attachment storage
+- `electron/` - Electron main/preload integration
 
-## Icons (Electron build)
+## Icons for Desktop Builds (Optional)
 
-Add `public/icon.png` (Linux), `public/icon.ico` (Windows), and/or `public/icon.icns` (macOS) for packaged app icons. Omit if not needed.
+Place build icons in `public/` if needed:
+
+- `icon.ico` for Windows
+- `icon.icns` for macOS
+- `icon.png` for Linux

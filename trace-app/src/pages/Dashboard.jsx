@@ -157,20 +157,7 @@ export function Dashboard() {
           </div>
         </div>
         {(dbInfo || dbInfoError) && (
-          <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
-            {dbInfoError && <p className="text-amber-800">Could not load DB path: {dbInfoError.message}</p>}
-            {dbInfo && (
-              <div className="space-y-1">
-                <p className="break-all">
-                  <span className="text-slate-500">Database path: </span>
-                  <code className="text-slate-800">{dbInfo.dbPath}</code>
-                </p>
-                <p className="break-all">
-                  <span className="text-slate-500">Attachments path: </span>
-                  <code className="text-slate-800">{dbInfo.attachmentsDir}</code>
-                </p>
-              </div>
-            )}
+          <div>
           </div>
         )}
       </header>
