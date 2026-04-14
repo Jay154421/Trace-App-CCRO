@@ -2,9 +2,19 @@ import { apiUrl } from '../config/api';
 
 async function request(path, options = {}) {
   const url = apiUrl(path);
+  const { headers: headerOverrides, ...fetchOptions } = options;
+  const headers = { ...headerOverrides };
+  if (
+    fetchOptions.body != null &&
+    fetchOptions.body !== '' &&
+    !headers['Content-Type'] &&
+    !headers['content-type']
+  ) {
+    headers['Content-Type'] = 'application/json';
+  }
   const res = await fetch(url, {
-    ...options,
-    headers: { 'Content-Type': 'application/json', ...options.headers },
+    ...fetchOptions,
+    headers,
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || res.statusText || 'Request failed');

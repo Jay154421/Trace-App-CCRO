@@ -5,6 +5,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const { initDb } = require('./db');
 const childrenRoutes = require('./routes/children');
+const databaseRoutes = require('./routes/database');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -16,6 +17,7 @@ app.use(cors({ origin: ['http://localhost:5173', 'http://localhost:5174', 'http:
 app.use(express.json({ limit: '10mb' }));
 
 app.use('/api/children', childrenRoutes);
+app.use('/api/database', databaseRoutes);
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 

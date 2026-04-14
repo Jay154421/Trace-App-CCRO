@@ -84,15 +84,20 @@ export function ChildDetail() {
   };
 
   const confirmDelete = () => {
+    const childId = Number(id);
+    if (!Number.isInteger(childId) || childId < 1) {
+      toast.error('Invalid applicant id.');
+      return;
+    }
     setDeleteDeleting(true);
     childrenApi
-      .remove(id)
+      .remove(childId)
       .then(() => {
         toast.success('Applicant removed.');
         setDeleteModalOpen(false);
         navigate('/children');
       })
-      .catch((err) => toast.error(err.message))
+      .catch((err) => toast.error(err?.message || 'Could not delete applicant.'))
       .finally(() => setDeleteDeleting(false));
   };
 

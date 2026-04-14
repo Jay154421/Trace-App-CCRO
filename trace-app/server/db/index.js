@@ -4,6 +4,7 @@ const fs = require('fs');
 
 const dataDir = process.env.DATA_DIR || path.join(__dirname, '../../data');
 const dbPath = path.join(dataDir, 'trace.db');
+let SQL = null;
 let db = null;
 
 function ensureDataDir() {
@@ -28,7 +29,7 @@ function saveDb() {
 }
 
 async function init() {
-  const SQL = await initSqlJs();
+  SQL = await initSqlJs();
   db = loadDb(SQL);
   db.save = saveDb;
 
@@ -146,4 +147,44 @@ function initDb() {
   return init();
 }
 
-module.exports = { getDb, initDb, init };
+function flushToDisk() {
+  saveDb();
+}
+
+function getDbPath() {
+  return dbPath;
+}
+
+function getAttachmentsDir() {
+  return path.join(path.dirname(dbPath), 'attachments');
+}
+
+function reloadFromDisk() {
+  if (!SQL) throw new Error('Database not initialized');
+  if (db) {
+    try {
+      db.close();
+    } catch (_) {
+      /* ignore close failures from already closed instances */
+    }
+    db = null;
+  }
+  db = loadDb(SQL);
+  db.save = saveDb;
+}
+
+function isSqliteFile(buf) {
+  if (!buf || buf.length < 16) return false;
+  return buf.subarray(0, 15).toString('ascii') === 'SQLite format 3';
+}
+
+module.exports = {
+  getDb,
+  initDb,
+  init,
+  flushToDisk,
+  getDbPath,
+  reloadFromDisk,
+  isSqliteFile,
+  getAttachmentsDir,
+};

@@ -2,9 +2,7 @@ const path = require('path');
 const fs = require('fs');
 const childModel = require('../models/child');
 const requirementsModel = require('../models/requirements');
-const { getDb } = require('../db');
-
-const ATTACHMENTS_DIR = path.join(__dirname, '../../data/attachments');
+const { getDb, getAttachmentsDir } = require('../db');
 
 function safeAttachmentFilename(name) {
   return name.replace(/[^a-zA-Z0-9._-]/g, '_');
@@ -64,10 +62,15 @@ function update(req, res) {
 }
 
 function remove(req, res) {
-  const id = Number(req.params.id);
-  const ok = childModel.remove(id);
-  if (!ok) return res.status(404).json({ error: 'Not found' });
-  res.json({ ok: true });
+  try {
+    const id = Number(req.params.id);
+    const ok = childModel.remove(id);
+    if (!ok) return res.status(404).json({ error: 'Not found' });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Remove child error:', err);
+    res.status(500).json({ error: err.message || 'Failed to delete applicant' });
+  }
 }
 
 function updateChecklist(req, res) {
@@ -77,7 +80,8 @@ function updateChecklist(req, res) {
     if (!child) return res.status(404).json({ error: 'Not found' });
     const items = req.body?.items;
     if (!Array.isArray(items)) return res.status(400).json({ error: 'items array required' });
-    if (!fs.existsSync(ATTACHMENTS_DIR)) fs.mkdirSync(ATTACHMENTS_DIR, { recursive: true });
+    const attachmentsDir = getAttachmentsDir();
+    if (!fs.existsSync(attachmentsDir)) fs.mkdirSync(attachmentsDir, { recursive: true });
     const db = getDb();
     db.prepare('DELETE FROM checklist_items WHERE child_id = ?').run(childId);
     const insertSql = 'INSERT INTO checklist_items (child_id, category, label, required, checked, notes, attachment) VALUES (?, ?, ?, ?, ?, ?, ?)';
@@ -98,11 +102,11 @@ function updateChecklist(req, res) {
         if (!f.attachmentBase64 || !f.attachmentFilename) continue;
         let duplicateIndex = 0;
         let filename = buildStoredAttachmentFilename(f.attachmentFilename, fallbackBase, duplicateIndex);
-        let filePath = path.join(ATTACHMENTS_DIR, filename);
+        let filePath = path.join(attachmentsDir, filename);
         while (fs.existsSync(filePath)) {
           duplicateIndex += 1;
           filename = buildStoredAttachmentFilename(f.attachmentFilename, fallbackBase, duplicateIndex);
-          filePath = path.join(ATTACHMENTS_DIR, filename);
+          filePath = path.join(attachmentsDir, filename);
         }
         const buf = Buffer.from(f.attachmentBase64, 'base64');
         fs.writeFileSync(filePath, buf);
@@ -152,7 +156,7 @@ function getChecklistAttachment(req, res) {
     return list.includes(filename);
   });
   if (!hasFile) return res.status(404).json({ error: 'Attachment not found' });
-  const filePath = path.join(ATTACHMENTS_DIR, filename);
+  const filePath = path.join(getAttachmentsDir(), filename);
   if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'File not found' });
   res.sendFile(path.resolve(filePath));
 }

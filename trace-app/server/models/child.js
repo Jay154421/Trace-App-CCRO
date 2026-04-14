@@ -133,10 +133,9 @@ function update(id, data) {
 
 function remove(id) {
   const db = getDb();
-  const doc = db.prepare('DELETE FROM documents WHERE child_id = ?');
-  const check = db.prepare('DELETE FROM checklist_items WHERE child_id = ?');
-  doc.run(id);
-  check.run(id);
+  // sql.js only allows one active prepared statement per database; run each DELETE immediately.
+  db.prepare('DELETE FROM documents WHERE child_id = ?').run(id);
+  db.prepare('DELETE FROM checklist_items WHERE child_id = ?').run(id);
   const result = db.prepare('DELETE FROM children WHERE id = ?').run(id);
   db.close();
   return result.changes > 0;
