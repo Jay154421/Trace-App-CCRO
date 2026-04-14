@@ -1,4 +1,4 @@
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useBlocker } from 'react-router-dom';
 import { useState, useEffect, useRef, useLayoutEffect, useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import { childrenApi } from '../services/api';
@@ -308,7 +308,6 @@ export function DocumentsWizard() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [step, setStep] = useState(0);
-  const [leaveModalOpen, setLeaveModalOpen] = useState(false);
   /** Pending confirmation before removing an attachment (pending upload or saved file). */
   const [removeAttachmentModal, setRemoveAttachmentModal] = useState(null);
   const [initialChecklist, setInitialChecklist] = useState(null);
@@ -354,12 +353,19 @@ export function DocumentsWizard() {
     return notesChanged || checkedChanged || hasNewFiles;
   });
 
+  const blocker = useBlocker(
+    useCallback(
+      ({ currentLocation, nextLocation }) =>
+        Boolean(hasUnsavedChanges) &&
+        (currentLocation.pathname !== nextLocation.pathname ||
+          currentLocation.search !== nextLocation.search ||
+          currentLocation.hash !== nextLocation.hash),
+      [hasUnsavedChanges]
+    )
+  );
+
   const handleBackClick = () => {
-    if (hasUnsavedChanges) {
-      setLeaveModalOpen(true);
-    } else {
-      navigate(`/children/${id}`);
-    }
+    navigate(`/children/${id}`);
   };
 
   const updateNotes = (index, notes) => {
@@ -476,7 +482,11 @@ export function DocumentsWizard() {
   };
 
   const saveAndLeave = () => {
-    save().then(() => navigate(`/children/${id}`));
+    save().then(() => {
+      if (blocker.state === 'blocked') {
+        blocker.proceed();
+      }
+    });
   };
 
   const stopCamera = () => {
@@ -1125,10 +1135,10 @@ export function DocumentsWizard() {
         </div>
       )}
 
-      {leaveModalOpen && (
+      {blocker.state === 'blocked' && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50"
-          onClick={() => setLeaveModalOpen(false)}
+          onClick={() => blocker.reset()}
           role="dialog"
           aria-modal="true"
           aria-labelledby="leave-modal-title"
@@ -1146,27 +1156,21 @@ export function DocumentsWizard() {
             <div className="flex flex-col gap-3 mt-5">
               <button
                 type="button"
-                onClick={() => {
-                  setLeaveModalOpen(false);
-                  saveAndLeave();
-                }}
+                onClick={() => saveAndLeave()}
                 className="w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
               >
                 Save Changes
               </button>
               <button
                 type="button"
-                onClick={() => setLeaveModalOpen(false)}
+                onClick={() => blocker.reset()}
                 className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
               >
                 Stay on Page
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setLeaveModalOpen(false);
-                  navigate(`/children/${id}`);
-                }}
+                onClick={() => blocker.proceed()}
                 className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
               >
                 Discard Changes
