@@ -97,13 +97,20 @@ export function Dashboard() {
       toast.error('Select a .zip backup file.');
       return;
     }
-    if (!window.confirm('Replace current database and attachment files with this backup? This cannot be undone.')) {
+    if (!window.confirm('Import new applicants and attachments from this backup? Existing matching applicants will be skipped.')) {
       return;
     }
     setDbBusy(true);
     try {
-      await importDatabaseFile(file);
-      toast.success('Backup imported.');
+      const result = await importDatabaseFile(file);
+      const summary = result?.summary;
+      if (summary) {
+        toast.success(
+          `Import complete: ${summary.addedApplicants} applicants added, ${summary.skippedApplicants} skipped, ${summary.addedChecklistItems} checklist added, ${summary.mergedChecklistItems} checklist merged, ${summary.copiedAttachments} attachments copied.`
+        );
+      } else {
+        toast.success('Backup imported.');
+      }
       setListKey((k) => k + 1);
     } catch (err) {
       toast.error(err?.message || 'Import failed.');

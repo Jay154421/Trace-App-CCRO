@@ -6,7 +6,7 @@ const { faker } = require('@faker-js/faker');
 const { initDb } = require('../db');
 const childModel = require('../models/child');
 
-const SEED_COUNT = 1050;
+const SEED_COUNT = 100;
 
 const PH_CITIES = [
   'Manila', 'Quezon City', 'Davao City', 'Cebu City', 'Caloocan',
