@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '../hooks/useQuery';
 import { childrenApi } from '../services/api';
@@ -21,9 +21,36 @@ export function ChildList() {
   const [modalOpen, setModalOpen] = useState(false);
   const [listKey, setListKey] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(8);
+
   const { data, loading, error } = useQuery(childrenApi.list, [listKey]);
   const list = data ?? [];
   const filteredList = list.filter((c) => matchApplicant(c, searchQuery));
+
+  useEffect(() => {
+    const updateItemsPerPage = () => {
+      const width = window.innerWidth;
+      if (width >= 1536) setItemsPerPage(15);      // 2xl
+      else if (width >= 1280) setItemsPerPage(12); // xl
+      else if (width >= 1024) setItemsPerPage(10); // lg
+      else if (width >= 768) setItemsPerPage(8);   // md
+      else setItemsPerPage(6);                     // sm (mobile)
+    };
+
+    updateItemsPerPage();
+    window.addEventListener('resize', updateItemsPerPage);
+    return () => window.removeEventListener('resize', updateItemsPerPage);
+  }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, itemsPerPage]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredList.length / itemsPerPage));
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedList = filteredList.slice(startIndex, startIndex + itemsPerPage);
 
   return (
     <div>
@@ -88,9 +115,10 @@ export function ChildList() {
           </button>
         </div>
       ) : (
-        <ul className="space-y-3">
-          {filteredList.map((c) => (
-            <li key={c.id}>
+        <>
+          <ul className="space-y-3">
+            {paginatedList.map((c) => (
+              <li key={c.id}>
               <Link
                 to={`/children/${c.id}`}
                 className="group flex items-center gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
@@ -140,6 +168,101 @@ export function ChildList() {
             </li>
           ))}
         </ul>
+
+          {filteredList.length > itemsPerPage && (
+            <div className="mt-6 flex items-center justify-between border-t border-slate-200 pt-4">
+              <div className="flex flex-1 justify-between sm:hidden">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="relative inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="relative ml-3 inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+              <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm text-slate-700">
+                    Showing <span className="font-medium">{startIndex + 1}</span> to{' '}
+                    <span className="font-medium">
+                      {Math.min(startIndex + itemsPerPage, filteredList.length)}
+                    </span>{' '}
+                    of <span className="font-medium">{filteredList.length}</span> results
+                  </p>
+                </div>
+                <div>
+                  <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="relative inline-flex items-center rounded-l-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <span className="sr-only">Previous</span>
+                      <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                    
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                      if (
+                        page === 1 ||
+                        page === totalPages ||
+                        (page >= currentPage - 1 && page <= currentPage + 1)
+                      ) {
+                        return (
+                          <button
+                            key={page}
+                            type="button"
+                            onClick={() => setCurrentPage(page)}
+                            className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold focus:z-20 focus:outline-offset-0 ${
+                              currentPage === page
+                                ? 'bg-emerald-600 text-white z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600'
+                                : 'text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        );
+                      } else if (
+                        page === currentPage - 2 ||
+                        page === currentPage + 2
+                      ) {
+                        return (
+                          <span key={page} className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-slate-700 ring-1 ring-inset ring-slate-300 focus:outline-offset-0">
+                            ...
+                          </span>
+                        );
+                      }
+                      return null;
+                    })}
+
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="relative inline-flex items-center rounded-r-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <span className="sr-only">Next</span>
+                      <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  </nav>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

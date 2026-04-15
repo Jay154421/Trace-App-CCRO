@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { childrenApi } from '../services/api';
 
@@ -15,6 +16,7 @@ const emptyForm = {
 };
 
 export function AddApplicantModal({ open, onClose, onAdded }) {
+  const navigate = useNavigate();
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(false);
 
@@ -40,10 +42,11 @@ export function AddApplicantModal({ open, onClose, onAdded }) {
     };
     childrenApi
       .create(payload)
-      .then(() => {
+      .then((res) => {
         toast.success('Applicant added.');
         onAdded?.();
         onClose();
+        navigate(`/children/${res.id}`);
       })
       .catch((err) => {
         toast.error(err.message || 'Failed to save.');
