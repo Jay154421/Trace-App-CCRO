@@ -9,6 +9,7 @@ router.get('/:id/attachments/:filename', idParam, ctrl.getChecklistAttachment);
 router.get('/:id', idParam, handleValidationErrors, ctrl.get);
 router.post('/', childCreate, handleValidationErrors, ctrl.create);
 router.put('/:id', childUpdate, handleValidationErrors, ctrl.update);
+router.delete('/bulk', ctrl.bulkRemove);
 router.delete('/:id', idParam, handleValidationErrors, ctrl.remove);
 router.put('/:id/checklist', idParam, [body('items').isArray()], handleValidationErrors, ctrl.updateChecklist);
 router.put('/:id/certificate-of-live-birth', idParam, handleValidationErrors, ctrl.updateCertificateOfLiveBirth);

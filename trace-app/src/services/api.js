@@ -27,6 +27,7 @@ export const childrenApi = {
   create: (body) => request('/children', { method: 'POST', body: JSON.stringify(body) }),
   update: (id, body) => request(`/children/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
   remove: (id) => request(`/children/${id}`, { method: 'DELETE' }),
+  bulkRemove: (ids) => request('/children/bulk', { method: 'DELETE', body: JSON.stringify({ ids }) }),
   updateChecklist: (id, items) => request(`/children/${id}/checklist`, { method: 'PUT', body: JSON.stringify({ items }) }),
   updateCertificateOfLiveBirth: (id, data) =>
     request(`/children/${id}/certificate-of-live-birth`, { method: 'PUT', body: JSON.stringify(data) }),

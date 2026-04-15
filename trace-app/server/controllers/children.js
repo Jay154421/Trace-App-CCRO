@@ -73,6 +73,24 @@ function remove(req, res) {
   }
 }
 
+function bulkRemove(req, res) {
+  try {
+    const ids = req.body?.ids;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'ids array is required' });
+    }
+    const numericIds = ids.map(Number).filter((n) => Number.isFinite(n) && n > 0);
+    if (numericIds.length === 0) {
+      return res.status(400).json({ error: 'No valid ids provided' });
+    }
+    const deleted = childModel.bulkRemove(numericIds);
+    res.json({ ok: true, deleted });
+  } catch (err) {
+    console.error('Bulk remove error:', err);
+    res.status(500).json({ error: err.message || 'Bulk delete failed' });
+  }
+}
+
 function updateChecklist(req, res) {
   try {
     const childId = Number(req.params.id);
@@ -171,4 +189,4 @@ function updateCertificateOfLiveBirth(req, res) {
   res.json({ ok: true });
 }
 
-module.exports = { list, get, create, update, remove, updateChecklist, getChecklistAttachment, updateCertificateOfLiveBirth };
+module.exports = { list, get, create, update, remove, bulkRemove, updateChecklist, getChecklistAttachment, updateCertificateOfLiveBirth };

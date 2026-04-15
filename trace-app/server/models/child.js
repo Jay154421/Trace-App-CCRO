@@ -141,4 +141,21 @@ function remove(id) {
   return result.changes > 0;
 }
 
-module.exports = { all, findById, create, update, remove, getAgeGroup, calculateAge, updateCertificateOfLiveBirth };
+function bulkRemove(ids) {
+  if (!Array.isArray(ids) || ids.length === 0) return 0;
+  const db = getDb();
+  let deleted = 0;
+  try {
+    for (const id of ids) {
+      db.prepare('DELETE FROM documents WHERE child_id = ?').run(id);
+      db.prepare('DELETE FROM checklist_items WHERE child_id = ?').run(id);
+      const result = db.prepare('DELETE FROM children WHERE id = ?').run(id);
+      deleted += result.changes;
+    }
+    return deleted;
+  } finally {
+    db.close();
+  }
+}
+
+module.exports = { all, findById, create, update, remove, bulkRemove, getAgeGroup, calculateAge, updateCertificateOfLiveBirth };
