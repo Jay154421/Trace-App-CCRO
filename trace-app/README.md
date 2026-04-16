@@ -1,6 +1,10 @@
 # TRACE System
 
-TRACE System is a birth certificate (COLB) application tracker focused on document completeness. It manages applicant records, age-group-based requirements, checklist compliance, attachments, and database backup/restore for local office workflows.
+## Introduction
+The TRACER System is a comprehensive digital solution developed for the City Civil Registry Office (CCRO) to manage, track, and secure birth certificate (Certificate of Live Birth - COLB) records. It is designed to modernize public service by moving away from traditional, paper-based tracking to an efficient, digital-first workflow. The system ensures that every applicant's document requirements are organized, verifiable, and easily accessible.
+
+## Purpose
+The primary purpose of the TRACE System is to streamline the evaluation of birth certificate applications by focusing on document completeness. It helps manage applicant records, dynamically adapt checklists based on age-group requirements, and handle document attachments and workflows. By doing so, it enhances the operational efficiency of the local civil registry office and ensures accuracy in civil registrations.
 
 ## Features
 
