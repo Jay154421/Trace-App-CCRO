@@ -13,12 +13,44 @@ function isComplete(c) {
   return total > 0 && checked === total;
 }
 
+function normalizeSearchText(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function getDateSearchTokens(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return [];
+  const tokens = new Set([normalizeSearchText(raw)]);
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) return [...tokens].filter(Boolean);
+  const year = String(date.getFullYear());
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  tokens.add(normalizeSearchText(`${year}-${month}-${day}`));
+  tokens.add(normalizeSearchText(`${month}/${day}/${year}`));
+  tokens.add(normalizeSearchText(`${day}/${month}/${year}`));
+  tokens.add(normalizeSearchText(`${month}-${day}-${year}`));
+  tokens.add(normalizeSearchText(`${day}-${month}-${year}`));
+  return [...tokens].filter(Boolean);
+}
+
 function matchApplicant(c, query) {
-  if (!query.trim()) return true;
-  const q = query.trim().toLowerCase();
-  const name = `${c.last_name} ${c.first_name} ${c.middle_name || ''}`.toLowerCase();
-  const dob = (c.date_of_birth || '').toLowerCase();
-  return name.includes(q) || dob.includes(q);
+  const q = normalizeSearchText(query);
+  if (!q) return true;
+  const name = normalizeSearchText(`${c.last_name || ''} ${c.first_name || ''} ${c.middle_name || ''}`);
+  const placeOfBirth = normalizeSearchText(c.place_of_birth);
+  const dateTokens = getDateSearchTokens(c.date_of_birth);
+  return (
+    name.includes(q) ||
+    placeOfBirth.includes(q) ||
+    dateTokens.some((token) => token.includes(q))
+  );
 }
 
 function getApplicantFullName(applicant) {
@@ -192,16 +224,24 @@ export function ChildList() {
       </div>
 
       {/* ── Search + Status filter bar ── */}
-      {list.length > 0 && (
-        <div className="mb-4 flex flex-wrap items-center gap-3">
-          <input
-            type="search"
-            placeholder="Search by name or date of birth…"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full max-w-xs rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-            aria-label="Search applicants"
-          />
+      {(list.length > 0 || searchQuery) && (
+        <div className="mb-4 flex flex-wrap items-center gap-3 animate-in fade-in duration-500">
+          <div className="relative w-full max-w-xs">
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+              <svg className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input
+              type="search"
+              placeholder="Search by name or date of birth…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-lg border border-slate-300 bg-white py-2 pl-10 pr-3 text-sm text-slate-800 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-shadow hover:shadow-sm"
+              aria-label="Search applicants"
+              autoComplete="off"
+            />
+          </div>
 
           {/* Status filter pills */}
           <div
@@ -214,13 +254,13 @@ export function ChildList() {
                 key={value}
                 type="button"
                 onClick={() => setStatusFilter(value)}
-                className={`px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
+                className={`px-3 py-2 text-sm font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
                   statusFilter === value
                     ? value === 'complete'
-                      ? 'bg-emerald-600 text-white'
+                      ? 'bg-emerald-600 text-white shadow-inner'
                       : value === 'pending'
-                      ? 'bg-amber-500 text-white'
-                      : 'bg-slate-700 text-white'
+                      ? 'bg-amber-500 text-white shadow-inner'
+                      : 'bg-slate-700 text-white shadow-inner'
                     : 'text-slate-600 hover:bg-slate-50'
                 }`}
                 aria-pressed={statusFilter === value}

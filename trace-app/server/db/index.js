@@ -118,7 +118,7 @@ function getDb() {
         } catch (e) {
           console.error('Db run: lastInsertRowid/changes read error', e);
         }
-        saveDb();
+        if (!db._inBatch) saveDb();
         return { lastInsertRowid, changes };
       };
       const get = (...params) => {
@@ -138,7 +138,23 @@ function getDb() {
     },
     exec(sql) {
       db.run(sql);
-      saveDb();
+      if (!db._inBatch) saveDb();
+    },
+    transaction(fn) {
+      const prev = !!db._inBatch;
+      db._inBatch = true;
+      try {
+        db.run('BEGIN TRANSACTION');
+        const result = fn();
+        db.run('COMMIT');
+        return result;
+      } catch (e) {
+        db.run('ROLLBACK');
+        throw e;
+      } finally {
+        db._inBatch = prev;
+        if (!db._inBatch) saveDb();
+      }
     },
   };
 }

@@ -70,6 +70,8 @@ export function Dashboard() {
     { id: 'pending', label: 'Pending Registrations', value: pendingCount, hint: 'Missing or incomplete documents' },
   ];
 
+  const [importConfirmFile, setImportConfirmFile] = useState(null);
+
   const handleExportDatabase = async () => {
     setDbBusy(true);
     try {
@@ -89,7 +91,7 @@ export function Dashboard() {
     }
   };
 
-  const handleImportDatabase = async (event) => {
+  const handleImportDatabase = (event) => {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) return;
@@ -97,9 +99,14 @@ export function Dashboard() {
       toast.error('Select a .zip backup file.');
       return;
     }
-    if (!window.confirm('Import new applicants and attachments from this backup? Existing matching applicants will be skipped.')) {
-      return;
-    }
+    setImportConfirmFile(file);
+  };
+
+  const executeImport = async () => {
+    const file = importConfirmFile;
+    setImportConfirmFile(null);
+    if (!file) return;
+    
     setDbBusy(true);
     try {
       const result = await importDatabaseFile(file);
@@ -167,6 +174,44 @@ export function Dashboard() {
         onClose={() => setModalOpen(false)}
         onAdded={() => setListKey((k) => k + 1)}
       />
+
+      {importConfirmFile && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <h2 className="text-lg font-semibold text-slate-800">
+              Import Backup
+            </h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Import new applicants and attachments from this backup? Existing matching applicants will be skipped.
+            </p>
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setImportConfirmFile(null);
+                  if (importDbInputRef.current) importDbInputRef.current.value = '';
+                }}
+                disabled={dbBusy}
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-400 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={executeImport}
+                disabled={dbBusy}
+                className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
+              >
+                {dbBusy ? 'Importing…' : 'Import'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800" role="alert">

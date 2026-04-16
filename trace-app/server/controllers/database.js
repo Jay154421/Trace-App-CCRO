@@ -113,128 +113,136 @@ async function importDatabase(req, res) {
       checklistByChildKey.set(`${Number(row.child_id)}|${key}`, row);
     }
 
-    let addedApplicants = 0;
-    let skippedApplicants = 0;
-    let addedChecklistItems = 0;
-    let copiedAttachments = 0;
+    const result = await db.transaction(async () => {
+      let addedApplicants = 0;
+      let skippedApplicants = 0;
+      let addedChecklistItems = 0;
+      let copiedAttachments = 0;
+      let mergedChecklistItems = 0;
 
-    for (const child of importedChildren) {
-      const key = buildApplicantKey(child);
-      const existingId = existingChildIdByKey.get(key);
-      if (existingId) {
-        importedToCurrentChildId.set(Number(child.id), existingId);
-        skippedApplicants += 1;
-        continue;
-      }
-
-      const inserted = db.prepare(
-        `INSERT INTO children (
-          first_name, middle_name, last_name, date_of_birth, place_of_birth, contact_no, age_group,
-          registrant_deceased, hilot_deceased, parent_foreigner, certificate_of_live_birth, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      ).run(
-        toNullableString(child.first_name),
-        toNullableString(child.middle_name),
-        toNullableString(child.last_name),
-        toNullableString(child.date_of_birth),
-        toNullableString(child.place_of_birth),
-        toNullableString(child.contact_no),
-        toNullableString(child.age_group),
-        toIntBool(child.registrant_deceased),
-        toIntBool(child.hilot_deceased),
-        toIntBool(child.parent_foreigner),
-        toNullableString(child.certificate_of_live_birth),
-        toNullableString(child.created_at),
-        toNullableString(child.updated_at)
-      );
-      const newId = Number(inserted.lastInsertRowid);
-      importedToCurrentChildId.set(Number(child.id), newId);
-      existingChildIdByKey.set(key, newId);
-      addedApplicants += 1;
-    }
-
-    const attachmentNameMap = new Map();
-    let mergedChecklistItems = 0;
-    for (const row of importedChecklist) {
-      const targetChildId = importedToCurrentChildId.get(Number(row.child_id));
-      if (!targetChildId) continue;
-
-      const attachmentNames = parseAttachmentColumn(row.attachment);
-      const resolvedAttachmentNames = [];
-      for (const oldName of attachmentNames) {
-        if (!/^[a-zA-Z0-9._-]+$/.test(oldName)) continue;
-        if (!attachmentNameMap.has(oldName)) {
-          const zipEntry = zip.file(`attachments/${oldName}`);
-          if (!zipEntry) {
-            if (fs.existsSync(path.join(attachmentsDir, oldName))) {
-              attachmentNameMap.set(oldName, oldName);
-            } else {
-              continue;
-            }
-          } else {
-            const newName = reserveUniqueAttachmentName(attachmentsDir, oldName);
-            const content = await zipEntry.async('nodebuffer');
-            fs.writeFileSync(path.join(attachmentsDir, newName), content);
-            attachmentNameMap.set(oldName, newName);
-            copiedAttachments += 1;
-          }
+      for (const child of importedChildren) {
+        const normalizedChild = normalizeImportChildRow(child);
+        if (!normalizedChild) {
+          skippedApplicants += 1;
+          continue;
         }
-        resolvedAttachmentNames.push(attachmentNameMap.get(oldName));
-      }
+        const key = buildApplicantKey(normalizedChild);
+        const existingId = existingChildIdByKey.get(key);
+        if (existingId) {
+          importedToCurrentChildId.set(Number(child.id), existingId);
+          skippedApplicants += 1;
+          continue;
+        }
 
-      const category = toNullableString(row.category);
-      const label = toNullableString(row.label);
-      const checklistKey = buildChecklistKey(category, label);
-      const existingChecklist = checklistByChildKey.get(`${targetChildId}|${checklistKey}`);
-
-      if (!existingChecklist) {
-        db.prepare(
-          `INSERT INTO checklist_items (child_id, category, label, required, checked, notes, attachment)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`
+        const inserted = db.prepare(
+          `INSERT INTO children (
+            first_name, middle_name, last_name, date_of_birth, place_of_birth, contact_no, age_group,
+            registrant_deceased, hilot_deceased, parent_foreigner, certificate_of_live_birth, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
         ).run(
-          targetChildId,
-          category,
-          label,
-          toIntBool(row.required),
-          toIntBool(row.checked),
-          toNullableString(row.notes),
-          serializeAttachmentColumn(resolvedAttachmentNames)
+          normalizedChild.first_name,
+          normalizedChild.middle_name,
+          normalizedChild.last_name,
+          normalizedChild.date_of_birth,
+          normalizedChild.place_of_birth,
+          normalizedChild.contact_no,
+          normalizedChild.age_group,
+          normalizedChild.registrant_deceased,
+          normalizedChild.hilot_deceased,
+          normalizedChild.parent_foreigner,
+          normalizedChild.certificate_of_live_birth,
+          normalizedChild.created_at,
+          normalizedChild.updated_at
         );
-        const insertedChecklist = db.prepare(
-          'SELECT id, child_id, category, label, required, checked, notes, attachment FROM checklist_items WHERE child_id = ? AND category = ? AND label = ? ORDER BY id DESC LIMIT 1'
-        ).get(targetChildId, category, label);
-        if (insertedChecklist && checklistKey) {
-          checklistByChildKey.set(`${targetChildId}|${checklistKey}`, insertedChecklist);
+        const newId = Number(inserted.lastInsertRowid);
+        importedToCurrentChildId.set(Number(child.id), newId);
+        existingChildIdByKey.set(key, newId);
+        addedApplicants += 1;
+      }
+
+      const attachmentNameMap = new Map();
+      for (const row of importedChecklist) {
+        const targetChildId = importedToCurrentChildId.get(Number(row.child_id));
+        if (!targetChildId) continue;
+
+        const attachmentNames = parseAttachmentColumn(row.attachment);
+        const resolvedAttachmentNames = [];
+        for (const oldName of attachmentNames) {
+          if (!/^[a-zA-Z0-9._-]+$/.test(oldName)) continue;
+          if (!attachmentNameMap.has(oldName)) {
+            const zipEntry = zip.file(`attachments/${oldName}`);
+            if (!zipEntry) {
+              if (fs.existsSync(path.join(attachmentsDir, oldName))) {
+                attachmentNameMap.set(oldName, oldName);
+              } else {
+                continue;
+              }
+            } else {
+              const newName = reserveUniqueAttachmentName(attachmentsDir, oldName);
+              const content = await zipEntry.async('nodebuffer');
+              fs.writeFileSync(path.join(attachmentsDir, newName), content);
+              attachmentNameMap.set(oldName, newName);
+              copiedAttachments += 1;
+            }
+          }
+          resolvedAttachmentNames.push(attachmentNameMap.get(oldName));
         }
-        addedChecklistItems += 1;
-        continue;
+
+        const category = toNullableString(row.category);
+        const label = toNullableString(row.label);
+        const checklistKey = buildChecklistKey(category, label);
+        const existingChecklist = checklistByChildKey.get(`${targetChildId}|${checklistKey}`);
+
+        if (!existingChecklist) {
+          db.prepare(
+            `INSERT INTO checklist_items (child_id, category, label, required, checked, notes, attachment)
+             VALUES (?, ?, ?, ?, ?, ?, ?)`
+          ).run(
+            targetChildId,
+            category,
+            label,
+            toIntBool(row.required),
+            toIntBool(row.checked),
+            toNullableString(row.notes),
+            serializeAttachmentColumn(resolvedAttachmentNames)
+          );
+          const insertedChecklist = db.prepare(
+            'SELECT id, child_id, category, label, required, checked, notes, attachment FROM checklist_items WHERE child_id = ? AND category = ? AND label = ? ORDER BY id DESC LIMIT 1'
+          ).get(targetChildId, category, label);
+          if (insertedChecklist && checklistKey) {
+            checklistByChildKey.set(`${targetChildId}|${checklistKey}`, insertedChecklist);
+          }
+          addedChecklistItems += 1;
+          continue;
+        }
+
+        const existingAttachmentNames = parseAttachmentColumn(existingChecklist.attachment);
+        const mergedAttachmentNames = uniqueStrings([...existingAttachmentNames, ...resolvedAttachmentNames]);
+        if (mergedAttachmentNames.length !== existingAttachmentNames.length) {
+          db.prepare('UPDATE checklist_items SET attachment = ? WHERE id = ?').run(
+            serializeAttachmentColumn(mergedAttachmentNames),
+            Number(existingChecklist.id)
+          );
+          checklistByChildKey.set(`${targetChildId}|${checklistKey}`, {
+            ...existingChecklist,
+            attachment: serializeAttachmentColumn(mergedAttachmentNames),
+          });
+          mergedChecklistItems += 1;
+        }
       }
 
-      const existingAttachmentNames = parseAttachmentColumn(existingChecklist.attachment);
-      const mergedAttachmentNames = uniqueStrings([...existingAttachmentNames, ...resolvedAttachmentNames]);
-      if (mergedAttachmentNames.length !== existingAttachmentNames.length) {
-        // Non-destructive merge: keep existing row values; append only new attachments.
-        db.prepare('UPDATE checklist_items SET attachment = ? WHERE id = ?').run(
-          serializeAttachmentColumn(mergedAttachmentNames),
-          Number(existingChecklist.id)
-        );
-        checklistByChildKey.set(`${targetChildId}|${checklistKey}`, {
-          ...existingChecklist,
-          attachment: serializeAttachmentColumn(mergedAttachmentNames),
-        });
-        mergedChecklistItems += 1;
-      }
-    }
-
-    res.json({
-      ok: true,
-      summary: {
+      return {
         addedApplicants,
         skippedApplicants,
         addedChecklistItems,
         mergedChecklistItems,
         copiedAttachments,
-      },
+      };
+    });
+
+    res.json({
+      ok: true,
+      summary: result,
     });
   } catch (err) {
     console.error('Import database error:', err);
@@ -270,12 +278,44 @@ function toNullableString(value) {
   return str ? str : null;
 }
 
+function normalizeOptionalText(value) {
+  const str = String(value ?? '').trim();
+  return str.length > 0 ? str : null;
+}
+
+function normalizeRequiredText(value, fallback = '') {
+  const str = String(value ?? '').trim();
+  return str.length > 0 ? str : fallback;
+}
+
+function normalizeImportChildRow(child) {
+  const firstName = normalizeRequiredText(child.first_name);
+  const lastName = normalizeRequiredText(child.last_name);
+  const dateOfBirth = normalizeDateOnly(child.date_of_birth || '');
+  if (!firstName || !lastName || !dateOfBirth) return null;
+  return {
+    first_name: firstName,
+    middle_name: normalizeOptionalText(child.middle_name),
+    last_name: lastName,
+    date_of_birth: dateOfBirth,
+    place_of_birth: normalizeOptionalText(child.place_of_birth),
+    contact_no: normalizeOptionalText(child.contact_no),
+    age_group: normalizeOptionalText(child.age_group),
+    registrant_deceased: toIntBool(child.registrant_deceased),
+    hilot_deceased: toIntBool(child.hilot_deceased),
+    parent_foreigner: toIntBool(child.parent_foreigner),
+    certificate_of_live_birth: normalizeOptionalText(child.certificate_of_live_birth),
+    created_at: normalizeOptionalText(child.created_at),
+    updated_at: normalizeOptionalText(child.updated_at),
+  };
+}
+
 function toIntBool(value) {
   return Number(value) ? 1 : 0;
 }
 
 function buildApplicantKey(row) {
-  const normalizedDob = normalizeDateOnly(row.date_of_birth);
+  const normalizedDob = normalizeDateOnly(row.date_of_birth || '');
   return [
     normalizeText(row.first_name),
     normalizeText(row.middle_name),

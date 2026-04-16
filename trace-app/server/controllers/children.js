@@ -101,47 +101,49 @@ function updateChecklist(req, res) {
     const attachmentsDir = getAttachmentsDir();
     if (!fs.existsSync(attachmentsDir)) fs.mkdirSync(attachmentsDir, { recursive: true });
     const db = getDb();
-    db.prepare('DELETE FROM checklist_items WHERE child_id = ?').run(childId);
-    const insertSql = 'INSERT INTO checklist_items (child_id, category, label, required, checked, notes, attachment) VALUES (?, ?, ?, ?, ?, ?, ?)';
-    for (const it of items) {
-      const existingFilenames = Array.isArray(it.attachmentFilenames)
-        ? it.attachmentFilenames.filter((f) => typeof f === 'string' && /^[a-zA-Z0-9._-]+$/.test(f))
-        : typeof it.attachment === 'string' && /^[a-zA-Z0-9._-]+$/.test(it.attachment)
-          ? [it.attachment]
-          : [];
-      const newFiles = Array.isArray(it.attachments) ? it.attachments : [];
-      if (it.attachmentBase64 && it.attachmentFilename) {
-        newFiles.push({ attachmentBase64: it.attachmentBase64, attachmentFilename: it.attachmentFilename });
-      }
-      const fallbackBase = `${childId}_${safeAttachmentFilename(it.category || 'general')}_${safeAttachmentFilename(it.label || 'doc')}`;
-      const savedFilenames = [];
-      for (let i = 0; i < newFiles.length; i++) {
-        const f = newFiles[i];
-        if (!f.attachmentBase64 || !f.attachmentFilename) continue;
-        let duplicateIndex = 0;
-        let filename = buildStoredAttachmentFilename(f.attachmentFilename, fallbackBase, duplicateIndex);
-        let filePath = path.join(attachmentsDir, filename);
-        while (fs.existsSync(filePath)) {
-          duplicateIndex += 1;
-          filename = buildStoredAttachmentFilename(f.attachmentFilename, fallbackBase, duplicateIndex);
-          filePath = path.join(attachmentsDir, filename);
+    db.transaction(() => {
+      db.prepare('DELETE FROM checklist_items WHERE child_id = ?').run(childId);
+      const insertSql = 'INSERT INTO checklist_items (child_id, category, label, required, checked, notes, attachment) VALUES (?, ?, ?, ?, ?, ?, ?)';
+      for (const it of items) {
+        const existingFilenames = Array.isArray(it.attachmentFilenames)
+          ? it.attachmentFilenames.filter((f) => typeof f === 'string' && /^[a-zA-Z0-9._-]+$/.test(f))
+          : typeof it.attachment === 'string' && /^[a-zA-Z0-9._-]+$/.test(it.attachment)
+            ? [it.attachment]
+            : [];
+        const newFiles = Array.isArray(it.attachments) ? it.attachments : [];
+        if (it.attachmentBase64 && it.attachmentFilename) {
+          newFiles.push({ attachmentBase64: it.attachmentBase64, attachmentFilename: it.attachmentFilename });
         }
-        const buf = Buffer.from(f.attachmentBase64, 'base64');
-        fs.writeFileSync(filePath, buf);
-        savedFilenames.push(filename);
+        const fallbackBase = `${childId}_${safeAttachmentFilename(it.category || 'general')}_${safeAttachmentFilename(it.label || 'doc')}`;
+        const savedFilenames = [];
+        for (let i = 0; i < newFiles.length; i++) {
+          const f = newFiles[i];
+          if (!f.attachmentBase64 || !f.attachmentFilename) continue;
+          let duplicateIndex = 0;
+          let filename = buildStoredAttachmentFilename(f.attachmentFilename, fallbackBase, duplicateIndex);
+          let filePath = path.join(attachmentsDir, filename);
+          while (fs.existsSync(filePath)) {
+            duplicateIndex += 1;
+            filename = buildStoredAttachmentFilename(f.attachmentFilename, fallbackBase, duplicateIndex);
+            filePath = path.join(attachmentsDir, filename);
+          }
+          const buf = Buffer.from(f.attachmentBase64, 'base64');
+          fs.writeFileSync(filePath, buf);
+          savedFilenames.push(filename);
+        }
+        const allFilenames = [...existingFilenames, ...savedFilenames];
+        const attachmentPath = allFilenames.length === 0 ? null : allFilenames.length === 1 ? allFilenames[0] : JSON.stringify(allFilenames);
+        db.prepare(insertSql).run(
+          childId,
+          it.category || 'general',
+          it.label || '',
+          it.required ? 1 : 0,
+          it.checked ? 1 : 0,
+          it.notes ?? null,
+          attachmentPath
+        );
       }
-      const allFilenames = [...existingFilenames, ...savedFilenames];
-      const attachmentPath = allFilenames.length === 0 ? null : allFilenames.length === 1 ? allFilenames[0] : JSON.stringify(allFilenames);
-      db.prepare(insertSql).run(
-        childId,
-        it.category || 'general',
-        it.label || '',
-        it.required ? 1 : 0,
-        it.checked ? 1 : 0,
-        it.notes ?? null,
-        attachmentPath
-      );
-    }
+    });
     res.json({ ok: true });
   } catch (err) {
     console.error('updateChecklist error:', err);
