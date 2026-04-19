@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -7,8 +8,8 @@ const childrenRoutes = require('./routes/children');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const dataDir = path.join(__dirname, '../data');
-require('fs').mkdirSync(dataDir, { recursive: true });
+const dataDir = process.env.DATA_DIR || path.join(__dirname, '../data');
+fs.mkdirSync(dataDir, { recursive: true });
 
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({ origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://127.0.0.1:5173', 'http://127.0.0.1:5174', 'http://127.0.0.1:5175'] }));
@@ -18,13 +19,24 @@ app.use('/api/children', childrenRoutes);
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
+const isElectronServe = process.env.ELECTRON_SERVE === '1';
+const staticDir = process.env.STATIC_DIR;
+if (isElectronServe && staticDir && fs.existsSync(staticDir)) {
+  app.use(express.static(staticDir));
+  app.get('*', (req, res) => {
+    const indexPath = path.join(staticDir, 'index.html');
+    if (fs.existsSync(indexPath)) res.sendFile(indexPath);
+    else res.status(404).send('Not found');
+  });
+}
+
 const requestedPort = Number(PORT) || 3001;
 
 function tryListen(port) {
   return new Promise((resolve, reject) => {
     const server = app.listen(port, () => resolve(server));
     server.on('error', (err) => {
-      if (err.code === 'EADDRINUSE') {
+      if (err.code === 'EADDRINUSE' && process.env.ELECTRON_STRICT_PORTS !== '1') {
         console.warn(`Port ${port} in use, trying ${port + 1}...`);
         tryListen(port + 1).then(resolve).catch(reject);
       } else reject(err);

@@ -1,4 +1,5 @@
 ---
+description: "Enforces exhaustive problem-solving, proactive ownership, and systematic methodology: act before asking, verify after fixing, never give up until all options are tried. Use when debugging, implementing features, researching, or when the agent might get stuck or deliver incomplete work."
 alwaysApply: false
 ---
 # PUA Universal Motivation Engine

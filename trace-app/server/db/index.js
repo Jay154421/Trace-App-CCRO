@@ -2,7 +2,8 @@ const initSqlJs = require('sql.js');
 const path = require('path');
 const fs = require('fs');
 
-const dbPath = path.join(__dirname, '../../data/trace.db');
+const dataDir = process.env.DATA_DIR || path.join(__dirname, '../../data');
+const dbPath = path.join(dataDir, 'trace.db');
 let db = null;
 
 function ensureDataDir() {

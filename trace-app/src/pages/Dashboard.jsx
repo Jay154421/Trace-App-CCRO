@@ -1,19 +1,82 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import { useQuery } from '../hooks/useQuery';
 import { childrenApi } from '../services/api';
 import { AddApplicantModal } from '../components/AddApplicantModal';
+
+function formatAgeGroupLabel(value) {
+  if (!value || value === 'unknown') return 'Unknown';
+  return String(value).replace(/_/g, ' ');
+}
 
 export function Dashboard() {
   const [modalOpen, setModalOpen] = useState(false);
   const [listKey, setListKey] = useState(0);
   const { data, loading, error } = useQuery(childrenApi.list, [listKey]);
   const list = Array.isArray(data) ? data : [];
+  const recentApplicants = list.slice(0, 5);
 
-  return (
-    <div>
-      <h1 className="text-2xl font-semibold text-slate-800 mb-2">Dashboard</h1>
-      <p className="text-slate-600 mb-6">Overview of applicants and document requirements.</p>
+  const completedCount = list.filter((child) => {
+    const total = child.checklist_total ?? 0;
+    const checked = child.checklist_checked ?? 0;
+    return total > 0 && checked === total;
+  }).length;
+
+  const pendingCount = list.length - completedCount;
+
+  const applicantsByAgeGroup = useMemo(() => {
+    const counts = new Map();
+    for (const child of list) {
+      const key = child.age_group || 'unknown';
+      counts.set(key, (counts.get(key) || 0) + 1);
+    }
+    return [...counts.entries()]
+      .map(([age_group, count]) => ({
+        label: formatAgeGroupLabel(age_group),
+        count,
+      }))
+      .sort((a, b) => b.count - a.count);
+  }, [list]);
+
+  const registrationStatusPie = useMemo(() => {
+    const rows = [
+      { name: 'Completed', value: completedCount, color: '#059669' },
+      { name: 'Pending', value: pendingCount, color: '#94a3b8' },
+    ];
+    return rows.filter((d) => d.value > 0);
+  }, [completedCount, pendingCount]);
+
+  const stats = [
+    { id: 'total', label: 'Total Applicants', value: list.length, hint: 'All recorded applicants' },
+    { id: 'completed', label: 'Completed Registrations', value: completedCount, hint: 'All required documents complete' },
+    { id: 'pending', label: 'Pending Registrations', value: pendingCount, hint: 'Missing or incomplete documents' },
+  ];
+
+  return (  
+    <div className="space-y-6 lg:space-y-8">
+      <header className="rounded-2xl border border-emerald-100 bg-gradient-to-r from-white via-emerald-50/70 to-white p-6 shadow-sm">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-slate-800 lg:text-3xl">Dashboard</h1>
+            <p className="mt-2 text-sm text-slate-600 md:text-base">
+              Overview of applicants and document requirements.
+            </p>
+          </div>
+        </div>
+      </header>
 
       <AddApplicantModal
         open={modalOpen}
@@ -27,60 +90,153 @@ export function Dashboard() {
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <section
-          className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm"
-          aria-labelledby="stats-total"
-        >
-          <h2 id="stats-total" className="text-sm font-medium text-slate-500 uppercase tracking-wide">
-            Total Applicants
-          </h2>
-          <p className="mt-2 text-3xl font-bold text-slate-800">{loading ? '…' : list.length}</p>
-        </section>
-        <section
-          className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm"
-          aria-labelledby="stats-cta"
-        >
-          <h2 id="stats-cta" className="text-sm font-medium text-slate-500 uppercase tracking-wide">
-            Quick action
-          </h2>
-          <button
-            type="button"
-            onClick={() => setModalOpen(true)}
-            className="mt-2 inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {stats.map((stat) => (
+          <section
+            key={stat.id}
+            className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+            aria-labelledby={`stats-${stat.id}`}
           >
-            Add applicant
-          </button>
-        </section>
+            <h2 id={`stats-${stat.id}`} className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              {stat.label}
+            </h2>
+            <p className="mt-3 text-3xl font-bold text-slate-800">
+              {loading ? <span className="inline-block h-9 w-14 animate-pulse rounded-md bg-slate-200" /> : stat.value}
+            </p>
+            <p className="mt-2 text-xs text-slate-500">{stat.hint}</p>
+          </section>
+        ))}
       </div>
 
-      {list.length > 0 && (
-        <section className="mt-8 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <h2 className="sr-only">Recent applicants</h2>
-          <ul className="divide-y divide-slate-200">
-            {list.slice(0, 5).map((c) => (
-              <li key={c.id}>
-                <Link
-                  to={`/children/${c.id}`}
-                  className="block px-5 py-3 hover:bg-slate-50 focus:bg-slate-50"
-                >
-                  <span className="font-medium text-slate-800">
-                    {c.last_name}, {c.first_name}
-                  </span>
-                  <span className="text-slate-500 text-sm ml-2">
-                    Age {c.age} · {c.age_group?.replace(/_/g, ' ') || '—'}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-          <div className="px-5 py-3 bg-slate-50 border-t border-slate-200">
+      <section className="grid gap-4 lg:grid-cols-2">
+        <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Applicants by age group</h2>
+          <p className="mt-1 text-xs text-slate-500">Count of applicants in each age category.</p>
+          <div className="mt-4 h-72 w-full min-h-[280px]">
+            {loading ? (
+              <div className="flex h-full items-center justify-center rounded-lg bg-slate-50">
+                <div className="h-40 w-full max-w-md animate-pulse rounded-md bg-slate-200" />
+              </div>
+            ) : applicantsByAgeGroup.length === 0 ? (
+              <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-500">
+                No applicants to chart yet.
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={applicantsByAgeGroup} margin={{ top: 8, right: 8, left: 0, bottom: 64 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis
+                    dataKey="label"
+                    tick={{ fontSize: 11, fill: '#64748b' }}
+                    interval={0}
+                    angle={-28}
+                    textAnchor="end"
+                    height={72}
+                  />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#64748b' }} width={36} />
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: '8px',
+                      border: '1px solid #e2e8f0',
+                      fontSize: '12px',
+                    }}
+                    formatter={(value) => [value, 'Applicants']}
+                  />
+                  <Bar dataKey="count" name="Applicants" fill="#10b981" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </article>
+
+        <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Registration status</h2>
+          <p className="mt-1 text-xs text-slate-500">Completed vs pending document checklists.</p>
+          <div className="mt-4 h-72 w-full min-h-[280px]">
+            {loading ? (
+              <div className="flex h-full items-center justify-center rounded-lg bg-slate-50">
+                <div className="h-48 w-48 animate-pulse rounded-full bg-slate-200" />
+              </div>
+            ) : list.length === 0 ? (
+              <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-500">
+                No applicants to chart yet.
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={registrationStatusPie}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={56}
+                    outerRadius={88}
+                    paddingAngle={2}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {registrationStatusPie.map((entry) => (
+                      <Cell key={entry.name} fill={entry.color} stroke="#fff" strokeWidth={1} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: '8px',
+                      border: '1px solid #e2e8f0',
+                      fontSize: '12px',
+                    }}
+                    formatter={(value) => [value, 'Applicants']}
+                  />
+                  <Legend wrapperStyle={{ fontSize: '12px' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </article>
+      </section>
+
+      <section className="grid gap-4">
+
+        <article className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm ">
+          <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Recent Applicants</h2>
             <Link to="/children" className="text-sm font-medium text-emerald-600 hover:text-emerald-700">
-              View all applicants →
+              Open full list
             </Link>
           </div>
-        </section>
-      )}
+
+          {loading ? (
+            <ul className="divide-y divide-slate-200">
+              {[1, 2, 3, 4, 5].map((item) => (
+                <li key={item} className="px-5 py-3">
+                  <div className="h-4 w-40 animate-pulse rounded bg-slate-200" />
+                  <div className="mt-2 h-3 w-56 animate-pulse rounded bg-slate-100" />
+                </li>
+              ))}
+            </ul>
+          ) : recentApplicants.length > 0 ? (
+            <ul className="divide-y divide-slate-200">
+              {recentApplicants.map((c) => (
+                <li key={c.id}>
+                  <Link to={`/children/${c.id}`} className="block px-5 py-3 transition hover:bg-slate-50 focus:bg-slate-50">
+                    <span className="font-medium text-slate-800">
+                      {c.last_name}, {c.first_name}
+                    </span>
+                    <span className="ml-2 text-sm text-slate-500">
+                      Age {c.age} · {c.age_group?.replace(/_/g, ' ') || '—'}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="px-5 py-10 text-center">
+              <p className="text-sm font-medium text-slate-700">No applicants yet</p>
+              <p className="mt-1 text-sm text-slate-500">Start by adding your first applicant record.</p>
+            </div>
+          )}
+        </article>
+      </section>
     </div>
   );
 }

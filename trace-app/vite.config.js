@@ -6,6 +6,6 @@ export default defineConfig({
   base: './',
   server: {
     port: 5174,
-    strictPort: false,
+    strictPort: process.env.ELECTRON_STRICT_PORTS === '1',
   },
 });
