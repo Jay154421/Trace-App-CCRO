@@ -5,6 +5,21 @@ import { childrenApi } from '../services/api';
 import { formatDateDDMMYYYY } from '../utils/date';
 import { buildFieldPositionPdfBase64, buildMergedCertData, buildPdfFilename } from '../utils/pdfUtils';
 
+function isTruthyFlag(value) {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') return value === 1;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (!normalized || normalized === '0' || normalized === 'false' || normalized === 'no' || normalized === 'off') {
+      return false;
+    }
+    if (normalized === '1' || normalized === 'true' || normalized === 'yes' || normalized === 'on') {
+      return true;
+    }
+  }
+  return Boolean(value);
+}
+
 const emptyEditForm = {
   first_name: '',
   middle_name: '',
@@ -15,6 +30,7 @@ const emptyEditForm = {
   registrant_deceased: false,
   hilot_deceased: false,
   parent_foreigner: false,
+  out_of_town: false,
 };
 
 export function ChildDetail() {
@@ -46,9 +62,10 @@ export function ChildDetail() {
         date_of_birth: child.date_of_birth ?? '',
         place_of_birth: child.place_of_birth ?? '',
         contact_no: child.contact_no ?? '',
-        registrant_deceased: Boolean(child.registrant_deceased),
-        hilot_deceased: Boolean(child.hilot_deceased),
-        parent_foreigner: Boolean(child.parent_foreigner),
+        registrant_deceased: isTruthyFlag(child.registrant_deceased),
+        hilot_deceased: isTruthyFlag(child.hilot_deceased),
+        parent_foreigner: isTruthyFlag(child.parent_foreigner),
+        out_of_town: isTruthyFlag(child.out_of_town),
       });
       setEditModalOpen(true);
     }
@@ -69,6 +86,7 @@ export function ChildDetail() {
       registrant_deceased: editForm.registrant_deceased,
       hilot_deceased: editForm.hilot_deceased,
       parent_foreigner: editForm.parent_foreigner,
+      out_of_town: editForm.out_of_town,
     };
     childrenApi
       .update(id, payload)
@@ -136,6 +154,10 @@ export function ChildDetail() {
   const checklistTotal = child.checklist?.length ?? 0;
   const checklistChecked = child.checklist?.filter((i) => i.checked).length ?? 0;
   const isChecklistComplete = checklistTotal > 0 && checklistChecked === checklistTotal;
+  const hasRegistrantDeceased = isTruthyFlag(child.registrant_deceased);
+  const hasHilotDeceased = isTruthyFlag(child.hilot_deceased);
+  const hasParentForeigner = isTruthyFlag(child.parent_foreigner);
+  const hasOutOfTown = isTruthyFlag(child.out_of_town);
 
   return (
     <div>
@@ -208,13 +230,14 @@ export function ChildDetail() {
             <dd className="font-medium text-slate-800">{child.age_group?.replace(/_/g, ' ') || '—'}</dd>
           </div>
           <div>
-              {(child.registrant_deceased || child.hilot_deceased || child.parent_foreigner) ? (
+              {(hasRegistrantDeceased || hasHilotDeceased || hasParentForeigner || hasOutOfTown) ? (
                 <div className="sm:col-span-2">
                   <dt className="text-sm text-slate-500 mb-1">Conditional requirements</dt>
                   <dd className="text-sm text-slate-700">
-                    {child.registrant_deceased ? <span className="block">Death cert. (registrant)</span> : null}
-                    {child.hilot_deceased && child.age <= 5 ? <span className="block">Death cert. (HILOT)</span> : null}
-                    {child.parent_foreigner ? <span className="block">Passport or BI cert. (foreign parent)</span> : null}
+                    {hasRegistrantDeceased ? <span className="block">Death cert. (registrant)</span> : null}
+                    {hasHilotDeceased && child.age <= 5 ? <span className="block">Death cert. (HILOT)</span> : null}
+                    {hasParentForeigner ? <span className="block">Passport or BI cert. (foreign parent)</span> : null}
+                    {hasOutOfTown ? <span className="block">Affidavit w/ Corroboration for Out-of-Town Applicant (Legal Office)</span> : null}
                   </dd>
                 </div>
               ) : null}
@@ -277,15 +300,20 @@ export function ChildDetail() {
           aria-labelledby="edit-modal-title"
         >
           <div
-            className="bg-white rounded-xl border border-slate-200 shadow-lg w-full max-w-xl max-h-[90vh] flex flex-col"
+            className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-2xl border border-slate-200 bg-white shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 id="edit-modal-title" className="text-lg font-semibold text-slate-800 px-5 py-4 border-b border-slate-200">
-              Edit applicant
-            </h2>
+            <div className="border-b border-slate-200 px-6 py-4">
+              <h2 id="edit-modal-title" className="text-lg font-semibold text-slate-800">
+                Edit applicant
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">Update applicant details and adjust conditional requirements as needed.</p>
+            </div>
             <form onSubmit={submitEdit} className="flex flex-col flex-1 min-h-0">
-              <div className="px-5 py-4 overflow-y-auto space-y-4">
-                <div className="grid gap-4 sm:grid-cols-3">
+              <div className="space-y-6 overflow-y-auto p-6">
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Basic details</h3>
+                  <div className="grid gap-4 sm:grid-cols-3">
                   <label className="block">
                     <span className="text-sm font-medium text-slate-700">First name *</span>
                     <input
@@ -293,7 +321,7 @@ export function ChildDetail() {
                       required
                       value={editForm.first_name}
                       onChange={(e) => updateEditForm('first_name', e.target.value)}
-                      className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                      className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
                       autoComplete="given-name"
                     />
                   </label>
@@ -303,7 +331,7 @@ export function ChildDetail() {
                       type="text"
                       value={editForm.middle_name}
                       onChange={(e) => updateEditForm('middle_name', e.target.value)}
-                      className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                      className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
                       autoComplete="additional-name"
                     />
                   </label>
@@ -314,78 +342,90 @@ export function ChildDetail() {
                       required
                       value={editForm.last_name}
                       onChange={(e) => updateEditForm('last_name', e.target.value)}
-                      className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                      className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
                       autoComplete="family-name"
                     />
                   </label>
                 </div>
-                <label className="block">
-                  <span className="text-sm font-medium text-slate-700">Date of birth *</span>
-                  <input
-                    type="date"
-                    required
-                    value={editForm.date_of_birth}
-                    onChange={(e) => updateEditForm('date_of_birth', e.target.value)}
-                    className="mt-1 block w-full max-w-xs rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                  />
-                </label>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="block">
+                    <span className="text-sm font-medium text-slate-700">Date of birth *</span>
+                    <input
+                      type="date"
+                      required
+                      value={editForm.date_of_birth}
+                      onChange={(e) => updateEditForm('date_of_birth', e.target.value)}
+                      className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-sm font-medium text-slate-700">Contact no.</span>
+                    <input
+                      type="text"
+                      value={editForm.contact_no}
+                      onChange={(e) => updateEditForm('contact_no', e.target.value)}
+                      className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
+                    />
+                  </label>
+                </div>
                 <label className="block">
                   <span className="text-sm font-medium text-slate-700">Place of birth</span>
                   <input
                     type="text"
                     value={editForm.place_of_birth}
                     onChange={(e) => updateEditForm('place_of_birth', e.target.value)}
-                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                    className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
                   />
                 </label>
-                <label className="block">
-                  <span className="text-sm font-medium text-slate-700">Contact no.</span>
-                  <input
-                    type="text"
-                    value={editForm.contact_no}
-                    onChange={(e) => updateEditForm('contact_no', e.target.value)}
-                    className="mt-1 block w-full max-w-xs rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                  />
-                </label>
-                <fieldset className="rounded-lg border border-slate-200 p-4">
-                  <legend className="text-sm font-medium text-slate-700">Conditional document requirements</legend>
-                  <p className="text-xs text-slate-500 mt-1 mb-3">Check if these apply; the document checklist will include the corresponding attachments.</p>
+                <fieldset className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
+                  <legend className="px-1 text-sm font-semibold text-slate-700">Conditional document requirements</legend>
+                  <p className="mb-4 mt-2 text-sm text-slate-500">Choose all that apply and required supporting documents will be added to the checklist.</p>
                   <div className="space-y-2">
-                    <label className="flex items-center gap-2">
+                    <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 transition hover:border-emerald-200 hover:bg-emerald-50/50">
+                      <input
+                        type="checkbox"
+                        checked={editForm.out_of_town}
+                        onChange={(e) => updateEditForm('out_of_town', e.target.checked)}
+                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                      />
+                      <span className="text-sm text-slate-700">Out of Town</span>
+                    </label>
+                    <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 transition hover:border-emerald-200 hover:bg-emerald-50/50">
                       <input
                         type="checkbox"
                         checked={editForm.registrant_deceased}
                         onChange={(e) => updateEditForm('registrant_deceased', e.target.checked)}
-                        className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                       />
                       <span className="text-sm text-slate-700">Registrant is deceased (attach death certificate)</span>
                     </label>
-                    <label className="flex items-center gap-2">
+                    <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 transition hover:border-emerald-200 hover:bg-emerald-50/50">
                       <input
                         type="checkbox"
                         checked={editForm.parent_foreigner}
                         onChange={(e) => updateEditForm('parent_foreigner', e.target.checked)}
-                        className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                       />
                       <span className="text-sm text-slate-700">One parent is foreigner (attach passport or Bureau of Immigration cert.)</span>
                     </label>
                   </div>
                 </fieldset>
               </div>
-              <div className="flex gap-3 px-5 py-4 border-t border-slate-200 bg-slate-50 rounded-b-xl">
-                <button
-                  type="submit"
-                  disabled={editSaving}
-                  className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 disabled:opacity-50"
-                >
-                  {editSaving ? 'Saving…' : 'Update'}
-                </button>
+              <div className="flex flex-col-reverse gap-3 border-t border-slate-200 bg-white px-6 py-4 sm:flex-row sm:justify-end">
                 <button
                   type="button"
                   onClick={() => setEditModalOpen(false)}
-                  className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 sm:w-auto"
                 >
                   Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editSaving}
+                  className="w-full rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 disabled:opacity-50 sm:w-auto"
+                >
+                  {editSaving ? 'Saving…' : 'Update applicant'}
                 </button>
               </div>
             </form>

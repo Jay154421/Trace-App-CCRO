@@ -137,8 +137,8 @@ async function importDatabase(req, res) {
         const inserted = db.prepare(
           `INSERT INTO children (
             first_name, middle_name, last_name, date_of_birth, place_of_birth, contact_no, age_group,
-            registrant_deceased, hilot_deceased, parent_foreigner, certificate_of_live_birth, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            registrant_deceased, hilot_deceased, parent_foreigner, out_of_town, certificate_of_live_birth, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
         ).run(
           normalizedChild.first_name,
           normalizedChild.middle_name,
@@ -150,6 +150,7 @@ async function importDatabase(req, res) {
           normalizedChild.registrant_deceased,
           normalizedChild.hilot_deceased,
           normalizedChild.parent_foreigner,
+          normalizedChild.out_of_town,
           normalizedChild.certificate_of_live_birth,
           normalizedChild.created_at,
           normalizedChild.updated_at
@@ -304,6 +305,7 @@ function normalizeImportChildRow(child) {
     registrant_deceased: toIntBool(child.registrant_deceased),
     hilot_deceased: toIntBool(child.hilot_deceased),
     parent_foreigner: toIntBool(child.parent_foreigner),
+    out_of_town: toIntBool(child.out_of_town),
     certificate_of_live_birth: normalizeOptionalText(child.certificate_of_live_birth),
     created_at: normalizeOptionalText(child.created_at),
     updated_at: normalizeOptionalText(child.updated_at),

@@ -37,6 +37,7 @@ function buildFakeApplicant() {
     registrant_deceased: faker.datatype.boolean({ probability: 0.08 }),
     hilot_deceased: faker.datatype.boolean({ probability: 0.06 }),
     parent_foreigner: faker.datatype.boolean({ probability: 0.1 }),
+    out_of_town: faker.datatype.boolean({ probability: 0.1 }),
   };
 }
 
@@ -55,6 +56,7 @@ async function seedApplicants(count = SEED_COUNT) {
       registrant_deceased: row.registrant_deceased,
       hilot_deceased: row.hilot_deceased,
       parent_foreigner: row.parent_foreigner,
+      out_of_town: row.out_of_town,
     });
     ids.push(Number(id));
   }

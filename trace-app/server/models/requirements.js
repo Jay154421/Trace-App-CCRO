@@ -4,7 +4,6 @@ const GENERAL_DOCS = [
   { id: 'affidavit_two_witnesses', label: 'Affidavit of Two Witnesses (Legal Office)' },
   { id: 'affidavit_abandonment', label: 'Affidavit of Abandonment (Legal Office)' },
   { id: 'affidavit_guardianship', label: 'Affidavit of Guardianship (Legal Office)' },
-  { id: 'affidavit_corroboration', label: 'Affidavit w/ Corroboration for Out-of-Town Applicant (Legal Office)' },
   { id: 'brgy_facts_birth', label: 'Brgy. Certification (Facts of Birth)' },
   { id: 'brgy_residency', label: 'Brgy. Residency' },
   { id: 'photo_2x2', label: '2x2 Photo I.D. with white background (studio copy: 1, out-of-town: 2)' },
@@ -58,6 +57,7 @@ const CONDITIONAL_DOCS = {
   death_cert_registrant: { id: 'death_cert_registrant', label: 'Death certificate (registrant)' },
   death_cert_hilot: { id: 'death_cert_hilot', label: 'Death certificate (HILOT)' },
   foreign_parent_id: { id: 'foreign_parent_id', label: 'Passport or Bureau of Immigration cert. (foreign parent)' },
+  affidavit_corroboration_out_of_town: { id: 'out_of_town_affidavit_legal_office', label: 'Affidavit w/ Corroboration for Out-of-Town Applicant (Legal Office)' },
 };
 
 const PHOTO_ID_SCANNER_CAPTURE_SIZE = { width: 600, height: 600, label: '2 x 2 in' };
@@ -102,6 +102,9 @@ function getRequirementsForChild(child) {
   }
   if (child.parent_foreigner) {
     conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.foreign_parent_id), category: 'conditional' });
+  }
+  if (child.out_of_town) {
+    conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.affidavit_corroboration_out_of_town), category: 'conditional' });
   }
   const all = [...base.all, ...conditional];
   return {

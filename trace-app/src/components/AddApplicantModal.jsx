@@ -13,6 +13,7 @@ const emptyForm = {
   registrant_deceased: false,
   hilot_deceased: false,
   parent_foreigner: false,
+  out_of_town: false,
 };
 
 export function AddApplicantModal({ open, onClose, onAdded }) {
@@ -39,6 +40,7 @@ export function AddApplicantModal({ open, onClose, onAdded }) {
       registrant_deceased: form.registrant_deceased,
       hilot_deceased: form.hilot_deceased,
       parent_foreigner: form.parent_foreigner,
+      out_of_town: form.out_of_town,
     };
     childrenApi
       .create(payload)
@@ -69,16 +71,21 @@ export function AddApplicantModal({ open, onClose, onAdded }) {
       aria-labelledby="add-applicant-modal-title"
     >
       <div
-        className="bg-white rounded-xl shadow-xl max-w-xl w-full max-h-[90vh] overflow-y-auto"
+        className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-2xl border border-slate-200 bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-6">
-          <h2 id="add-applicant-modal-title" className="text-xl font-semibold text-slate-800 mb-4">
+        <div className="border-b border-slate-200 px-6 py-4">
+          <h2 id="add-applicant-modal-title" className="text-xl font-semibold text-slate-800">
             Add applicant
           </h2>
+          <p className="mt-1 text-sm text-slate-500">Fill out the applicant profile and apply any conditional requirements.</p>
+        </div>
 
-          <form onSubmit={submit} className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-3">
+          <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
+            <div className="space-y-6 overflow-y-auto p-6">
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Basic details</h3>
+              <div className="grid gap-4 sm:grid-cols-3">
               <label className="block">
                 <span className="text-sm font-medium text-slate-700">First name *</span>
                 <input
@@ -86,7 +93,7 @@ export function AddApplicantModal({ open, onClose, onAdded }) {
                   required
                   value={form.first_name}
                   onChange={(e) => update('first_name', e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                  className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
                   autoComplete="given-name"
                   aria-required="true"
                 />
@@ -97,7 +104,7 @@ export function AddApplicantModal({ open, onClose, onAdded }) {
                   type="text"
                   value={form.middle_name}
                   onChange={(e) => update('middle_name', e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                  className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
                   autoComplete="additional-name"
                 />
               </label>
@@ -108,24 +115,37 @@ export function AddApplicantModal({ open, onClose, onAdded }) {
                   required
                   value={form.last_name}
                   onChange={(e) => update('last_name', e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                  className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
                   autoComplete="family-name"
                   aria-required="true"
                 />
               </label>
             </div>
+            </div>
 
-            <label className="block">
-              <span className="text-sm font-medium text-slate-700">Date of birth *</span>
-              <input
-                type="date"
-                required
-                value={form.date_of_birth}
-                onChange={(e) => update('date_of_birth', e.target.value)}
-                className="mt-1 block w-full max-w-xs rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                aria-required="true"
-              />
-            </label>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block">
+                <span className="text-sm font-medium text-slate-700">Date of birth *</span>
+                <input
+                  type="date"
+                  required
+                  value={form.date_of_birth}
+                  onChange={(e) => update('date_of_birth', e.target.value)}
+                  className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
+                  aria-required="true"
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-sm font-medium text-slate-700">Contact no.</span>
+                <input
+                  type="text"
+                  value={form.contact_no}
+                  onChange={(e) => update('contact_no', e.target.value)}
+                  className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
+                />
+              </label>
+            </div>
 
             <label className="block">
               <span className="text-sm font-medium text-slate-700">Place of birth</span>
@@ -133,63 +153,62 @@ export function AddApplicantModal({ open, onClose, onAdded }) {
                 type="text"
                 value={form.place_of_birth}
                 onChange={(e) => update('place_of_birth', e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
               />
             </label>
 
-            <label className="block">
-              <span className="text-sm font-medium text-slate-700">Contact no.</span>
-              <input
-                type="text"
-                value={form.contact_no}
-                onChange={(e) => update('contact_no', e.target.value)}
-                className="mt-1 block w-full max-w-xs rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-              />
-            </label>
-
-            <fieldset className="rounded-lg border border-slate-200 p-4">
-              <legend className="text-sm font-medium text-slate-700">Conditional document requirements</legend>
-              <p className="text-xs text-slate-500 mt-1 mb-3">Check if these apply; the document checklist will include the corresponding attachments.</p>
+            <fieldset className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
+              <legend className="px-1 text-sm font-semibold text-slate-700">Conditional document requirements</legend>
+              <p className="mb-4 mt-2 text-sm text-slate-500">Choose all that apply and required supporting documents will be added to the checklist.</p>
               <div className="space-y-2">
-                <label className="flex items-center gap-2">
+              <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 transition hover:border-emerald-200 hover:bg-emerald-50/50">
+                  <input
+                    type="checkbox"
+                    checked={form.out_of_town}
+                    onChange={(e) => update('out_of_town', e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <span className="text-sm text-slate-700">Out of Town</span>
+                </label>
+                <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 transition hover:border-emerald-200 hover:bg-emerald-50/50">
                   <input
                     type="checkbox"
                     checked={form.registrant_deceased}
                     onChange={(e) => update('registrant_deceased', e.target.checked)}
-                    className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                   />
                   <span className="text-sm text-slate-700">Registrant is deceased (attach death certificate)</span>
                 </label>
-                <label className="flex items-center gap-2">
+                <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 transition hover:border-emerald-200 hover:bg-emerald-50/50">
                   <input
                     type="checkbox"
                     checked={form.parent_foreigner}
                     onChange={(e) => update('parent_foreigner', e.target.checked)}
-                    className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                   />
                   <span className="text-sm text-slate-700">One parent is foreigner (attach passport or Bureau of Immigration cert.)</span>
                 </label>
               </div>
             </fieldset>
+            </div>
 
-            <div className="flex gap-3 pt-2">
-              <button
-                type="submit"
-                disabled={loading}
-                className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 disabled:opacity-50"
-              >
-                {loading ? 'Saving…' : 'Add applicant'}
-              </button>
+            <div className="flex flex-col-reverse gap-3 border-t border-slate-200 bg-white px-6 py-4 sm:flex-row sm:justify-end">
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 sm:w-auto"
               >
                 Cancel
               </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 disabled:opacity-50 sm:w-auto"
+              >
+                {loading ? 'Saving…' : 'Add applicant'}
+              </button>
             </div>
           </form>
-        </div>
       </div>
     </div>
   );

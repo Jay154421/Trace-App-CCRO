@@ -5,6 +5,11 @@ import { childrenApi } from '../services/api';
 import { apiUrl } from '../config/api';
 
 const PHOTO_ID_REQUIREMENT_ID = 'photo_2x2';
+const OUT_OF_TOWN_AFFIDAVIT_REQUIREMENT = {
+  id: 'out_of_town_affidavit_legal_office',
+  category: 'conditional',
+  label: 'Affidavit w/ Corroboration for Out-of-Town Applicant (Legal Office)',
+};
 const FALLBACK_CAPTURE_SIZE = { width: 600, height: 600, label: '2 x 2 in' };
 const FALLBACK_DOCUMENT_SCAN_SIZE = { width: 1240, height: 1754, label: 'Document scan' };
 
@@ -54,6 +59,27 @@ function toSafeFilenamePart(value) {
     .trim()
     .replace(/\s+/g, '_')
     .replace(/[^a-zA-Z0-9_-]/g, '');
+}
+
+function isTruthyFlag(value) {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') return value === 1;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (!normalized || normalized === '0' || normalized === 'false' || normalized === 'no' || normalized === 'off') {
+      return false;
+    }
+    if (normalized === '1' || normalized === 'true' || normalized === 'yes' || normalized === 'on') {
+      return true;
+    }
+  }
+  return Boolean(value);
+}
+
+function isOutOfTownAffidavitRequirement(requirement) {
+  const label = String(requirement?.label || '').toLowerCase();
+  return requirement?.id === OUT_OF_TOWN_AFFIDAVIT_REQUIREMENT.id
+    || (label.includes('affidavit') && label.includes('corroboration') && label.includes('out-of-town'));
 }
 
 function buildPhotoFilename(child) {
@@ -112,29 +138,31 @@ function buildPhotoOutputLabel(child, filename) {
   return `${owner} ${month} ${day}, ${year}`;
 }
 
-const OUT_OF_TOWN_AFFIDAVIT_LABEL = 'Affidavit w/ Corroboration for Out-of-Town Applicant (Legal Office)';
-
-function isIliganApplicant(child) {
-  const placeOfBirth = typeof child?.place_of_birth === 'string' ? child.place_of_birth : '';
-  const certificateCity = typeof child?.certificate_of_live_birth?.placeOfBirthCity === 'string'
-    ? child.certificate_of_live_birth
-      .placeOfBirthCity
-    : '';
-  const normalized = `${placeOfBirth} ${certificateCity}`
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-  return /\biligan\b/.test(normalized);
-}
-
 function buildChecklist(requirements, existing = [], child = null) {
   const byKey = new Map(existing.map((e) => [`${e.category}:${e.label}`, e]));
   const allRequirements = Array.isArray(requirements?.all) ? requirements.all : [];
-  const normalizedRequirements = isIliganApplicant(child)
-    ? allRequirements.filter((requirement) => requirement.label !== OUT_OF_TOWN_AFFIDAVIT_LABEL)
-    : allRequirements;
-  return normalizedRequirements.map((r) => {
+  const normalizedOutOfTown = isTruthyFlag(child?.out_of_town);
+  const hasOutOfTownAffidavit = allRequirements.some((requirement) => isOutOfTownAffidavitRequirement(requirement));
+  const filteredRequirements = allRequirements.filter((requirement) => {
+    if (isOutOfTownAffidavitRequirement(requirement)) {
+      return normalizedOutOfTown;
+    }
+    return true;
+  });
+  const missingExistingRequirements = existing.filter((item) => {
+    if (!item?.label || !item?.category) return false;
+    if (!normalizedOutOfTown && isOutOfTownAffidavitRequirement(item)) return false;
+    return !filteredRequirements.some((requirement) => (
+      requirement?.label === item.label && requirement?.category === item.category
+    ));
+  });
+  const shouldRequireOutOfTownAffidavit = normalizedOutOfTown && !hasOutOfTownAffidavit;
+  const requirementsList = shouldRequireOutOfTownAffidavit
+    ? [...filteredRequirements, OUT_OF_TOWN_AFFIDAVIT_REQUIREMENT]
+    : filteredRequirements;
+  const mergedRequirements = [...requirementsList, ...missingExistingRequirements];
+
+  return mergedRequirements.map((r) => {
     const existingItem = byKey.get(`${r.category}:${r.label}`);
     const attachmentList = parseAttachments(existingItem?.attachment);
     return {

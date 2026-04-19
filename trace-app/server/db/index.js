@@ -75,7 +75,7 @@ async function init() {
   } catch (e) {
     if (!/duplicate column name/i.test(e.message)) throw e;
   }
-  for (const col of ['registrant_deceased', 'hilot_deceased', 'parent_foreigner']) {
+  for (const col of ['registrant_deceased', 'hilot_deceased', 'parent_foreigner', 'out_of_town']) {
     try {
       db.exec(`ALTER TABLE children ADD COLUMN ${col} INTEGER DEFAULT 0`);
     } catch (e) {

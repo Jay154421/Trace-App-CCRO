@@ -15,6 +15,10 @@ const childCreate = [
   body('date_of_birth').isISO8601(),
   body('place_of_birth').optional({ values: 'falsy' }).trim().isLength({ max: 500 }).escape(),
   body('contact_no').optional({ values: 'falsy' }).trim().isLength({ max: 50 }).escape(),
+  body('registrant_deceased').optional().isBoolean().toBoolean(),
+  body('hilot_deceased').optional().isBoolean().toBoolean(),
+  body('parent_foreigner').optional().isBoolean().toBoolean(),
+  body('out_of_town').optional().isBoolean().toBoolean(),
 ];
 
 const childUpdate = [
@@ -25,6 +29,10 @@ const childUpdate = [
   body('date_of_birth').optional().isISO8601(),
   body('place_of_birth').optional({ values: 'falsy' }).trim().isLength({ max: 500 }).escape(),
   body('contact_no').optional({ values: 'falsy' }).trim().isLength({ max: 50 }).escape(),
+  body('registrant_deceased').optional().isBoolean().toBoolean(),
+  body('hilot_deceased').optional().isBoolean().toBoolean(),
+  body('parent_foreigner').optional().isBoolean().toBoolean(),
+  body('out_of_town').optional().isBoolean().toBoolean(),
 ];
 
 const idParam = [param('id').isInt({ min: 1 })];

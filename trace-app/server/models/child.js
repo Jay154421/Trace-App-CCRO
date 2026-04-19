@@ -77,8 +77,8 @@ function create(data) {
   const age_group = getAgeGroup(age);
   const db = getDb();
   const stmt = db.prepare(`
-    INSERT INTO children (first_name, middle_name, last_name, date_of_birth, place_of_birth, contact_no, age_group, registrant_deceased, hilot_deceased, parent_foreigner)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO children (first_name, middle_name, last_name, date_of_birth, place_of_birth, contact_no, age_group, registrant_deceased, hilot_deceased, parent_foreigner, out_of_town)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const result = stmt.run(
     data.first_name,
@@ -90,7 +90,8 @@ function create(data) {
     age_group,
     data.registrant_deceased ? 1 : 0,
     data.hilot_deceased ? 1 : 0,
-    data.parent_foreigner ? 1 : 0
+    data.parent_foreigner ? 1 : 0,
+    data.out_of_town ? 1 : 0
   );
   db.close();
   return result.lastInsertRowid;
@@ -105,12 +106,13 @@ function update(id, data) {
   const registrantDeceased = data.registrant_deceased !== undefined ? (data.registrant_deceased ? 1 : 0) : (existing.registrant_deceased ? 1 : 0);
   const hilotDeceased = data.hilot_deceased !== undefined ? (data.hilot_deceased ? 1 : 0) : (existing.hilot_deceased ? 1 : 0);
   const parentForeigner = data.parent_foreigner !== undefined ? (data.parent_foreigner ? 1 : 0) : (existing.parent_foreigner ? 1 : 0);
+  const outOfTown = data.out_of_town !== undefined ? (data.out_of_town ? 1 : 0) : (existing.out_of_town ? 1 : 0);
   const stmt = db.prepare(`
     UPDATE children SET
       first_name = ?, middle_name = ?, last_name = ?,
       date_of_birth = ?, place_of_birth = ?, contact_no = ?,
       age_group = COALESCE(?, age_group),
-      registrant_deceased = ?, hilot_deceased = ?, parent_foreigner = ?,
+      registrant_deceased = ?, hilot_deceased = ?, parent_foreigner = ?, out_of_town = ?,
       updated_at = datetime('now')
     WHERE id = ?
   `);
@@ -125,6 +127,7 @@ function update(id, data) {
     registrantDeceased,
     hilotDeceased,
     parentForeigner,
+    outOfTown,
     id
   );
   db.close();
