@@ -31,4 +31,8 @@ export const childrenApi = {
   updateChecklist: (id, items) => request(`/children/${id}/checklist`, { method: 'PUT', body: JSON.stringify({ items }) }),
   updateCertificateOfLiveBirth: (id, data) =>
     request(`/children/${id}/certificate-of-live-birth`, { method: 'PUT', body: JSON.stringify(data) }),
+  updatePaternityAffidavit: (id, data) =>
+    request(`/children/${id}/paternity-affidavit`, { method: 'PUT', body: JSON.stringify(data) }),
+  updateDelayedRegistrationAffidavit: (id, data) =>
+    request(`/children/${id}/delayed-registration-affidavit`, { method: 'PUT', body: JSON.stringify(data) }),
 };

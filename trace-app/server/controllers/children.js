@@ -191,4 +191,24 @@ function updateCertificateOfLiveBirth(req, res) {
   res.json({ ok: true });
 }
 
-module.exports = { list, get, create, update, remove, bulkRemove, updateChecklist, getChecklistAttachment, updateCertificateOfLiveBirth };
+function updatePaternityAffidavit(req, res) {
+  const id = Number(req.params.id);
+  const child = childModel.findById(id);
+  if (!child) return res.status(404).json({ error: 'Not found' });
+  const data = req.body && typeof req.body === 'object' ? req.body : {};
+  const ok = childModel.updatePaternityAffidavit(id, data);
+  if (!ok) return res.status(500).json({ error: 'Failed to save paternity affidavit' });
+  res.json({ ok: true });
+}
+
+function updateDelayedRegistrationAffidavit(req, res) {
+  const id = Number(req.params.id);
+  const child = childModel.findById(id);
+  if (!child) return res.status(404).json({ error: 'Not found' });
+  const data = req.body && typeof req.body === 'object' ? req.body : {};
+  const ok = childModel.updateDelayedRegistrationAffidavit(id, data);
+  if (!ok) return res.status(500).json({ error: 'Failed to save delayed registration affidavit' });
+  res.json({ ok: true });
+}
+
+module.exports = { list, get, create, update, remove, bulkRemove, updateChecklist, getChecklistAttachment, updateCertificateOfLiveBirth, updatePaternityAffidavit, updateDelayedRegistrationAffidavit };

@@ -51,9 +51,27 @@ function findById(id) {
       certificate_of_live_birth = {};
     }
   }
+  let paternity_affidavit = {};
+  if (row.paternity_affidavit) {
+    try {
+      paternity_affidavit = JSON.parse(row.paternity_affidavit);
+    } catch (e) {
+      paternity_affidavit = {};
+    }
+  }
+  let delayed_registration_affidavit = {};
+  if (row.delayed_registration_affidavit) {
+    try {
+      delayed_registration_affidavit = JSON.parse(row.delayed_registration_affidavit);
+    } catch (e) {
+      delayed_registration_affidavit = {};
+    }
+  }
   return {
     ...row,
     certificate_of_live_birth,
+    paternity_affidavit,
+    delayed_registration_affidavit,
     age: calculateAge(row.date_of_birth),
     age_group: row.age_group || getAgeGroup(calculateAge(row.date_of_birth)),
   };
@@ -68,6 +86,32 @@ function updateCertificateOfLiveBirth(id, data) {
   }
   const json = JSON.stringify(data || {});
   db.prepare('UPDATE children SET certificate_of_live_birth = ?, updated_at = datetime(\'now\') WHERE id = ?').run(json, id);
+  db.close();
+  return true;
+}
+
+function updatePaternityAffidavit(id, data) {
+  const db = getDb();
+  const existing = db.prepare('SELECT id FROM children WHERE id = ?').get(id);
+  if (!existing) {
+    db.close();
+    return false;
+  }
+  const json = JSON.stringify(data || {});
+  db.prepare('UPDATE children SET paternity_affidavit = ?, updated_at = datetime(\'now\') WHERE id = ?').run(json, id);
+  db.close();
+  return true;
+}
+
+function updateDelayedRegistrationAffidavit(id, data) {
+  const db = getDb();
+  const existing = db.prepare('SELECT id FROM children WHERE id = ?').get(id);
+  if (!existing) {
+    db.close();
+    return false;
+  }
+  const json = JSON.stringify(data || {});
+  db.prepare('UPDATE children SET delayed_registration_affidavit = ?, updated_at = datetime(\'now\') WHERE id = ?').run(json, id);
   db.close();
   return true;
 }
@@ -159,4 +203,4 @@ function bulkRemove(ids) {
   });
 }
 
-module.exports = { all, findById, create, update, remove, bulkRemove, getAgeGroup, calculateAge, updateCertificateOfLiveBirth };
+module.exports = { all, findById, create, update, remove, bulkRemove, getAgeGroup, calculateAge, updateCertificateOfLiveBirth, updatePaternityAffidavit, updateDelayedRegistrationAffidavit };
