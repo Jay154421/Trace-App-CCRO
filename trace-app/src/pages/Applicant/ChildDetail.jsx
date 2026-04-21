@@ -1,9 +1,9 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import { childrenApi } from '../services/api';
-import { formatDateDDMMYYYY } from '../utils/date';
-import { buildFieldPositionPdfBase64, buildMergedCertData, buildPdfFilename } from '../utils/pdfUtils';
+import { childrenApi } from '../../services/api';
+import { formatDateDDMMYYYY } from '../../utils/date';
+import { buildFieldPositionPdfBase64, buildMergedCertData, buildPdfFilename } from '../../utils/pdfUtils';
 
 function isTruthyFlag(value) {
   if (typeof value === 'boolean') return value;
@@ -178,6 +178,30 @@ export function ChildDetail() {
           >
             Document checklist
           </Link>
+          <Link
+            to={`/children/${id}/field-position`}
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Field Position
+          </Link>
+          <Link
+            to={`/children/${id}/paternity-affidavit`}
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Paternity Affidavit
+          </Link>
+          <Link
+            to={`/children/${id}/delayed-registration-affidavit`}
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Delayed Birth Affidavit
+          </Link>
+          <Link
+            to={`/children/${id}/field-position-back`}
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Field Position Back
+          </Link>
           <button
             type="button"
             onClick={handleSavePdf}
@@ -230,18 +254,18 @@ export function ChildDetail() {
             <dd className="font-medium text-slate-800">{child.age_group?.replace(/_/g, ' ') || '—'}</dd>
           </div>
           <div>
-              {(hasRegistrantDeceased || hasHilotDeceased || hasParentForeigner || hasOutOfTown) ? (
-                <div className="sm:col-span-2">
-                  <dt className="text-sm text-slate-500 mb-1">Conditional requirements</dt>
-                  <dd className="text-sm text-slate-700">
-                    {hasRegistrantDeceased ? <span className="block">Death cert. (registrant)</span> : null}
-                    {hasHilotDeceased && child.age <= 5 ? <span className="block">Death cert. (HILOT)</span> : null}
-                    {hasParentForeigner ? <span className="block">Passport or BI cert. (foreign parent)</span> : null}
-                    {hasOutOfTown ? <span className="block">Affidavit w/ Corroboration for Out-of-Town Applicant (Legal Office)</span> : null}
-                  </dd>
-                </div>
-              ) : null}
-           </div>
+            {(hasRegistrantDeceased || hasHilotDeceased || hasParentForeigner || hasOutOfTown) ? (
+              <div className="sm:col-span-2">
+                <dt className="text-sm text-slate-500 mb-1">Conditional requirements</dt>
+                <dd className="text-sm text-slate-700">
+                  {hasRegistrantDeceased ? <span className="block">Death cert. (registrant)</span> : null}
+                  {hasHilotDeceased && child.age <= 5 ? <span className="block">Death cert. (HILOT)</span> : null}
+                  {hasParentForeigner ? <span className="block">Passport or BI cert. (foreign parent)</span> : null}
+                  {hasOutOfTown ? <span className="block">Affidavit w/ Corroboration for Out-of-Town Applicant (Legal Office)</span> : null}
+                </dd>
+              </div>
+            ) : null}
+          </div>
           {child.created_at && (
             <div>
               <dt className="text-sm text-slate-500">Created date</dt>
@@ -314,39 +338,39 @@ export function ChildDetail() {
                 <div className="space-y-4">
                   <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Basic details</h3>
                   <div className="grid gap-4 sm:grid-cols-3">
-                  <label className="block">
-                    <span className="text-sm font-medium text-slate-700">First name *</span>
-                    <input
-                      type="text"
-                      required
-                      value={editForm.first_name}
-                      onChange={(e) => updateEditForm('first_name', e.target.value)}
-                      className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
-                      autoComplete="given-name"
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="text-sm font-medium text-slate-700">Middle name</span>
-                    <input
-                      type="text"
-                      value={editForm.middle_name}
-                      onChange={(e) => updateEditForm('middle_name', e.target.value)}
-                      className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
-                      autoComplete="additional-name"
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="text-sm font-medium text-slate-700">Last name *</span>
-                    <input
-                      type="text"
-                      required
-                      value={editForm.last_name}
-                      onChange={(e) => updateEditForm('last_name', e.target.value)}
-                      className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
-                      autoComplete="family-name"
-                    />
-                  </label>
-                </div>
+                    <label className="block">
+                      <span className="text-sm font-medium text-slate-700">First name *</span>
+                      <input
+                        type="text"
+                        required
+                        value={editForm.first_name}
+                        onChange={(e) => updateEditForm('first_name', e.target.value)}
+                        className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
+                        autoComplete="given-name"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="text-sm font-medium text-slate-700">Middle name</span>
+                      <input
+                        type="text"
+                        value={editForm.middle_name}
+                        onChange={(e) => updateEditForm('middle_name', e.target.value)}
+                        className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
+                        autoComplete="additional-name"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="text-sm font-medium text-slate-700">Last name *</span>
+                      <input
+                        type="text"
+                        required
+                        value={editForm.last_name}
+                        onChange={(e) => updateEditForm('last_name', e.target.value)}
+                        className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
+                        autoComplete="family-name"
+                      />
+                    </label>
+                  </div>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="block">

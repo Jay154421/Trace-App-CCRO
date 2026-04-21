@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { childrenApi } from '../services/api';
+import { childrenApi } from '../../services/api';
 
 function isTruthyFlag(value) {
   if (typeof value === 'boolean') return value;

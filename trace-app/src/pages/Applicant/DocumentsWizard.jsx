@@ -1,8 +1,8 @@
 import { useParams, Link, useNavigate, useBlocker } from 'react-router-dom';
 import { useState, useEffect, useRef, useLayoutEffect, useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
-import { childrenApi } from '../services/api';
-import { apiUrl } from '../config/api';
+import { childrenApi } from '../../services/api';
+import { apiUrl } from '../../config/api';
 
 const PHOTO_ID_REQUIREMENT_ID = 'photo_2x2';
 const OUT_OF_TOWN_AFFIDAVIT_REQUIREMENT = {
@@ -21,9 +21,8 @@ function showRemoveAttachmentLoadingToast() {
   return toast.custom(
     (t) => (
       <div
-        className={`flex max-w-md items-center gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-900 shadow-lg transition-opacity duration-300 ease-out ${
-          t.visible ? 'opacity-100' : 'opacity-0'
-        }`}
+        className={`flex max-w-md items-center gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-900 shadow-lg transition-opacity duration-300 ease-out ${t.visible ? 'opacity-100' : 'opacity-0'
+          }`}
         role="status"
         aria-live="polite"
       >
@@ -959,9 +958,8 @@ export function DocumentsWizard() {
               key={i}
               type="button"
               onClick={() => setStep(i)}
-              className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
-                step === i ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              }`}
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium ${step === i ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
             >
               {s.name}
             </button>
@@ -982,7 +980,7 @@ export function DocumentsWizard() {
                     type="checkbox"
                     id={`check-${globalIndex}`}
                     checked={hasAnyAttachments(item)}
-                    onChange={() => {}}
+                    onChange={() => { }}
                     readOnly
                     tabIndex={-1}
                     aria-disabled="true"
@@ -1210,20 +1208,18 @@ export function DocumentsWizard() {
 
       {cameraOpen && (
         <div
-          className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 ${
-            isPhotoCameraTarget ? 'overflow-y-auto' : 'overflow-hidden'
-          }`}
+          className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 ${isPhotoCameraTarget ? 'overflow-y-auto' : 'overflow-hidden'
+            }`}
           onClick={closeCamera}
           role="dialog"
           aria-modal="true"
           aria-labelledby="camera-modal-title"
         >
           <div
-            className={`my-4 w-full rounded-xl border border-slate-200 bg-white p-5 shadow-lg ${
-              isPhotoCameraTarget
+            className={`my-4 w-full rounded-xl border border-slate-200 bg-white p-5 shadow-lg ${isPhotoCameraTarget
                 ? 'max-h-[90vh] max-w-xl overflow-y-auto'
                 : 'flex h-[min(90vh,780px)] max-w-4xl flex-col'
-            }`}
+              }`}
             onClick={(e) => e.stopPropagation()}
           >
             <h2 id="camera-modal-title" className="text-lg font-semibold text-slate-800">
@@ -1233,9 +1229,8 @@ export function DocumentsWizard() {
               Scanner capture size: {activeCaptureSize.label} ({activeCaptureSize.width} x {activeCaptureSize.height} px)
             </p>
             <div
-              className={`mt-3 overflow-hidden rounded-lg border border-slate-200 bg-black ${
-                isPhotoCameraTarget ? '' : 'h-[min(62vh,560px)] min-h-[300px]'
-              }`}
+              className={`mt-3 overflow-hidden rounded-lg border border-slate-200 bg-black ${isPhotoCameraTarget ? '' : 'h-[min(62vh,560px)] min-h-[300px]'
+                }`}
             >
               {capturedPhotoUrl ? (
                 <img
@@ -1247,18 +1242,16 @@ export function DocumentsWizard() {
               ) : rawCapturedUrl ? (
                 <div
                   ref={cropStageRef}
-                  className={`relative flex w-full items-center justify-center bg-neutral-900 ${
-                    isPhotoCameraTarget ? 'min-h-[280px] max-h-[min(60vh,520px)]' : 'h-full'
-                  }`}
+                  className={`relative flex w-full items-center justify-center bg-neutral-900 ${isPhotoCameraTarget ? 'min-h-[280px] max-h-[min(60vh,520px)]' : 'h-full'
+                    }`}
                 >
                   <img
                     ref={cropImageRef}
                     src={rawCapturedUrl}
                     alt="Crop source"
                     draggable={false}
-                    className={`w-full select-none object-contain pointer-events-none ${
-                      isPhotoCameraTarget ? 'max-h-[min(60vh,520px)]' : 'h-full'
-                    }`}
+                    className={`w-full select-none object-contain pointer-events-none ${isPhotoCameraTarget ? 'max-h-[min(60vh,520px)]' : 'h-full'
+                      }`}
                     onLoad={updateCropLayout}
                   />
                   {cropOverlayPx && (

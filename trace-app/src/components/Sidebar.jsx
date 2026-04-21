@@ -41,7 +41,7 @@ export function Sidebar() {
     >
       <div className="px-4 pt-5 pb-4 border-b border-slate-200/80">
         <div className="flex items-center gap-3">
-          <img src="/icon.jpg" alt="" className="w-11 h-11 rounded-2xl object-cover ring-1 ring-slate-200 shrink-0" />
+          <img src="/icon.jpg" alt="" className="w-11 h-11 ring-slate-200 shrink-0" />
           <div className="min-w-0 text-left">
             <h1 className="font-semibold text-lg tracking-tight text-slate-900">TRACE</h1>
             <p className="text-[10px] text-slate-500 leading-tight">

@@ -2,7 +2,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { jsPDF } from 'jspdf';
-import { childrenApi } from '../services/api';
+import { childrenApi } from '../../services/api';
 
 // ============================================================================
 // CONSTANTS
@@ -63,7 +63,7 @@ const FIELD_POSITIONS = {
   birth_order: { x: 1725, y: 1038 },
   weight_at_birth: { x: 2124, y: 1038 },
   mother_maiden_first: { x: 531, y: 1167, width: 531 },
-  mother_maiden_middle: { x: 1179, y: 1167, width: 543},
+  mother_maiden_middle: { x: 1179, y: 1167, width: 543 },
   mother_maiden_last: { x: 1830, y: 1167, width: 567 },
   mother_citizenship: { x: 543, y: 1275 },
   mother_religion: { x: 1557, y: 1275, width: 663 },
@@ -72,7 +72,7 @@ const FIELD_POSITIONS = {
   mother_children_dead: { x: 1056, y: 1440 },
   mother_occupation: { x: 1392, y: 1440, width: 639 },
   mother_age: { x: 2175, y: 1440 },
-  mother_residence_house: { x: 336, y: 1557, width: 774  },
+  mother_residence_house: { x: 336, y: 1557, width: 774 },
   mother_residence_city: { x: 1215, y: 1557, width: 330 },
   mother_residence_province: { x: 1605, y: 1557, width: 375 },
   mother_country: { x: 2070, y: 1557, width: 315 },
@@ -81,17 +81,17 @@ const FIELD_POSITIONS = {
   father_name_last: { x: 1830, y: 1677, width: 567 },
   father_citizenship: { x: 336, y: 1818 },
   father_religion: { x: 900, y: 1818 },
-  father_occupation: { x: 1509, y: 1818, width: 510},
+  father_occupation: { x: 1509, y: 1818, width: 510 },
   father_age: { x: 2175, y: 1818 },
   father_residence_house: { x: 336, y: 1959, width: 774 },
   father_residence_city: { x: 1215, y: 1959, width: 330 },
-  father_residence_province: { x: 1605, y: 1959, width: 375},
+  father_residence_province: { x: 1605, y: 1959, width: 375 },
   father_country: { x: 2070, y: 1959, width: 315 },
   marriage_date_month: { x: 507, y: 2148 },
   marriage_date_day: { x: 696, y: 2148 },
   marriage_date_year: { x: 873, y: 2148 },
   marriage_place_city: { x: 1239, y: 2148, width: 378 },
-  marriage_place_province: { x: 1667, y: 2148 , width: 397},
+  marriage_place_province: { x: 1667, y: 2148, width: 397 },
   marriage_place_country: { x: 2112, y: 2148, width: 342 },
   // Attendant type radio button positions
   attendant_radio_physician: { x: 282, y: 2227 },
@@ -102,12 +102,12 @@ const FIELD_POSITIONS = {
   attendant_type_specify: { x: 2148, y: 2277, width: 249 },
   attendant_title: { x: 507, y: 2643 },
   attendant_name: { x: 483, y: 2562, width: 780 },
-  attendant_address: { x: 1500, y: 2505, width: 905},
+  attendant_address: { x: 1500, y: 2505, width: 905 },
   attendant_date: { x: 1512, y: 2643 },
   attendant_time: { x: 1533, y: 2409 },
-  informant_signature: { x: 483, y: 2916, width: 768},
+  informant_signature: { x: 483, y: 2916, width: 768 },
   informant_relation: { x: 612, y: 3000 },
-  informant_address: { x: 399, y: 3057, width: 864},
+  informant_address: { x: 399, y: 3057, width: 864 },
   informant_date: { x: 519, y: 3129 },
   received_by: { x: 519, y: 3306 },
   received_by_title: { x: 519, y: 3375 },
@@ -318,7 +318,7 @@ function countryDisplayFromCodeOrText(codeOrText) {
       const displayNames = new Intl.DisplayNames(['en'], { type: 'region' });
       const name = displayNames.of(text.toUpperCase());
       if (name && name !== text.toUpperCase()) return name;
-    } catch (_) { /* ignore */ }  
+    } catch (_) { /* ignore */ }
   }
   return text;
 }
@@ -800,7 +800,7 @@ function buildCombinedPdfBase64(merged) {
   // Add checklist title
   doc.setFontSize(14);
   doc.text('Document Requirements Checklist', 0.5, checklistStartY);
-  
+
   // Add child info
   doc.setFontSize(10);
   const childName = `${merged.childFirst || ''} ${merged.childMiddle || ''} ${merged.childLast || ''}`.trim();
@@ -906,7 +906,7 @@ function usePrintStyles() {
   useEffect(() => {
     const styleId = PRINT_STYLES_ID;
     let styleEl = document.getElementById(styleId);
-    
+
     if (!styleEl) {
       styleEl = document.createElement('style');
       styleEl.id = styleId;
@@ -935,17 +935,17 @@ function usePrintStyles() {
 function generateTableWithCheckmarks(doc, data, columns, options = {}, checkmarkColumns = {}) {
   const { startY = 0, margin = {} } = options;
   const { top = 0, right = 0, bottom = 0, left = 0 } = margin;
-  
+
   // Set up table styling
   doc.setFontSize(10);
   doc.setTextColor(0, 0, 0);
-  
+
   // Calculate column widths
   const pageWidth = doc.internal.pageSize.width;
   const usableWidth = pageWidth - left - right;
   const colCount = columns.length;
   const colWidth = usableWidth / colCount;
-  
+
   // Draw table headers
   let currentY = startY;
   doc.setFont(undefined, 'bold');
@@ -958,21 +958,21 @@ function generateTableWithCheckmarks(doc, data, columns, options = {}, checkmark
   });
   doc.setFont(undefined, 'normal');
   currentY += 8;
-  
+
   // Draw table rows
   data.forEach((row, rowIndex) => {
     const rowY = currentY;
-    
+
     columns.forEach((col, colIndex) => {
       const x = left + (colIndex * colWidth);
       const value = row[col.key];
-      
+
       // Handle checkmark columns
       if (checkmarkColumns[col.key] && typeof value === 'boolean') {
         const checkmarkConfig = checkmarkColumns[col.key];
         const checkmarkText = value ? '✓' : '✗';
         const checkmarkColor = value ? [0, 128, 0] : [255, 0, 0]; // Green for true, red for false
-        
+
         doc.setTextColor(...checkmarkColor);
         doc.text(checkmarkText, x + colWidth / 2, currentY + 4, { align: 'center' });
       } else {
@@ -981,15 +981,15 @@ function generateTableWithCheckmarks(doc, data, columns, options = {}, checkmark
         const text = String(value || '');
         doc.text(text, x + 2, currentY + 4);
       }
-      
+
       // Draw cell borders
       doc.setLineWidth(0.3);
       doc.rect(x, currentY, colWidth, 8);
     });
-    
+
     currentY += 8;
   });
-  
+
   // Draw table bottom border
   doc.setLineWidth(0.5);
   doc.line(left, currentY, left + usableWidth, currentY);
@@ -1004,14 +1004,14 @@ function PositionedValue({ fieldKey, value, fontLenSource }) {
     fieldKey === 'informant_address' && fontLenSource != null
       ? String(fontLenSource).trim().length
       : String(value ?? '').trim().length;
-  
+
   let fontPx = PDF_LAYOUT.fieldFontSize;
   if (fieldKey === 'informant_address' && lenForFont >= INFORMANT_ADDRESS_COMPACT_LENGTH) {
     fontPx = INFORMANT_ADDRESS_COMPACT_OVERLAY_PX;
   } else if (fieldKey === 'attendant_address') {
     fontPx = getAttendantAddressFontPx(lenForFont);
   }
-  
+
   const isCentered = CENTERED_FIELD_KEYS.includes(fieldKey);
   const colW = getEffectiveColumnWidthPx(fieldKey);
   const boxWidth = field.width ?? colW ?? undefined;
@@ -1122,7 +1122,7 @@ export function FieldPosition() {
   const merged = buildMergedCertData(child, cert);
   const getVal = (key) => getMergedValue(merged, key);
   const getAbbrevVal = (key) => abbreviateAddressText(getVal(key));
-  
+
   // Get normalized attendant type for radio button logic
   const attendantType = normalizeAttendantType(getVal('attendantType') ?? getVal('attendant_type'));
 
@@ -1264,7 +1264,7 @@ export function FieldPosition() {
           <RadioMark x={875} y={2277} show={attendantType === 'midwife'} />
           <RadioMark x={1179} y={2277} show={attendantType === 'hilot'} />
           <RadioMark x={1794} y={2277} show={attendantType === 'other'} />
-          
+
           {/* Attendant Type Specify (only show for "other") */}
           <PositionedValue fieldKey="attendant_type_specify" value={attendantType === 'other' ? (getVal('attendantTypeSpecify') ?? getVal('attendantOthersSpecify') ?? '') : ''} />
 
