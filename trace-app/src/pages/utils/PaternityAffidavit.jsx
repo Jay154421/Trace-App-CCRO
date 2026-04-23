@@ -168,7 +168,7 @@ export function PaternityAffidavit() {
             </div>
 
             <div className="flex items-baseline gap-2">
-              <span>Community Tax Cert. No.</span>
+              <span>CTC/Valid ID -</span>
               <FormLine value={form.ctcNo} onChange={v => update('ctcNo', v)} width="w-48" />
               <span>issued on</span>
               <FormLine value={form.issuedOn} onChange={v => update('issuedOn', v)} width="w-48" />

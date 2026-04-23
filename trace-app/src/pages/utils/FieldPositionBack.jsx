@@ -47,60 +47,61 @@ const RADIO_CHECK_SHAPE_EXTENT = { horizontal: 0.95, vertical: 0.7 };
 // Field position coordinates (layout pixels) for BACK SIDE (Affidavits)
 const FIELD_POSITIONS = {
     // --- AFFIDAVIT OF ACKNOWLEDGMENT/ADMISSION OF PATERNITY ---
-    pa_mother_name: { x: 450, y: 648, width: 800 },
-    pa_father_name: { x: 1450, y: 648, width: 800 },
-    pa_child_name: { x: 750, y: 753, width: 1000 },
-    pa_dob: { x: 300, y: 885, width: 400 },
-    pa_pob: { x: 800, y: 885, width: 1200 },
-    pa_sworn_day: { x: 650, y: 1557, width: 150 },
-    pa_sworn_month: { x: 900, y: 1557, width: 350 },
-    pa_sworn_year: { x: 1350, y: 1557, width: 200 },
-    pa_sworn_by_1: { x: 300, y: 1677, width: 800 },
-    pa_sworn_by_2: { x: 1300, y: 1677, width: 800 },
-    pa_ctc_no: { x: 800, y: 1818, width: 400 },
-    pa_issued_on: { x: 1400, y: 1818, width: 400 },
-    pa_issued_at: { x: 300, y: 1959, width: 800 },
-    pa_admin_officer: { x: 1500, y: 2505, width: 900 },
-    pa_name_in_print: { x: 483, y: 3057, width: 800 },
-    pa_position: { x: 1500, y: 3057, width: 900 },
-    pa_address: { x: 1500, y: 3129, width: 900 },
+    pa_mother_name: { x: 399, y: 318, width: 840 },
+    pa_father_name: { x: 1368, y: 318, width: 885 },
+    pa_child_name: { x: 1122, y: 375, width: 990 },
+    pa_dob: { x: 294, y: 435, width: 567 },
+    pa_pob: { x: 954, y: 435, width: 876 },
+    pa_sworn_day: { x: 1140, y: 861 },
+    pa_sworn_month: { x: 1428, y: 861, width: 495 },
+    pa_sworn_year: { x: 1995, y: 861, width: 177 },
+    pa_sworn_by_1: { x: 165, y: 942, width: 696 },
+    pa_sworn_by_2: { x: 990, y: 942, width: 687 },
+    pa_ctc_no: { x: 387, y: 1002, width: 864 },
+    pa_issued_on: { x: 1533, y: 1002, width: 639 },
+    pa_issued_at: { x: 165, y: 1062, width: 861 },
+    pa_admin_officer: { x: 1275, y: 1275, width: 897 },
+    pa_name_in_print: { x: 246, y: 1392, width: 897 },
+    pa_position: { x: 1275, y: 1275, width: 897 },
+    pa_address: { x: 1275, y: 1380, width: 897 },
 
     // --- AFFIDAVIT FOR DELAYED REGISTRATION OF BIRTH ---
-    dra_affiant_name: { x: 300, y: 2227, width: 800 },
-    dra_residence: { x: 800, y: 2277, width: 1500 },
-    dra_self_birth_place: { x: 600, y: 2562, width: 800 },
-    dra_self_birth_date: { x: 1600, y: 2562, width: 400 },
-    dra_other_birth_name: { x: 600, y: 2643, width: 800 },
-    dra_other_birth_place: { x: 1600, y: 2643, width: 800 },
-    dra_other_birth_date: { x: 300, y: 2700, width: 400 },
-    dra_attended_by: { x: 800, y: 2800, width: 800 },
-    dra_attendant_address: { x: 400, y: 2880, width: 1500 },
-    dra_citizenship: { x: 800, y: 2950, width: 600 },
-    dra_marriage_date: { x: 1100, y: 3050, width: 400 },
-    dra_marriage_place: { x: 1700, y: 3050, width: 600 },
-    dra_father_name: { x: 700, y: 3150, width: 800 },
-    dra_delay_reason: { x: 300, y: 3250, width: 2000 },
-    dra_spouse_name: { x: 800, y: 3350, width: 800 },
-    dra_relationship: { x: 600, y: 3450, width: 600 },
-    dra_affixed_day: { x: 1400, y: 3550, width: 150 },
-    dra_affixed_month: { x: 1700, y: 3550, width: 350 },
-    dra_affixed_at: { x: 300, y: 3650, width: 800 },
-    dra_sworn_day: { x: 650, y: 3750, width: 150 },
-    dra_sworn_month: { x: 900, y: 3750, width: 350 },
-    dra_sworn_year: { x: 1350, y: 3750, width: 200 },
-    dra_sworn_at: { x: 300, y: 3850, width: 800 },
-    dra_ctc_no: { x: 400, y: 3950, width: 400 },
-    dra_issued_on: { x: 1000, y: 3950, width: 400 },
-    dra_issued_at: { x: 1600, y: 3950, width: 600 },
-    dra_admin_officer: { x: 400, y: 4050, width: 800 },
-    dra_name_in_print: { x: 400, y: 4100, width: 800 },
-    dra_address: { x: 1400, y: 4100, width: 800 },
+    dra_affiant_name: { x: 318, y: 1653, width: 921 },
+    dra_residence: { x: 744, y: 1737, width: 1521 },
+    dra_self_birth_place: { x: 696, y: 1959, width: 885 },
+    dra_self_birth_date: { x: 1710, y: 1959, width: 534 },
+    dra_other_birth_name: { x: 696, y: 2043, width: 708 },
+    dra_other_birth_place: { x: 1770, y: 2043, width: 495 },
+    dra_other_birth_date: { x: 1191, y: 2112, width: 567 },
+    dra_attended_by: { x: 1062, y: 2196, width: 945 },
+    dra_attendant_address: { x: 399, y: 2244, width: 1620 },
+    dra_citizenship: { x: 966, y: 2337, width: 852 },
+    dra_marriage_date: { x: 1251, y: 2433, width: 483 },
+    dra_marriage_place: { x: 1854, y: 2433, width: 411 },
+    dra_father_name: { x: 1521, y: 2631, width: 723 },
+    dra_delay_reason: { x: 1488, y: 2715, width: 777 },
+    dra_spouse_name: { x: 1191, y: 2868, width: 732 },
+    dra_relationship: { x: 1521, y: 2964, width: 402 },
+    dra_affixed_day: { x: 1251, y: 3234 },
+    dra_affixed_month: { x: 1521, y: 3234, width: 675 },
+    dra_affixed_at: { x: 1131, y: 3294, width: 840 },
+    dra_sworn_day: { x: 1179, y: 3612 },
+    dra_sworn_month: { x: 1488, y: 3612, width: 483 },
+    dra_sworn_year: { x: 2043, y: 3612, width: 189 },
+    dra_sworn_at: { x: 153, y: 3753, width: 1026 },
+    dra_ctc_no: { x: 153, y: 3822, width: 330 },
+    dra_issued_on: { x: 732, y: 3822, width: 567 },
+    dra_issued_at: { x: 1404, y: 3822, width: 849 },
+    dra_admin_officer: { x: 1332, y: 3861, width: 852 },
+    dra_position: { x: 1332, y: 3861, width: 852 },
+    dra_name_in_print: { x: 282, y: 3978, width: 861 },
+    dra_address: { x: 1332, y: 3978, width: 852 },
 
     // DRA Checkboxes
-    dra_chk_self_birth: { x: 500, y: 2500 },
-    dra_chk_other_birth: { x: 500, y: 2600 },
-    dra_chk_married: { x: 1400, y: 3000 },
-    dra_chk_not_married: { x: 500, y: 3100 },
+    dra_chk_self_birth: { x: 387, y: 1959 },
+    dra_chk_other_birth: { x: 387, y: 2055 },
+    dra_chk_married: { x: 954, y: 2442 },
+    dra_chk_not_married: { x: 954, y: 2598 },
 };
 
 /** Space between form columns to prevent text bleeding into next box */
@@ -587,16 +588,17 @@ function buildFieldPositionPdfBase64(merged) {
     // Draw DRA checkboxes
     const dra = merged.delayed_registration_affidavit || {};
     const draCheckboxes = [
-        { show: dra.isSelfBirth, pos: { x: 500, y: 2500 } },
-        { show: dra.isOtherBirth, pos: { x: 500, y: 2600 } },
-        { show: dra.isMarried, pos: { x: 1400, y: 3000 } },
-        { show: dra.isNotMarried, pos: { x: 500, y: 3100 } },
+        { show: dra.isSelfBirth, key: 'dra_chk_self_birth' },
+        { show: dra.isOtherBirth, key: 'dra_chk_other_birth' },
+        { show: dra.isMarried, key: 'dra_chk_married' },
+        { show: dra.isNotMarried, key: 'dra_chk_not_married' },
     ];
 
     draCheckboxes.forEach(cb => {
-        if (cb.show) {
-            const xIn = (cb.pos.x / docWidth) * pageWidthInches;
-            const yIn = ((cb.pos.y + 10) / docHeight) * pageHeightInches;
+        if (cb.show && FIELD_POSITIONS[cb.key]) {
+            const pos = FIELD_POSITIONS[cb.key];
+            const xIn = (pos.x / docWidth) * pageWidthInches;
+            const yIn = ((pos.y + 10) / docHeight) * pageHeightInches;
             drawRadioMark(doc, xIn, yIn);
         }
     });
@@ -736,6 +738,24 @@ function buildCombinedPdfBase64(merged) {
         const yIn = ((pos.y + 10) / docHeight) * pageHeightInches;
         drawRadioMark(doc, xIn, yIn);
     }
+
+    // Draw DRA checkboxes
+    const dra = merged.delayed_registration_affidavit || {};
+    const draCheckboxes = [
+        { show: dra.isSelfBirth, key: 'dra_chk_self_birth' },
+        { show: dra.isOtherBirth, key: 'dra_chk_other_birth' },
+        { show: dra.isMarried, key: 'dra_chk_married' },
+        { show: dra.isNotMarried, key: 'dra_chk_not_married' },
+    ];
+
+    draCheckboxes.forEach(cb => {
+        if (cb.show && FIELD_POSITIONS[cb.key]) {
+            const pos = FIELD_POSITIONS[cb.key];
+            const xIn = (pos.x / docWidth) * pageWidthInches;
+            const yIn = ((pos.y + 10) / docHeight) * pageHeightInches;
+            drawRadioMark(doc, xIn, yIn);
+        }
+    });
 
     // Draw "other" specify text if applicable
     if (attendantType === 'other') {
