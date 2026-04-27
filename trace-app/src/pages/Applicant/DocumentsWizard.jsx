@@ -11,8 +11,10 @@ const OUT_OF_TOWN_AFFIDAVIT_REQUIREMENT = {
   category: 'conditional',
   label: 'Affidavit w/ Corroboration for Out-of-Town Applicant (Legal Office)',
 };
-const FALLBACK_CAPTURE_SIZE = { width: 600, height: 600, label: '2 x 2 in' };
-const FALLBACK_DOCUMENT_SCAN_SIZE = { width: 1240, height: 1754, label: 'Document scan' };
+const FALLBACK_CAPTURE_SIZE = { width: 1200, height: 1200, label: '2 x 2 in' };
+const FALLBACK_DOCUMENT_SCAN_SIZE = { width: 1275, height: 1800, label: 'Document scan' };
+const DOCUMENT_PORTRAIT_ASPECT = 3 / 4;
+const DOCUMENT_LANDSCAPE_ASPECT = 16 / 10;
 
 /** How long the red loading toast stays visible before auto-dismiss. */
 const REMOVE_ATTACHMENT_LOADING_MS = 5000;
@@ -177,6 +179,118 @@ function getNormalizedCaptureSize(item) {
   };
 }
 
+function getMinimumHdSize(aspectRatio) {
+  if (!Number.isFinite(aspectRatio) || aspectRatio <= 0) {
+    return { width: 1280, height: 720 };
+  }
+  if (aspectRatio >= 1) {
+    let width = 1280;
+    let height = Math.round(width / aspectRatio);
+    if (height < 720) {
+      height = 720;
+      width = Math.round(height * aspectRatio);
+    }
+    return { width, height };
+  }
+  let height = 1280;
+  let width = Math.round(height * aspectRatio);
+  if (width < 720) {
+    width = 720;
+    height = Math.round(width / aspectRatio);
+  }
+  return { width, height };
+}
+
+function getPreferredCaptureSize(item) {
+  const normalized = getNormalizedCaptureSize(item);
+  const hdMinimum = getMinimumHdSize(normalized.width / normalized.height);
+  return {
+    width: Math.max(normalized.width, hdMinimum.width),
+    height: Math.max(normalized.height, hdMinimum.height),
+  };
+}
+
+function normalizeQuarterTurns(turns) {
+  return ((Math.round(turns) % 4) + 4) % 4;
+}
+
+function getQuarterTurnsFromAngle(angle = 0) {
+  const normalized = ((Math.round(angle) % 360) + 360) % 360;
+  if (normalized >= 315 || normalized < 45) return 0;
+  if (normalized < 135) return 1;
+  if (normalized < 225) return 2;
+  return 3;
+}
+
+function getCurrentDeviceOrientation() {
+  if (typeof window === 'undefined') return 'portrait';
+  const orientationType = window.screen?.orientation?.type;
+  if (typeof orientationType === 'string') {
+    return orientationType.includes('landscape') ? 'landscape' : 'portrait';
+  }
+  return window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
+}
+
+function getCurrentOrientationAngle() {
+  if (typeof window === 'undefined') return 0;
+  if (typeof window.screen?.orientation?.angle === 'number') {
+    return window.screen.orientation.angle;
+  }
+  if (typeof window.orientation === 'number') {
+    return window.orientation;
+  }
+  return 0;
+}
+
+function getTargetCropAspect(item, orientation = 'portrait') {
+  if (item?.id === PHOTO_ID_REQUIREMENT_ID) {
+    const s = getNormalizedCaptureSize(item);
+    return s.width / s.height;
+  }
+  return orientation === 'landscape' ? DOCUMENT_LANDSCAPE_ASPECT : DOCUMENT_PORTRAIT_ASPECT;
+}
+
+function getPreferredCaptureSizeForAspect(item, targetAspect) {
+  const basePreferred = getPreferredCaptureSize(item);
+  const hdMinimum = getMinimumHdSize(targetAspect);
+  const baseArea = basePreferred.width * basePreferred.height;
+  let width = Math.round(Math.sqrt(baseArea * targetAspect));
+  let height = Math.round(width / targetAspect);
+  width = Math.max(width, hdMinimum.width);
+  height = Math.max(height, hdMinimum.height);
+  return { width, height };
+}
+
+function buildVideoConstraintPresets(item) {
+  const preferredSize = getPreferredCaptureSize(item);
+  const isPhotoTarget = item?.id === PHOTO_ID_REQUIREMENT_ID;
+  const preferredFacingMode = isPhotoTarget ? 'user' : 'environment';
+  const softMinimum = getMinimumHdSize(preferredSize.width / preferredSize.height);
+  const minWidth = Math.min(softMinimum.width, preferredSize.width);
+  const minHeight = Math.min(softMinimum.height, preferredSize.height);
+
+  return [
+    {
+      facingMode: { ideal: preferredFacingMode },
+      width: { ideal: preferredSize.width, min: minWidth },
+      height: { ideal: preferredSize.height, min: minHeight },
+      frameRate: { ideal: 30, min: 24 },
+    },
+    {
+      facingMode: { ideal: preferredFacingMode },
+      width: { ideal: 1280 },
+      height: { ideal: 720 },
+      frameRate: { ideal: 30, min: 24 },
+    },
+    {
+      facingMode: preferredFacingMode,
+    },
+    {
+      facingMode: 'user',
+    },
+  ];
+}
+
 const MIN_CROP_NATURAL = 48;
 
 function computeMaxCenteredCrop(iw, ih, targetAspect) {
@@ -332,6 +446,8 @@ export function DocumentsWizard() {
   const [rawCapturedUrl, setRawCapturedUrl] = useState('');
   const [capturedPhotoFile, setCapturedPhotoFile] = useState(null);
   const [capturedPhotoUrl, setCapturedPhotoUrl] = useState('');
+  const [deviceOrientation, setDeviceOrientation] = useState(getCurrentDeviceOrientation);
+  const [captureQuarterTurns, setCaptureQuarterTurns] = useState(0);
   const [cropRectNatural, setCropRectNatural] = useState(null);
   const [naturalImageSize, setNaturalImageSize] = useState(null);
   const [cropImageLayout, setCropImageLayout] = useState(null);
@@ -343,6 +459,65 @@ export function DocumentsWizard() {
   const cropStageRef = useRef(null);
   const cropImageRef = useRef(null);
   const cropDragRef = useRef(null);
+
+  const loadImageElement = useCallback((src) => new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('Failed to load captured image.'));
+    img.src = src;
+  }), []);
+
+  const drawRotatedImageToCanvas = useCallback((image, quarterTurns = 0) => {
+    const turns = normalizeQuarterTurns(quarterTurns);
+    const srcWidth = image.naturalWidth || image.width;
+    const srcHeight = image.naturalHeight || image.height;
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Unable to process captured image.');
+    const rotateBy90 = turns % 2 === 1;
+    canvas.width = rotateBy90 ? srcHeight : srcWidth;
+    canvas.height = rotateBy90 ? srcWidth : srcHeight;
+    ctx.save();
+    if (turns === 1) {
+      ctx.translate(canvas.width, 0);
+      ctx.rotate(Math.PI / 2);
+    } else if (turns === 2) {
+      ctx.translate(canvas.width, canvas.height);
+      ctx.rotate(Math.PI);
+    } else if (turns === 3) {
+      ctx.translate(0, canvas.height);
+      ctx.rotate(-Math.PI / 2);
+    }
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(image, 0, 0, srcWidth, srcHeight);
+    ctx.restore();
+    return canvas;
+  }, []);
+
+  const rotateCurrentRawCapture = useCallback(async (deltaTurns = 1) => {
+    if (!rawCapturedUrl) return;
+    try {
+      const image = await loadImageElement(rawCapturedUrl);
+      const rotatedCanvas = drawRotatedImageToCanvas(image, deltaTurns);
+      const blob = await new Promise((resolve) => rotatedCanvas.toBlob(resolve, 'image/jpeg', 0.92));
+      if (!blob) throw new Error('Failed to rotate image.');
+      const file = new File([blob], `raw_capture_${Date.now()}.jpg`, { type: 'image/jpeg' });
+      if (rawCapturedUrl) URL.revokeObjectURL(rawCapturedUrl);
+      if (capturedPhotoUrl) URL.revokeObjectURL(capturedPhotoUrl);
+      setRawCapturedFile(file);
+      setRawCapturedUrl(URL.createObjectURL(file));
+      setCapturedPhotoFile(null);
+      setCapturedPhotoUrl('');
+      setCropRectNatural(null);
+      setNaturalImageSize(null);
+      setCropImageLayout(null);
+      setCaptureQuarterTurns((prev) => normalizeQuarterTurns(prev + deltaTurns));
+      setCameraError('');
+    } catch (err) {
+      setCameraError(err?.message || 'Unable to rotate captured image.');
+    }
+  }, [capturedPhotoUrl, drawRotatedImageToCanvas, loadImageElement, rawCapturedUrl]);
 
   useEffect(() => {
     childrenApi
@@ -356,6 +531,17 @@ export function DocumentsWizard() {
       .catch(setError)
       .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    const updateOrientation = () => setDeviceOrientation(getCurrentDeviceOrientation());
+    updateOrientation();
+    window.addEventListener('orientationchange', updateOrientation);
+    window.addEventListener('resize', updateOrientation);
+    return () => {
+      window.removeEventListener('orientationchange', updateOrientation);
+      window.removeEventListener('resize', updateOrientation);
+    };
+  }, []);
 
   const hasUnsavedChanges = initialChecklist && checklist.some((curr, i) => {
     const init = initialChecklist[i];
@@ -512,7 +698,7 @@ export function DocumentsWizard() {
     }
   };
 
-  const startCamera = async () => {
+  const startCamera = async (targetIndex = cameraTargetIndex) => {
     setCameraBusy(true);
     setCameraError('');
     if (rawCapturedUrl) {
@@ -525,13 +711,50 @@ export function DocumentsWizard() {
       setCapturedPhotoUrl('');
       setCapturedPhotoFile(null);
     }
+    setCaptureQuarterTurns(0);
     try {
       stopCamera();
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user' },
-        audio: false,
-      });
+      const targetItem = targetIndex !== null ? checklist[targetIndex] : null;
+      const videoPresets = buildVideoConstraintPresets(targetItem);
+      let stream = null;
+      for (const videoConstraint of videoPresets) {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: videoConstraint,
+            audio: false,
+          });
+          break;
+        } catch {
+          // Try next less strict preset.
+        }
+      }
+      if (!stream) {
+        throw new Error('Unable to access a high-quality camera stream.');
+      }
       streamRef.current = stream;
+
+      const [videoTrack] = stream.getVideoTracks();
+      if (videoTrack?.getCapabilities && videoTrack?.applyConstraints) {
+        const capabilities = videoTrack.getCapabilities();
+        const advanced = {};
+        if (Array.isArray(capabilities.focusMode) && capabilities.focusMode.includes('continuous')) {
+          advanced.focusMode = 'continuous';
+        }
+        if (Array.isArray(capabilities.exposureMode) && capabilities.exposureMode.includes('continuous')) {
+          advanced.exposureMode = 'continuous';
+        }
+        if (Array.isArray(capabilities.whiteBalanceMode) && capabilities.whiteBalanceMode.includes('continuous')) {
+          advanced.whiteBalanceMode = 'continuous';
+        }
+        if (Object.keys(advanced).length > 0) {
+          try {
+            await videoTrack.applyConstraints({ advanced: [advanced] });
+          } catch {
+            // Ignore unsupported advanced track controls.
+          }
+        }
+      }
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
@@ -546,7 +769,7 @@ export function DocumentsWizard() {
   const openCameraForItem = async (index) => {
     setCameraTargetIndex(index);
     setCameraOpen(true);
-    await startCamera();
+    await startCamera(index);
   };
 
   const closeCamera = () => {
@@ -565,6 +788,7 @@ export function DocumentsWizard() {
     setRawCapturedUrl('');
     setCapturedPhotoFile(null);
     setCapturedPhotoUrl('');
+    setCaptureQuarterTurns(0);
     setCropRectNatural(null);
     setNaturalImageSize(null);
     setCropImageLayout(null);
@@ -579,16 +803,39 @@ export function DocumentsWizard() {
       setCameraError('Camera not ready. Please retry.');
       return;
     }
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d');
+    const sourceCanvas = document.createElement('canvas');
+    sourceCanvas.width = width;
+    sourceCanvas.height = height;
+    const ctx = sourceCanvas.getContext('2d');
     if (!ctx) {
       setCameraError('Unable to process captured image.');
       return;
     }
     ctx.drawImage(video, 0, 0, width, height);
-    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92));
+    const autoTurns = getQuarterTurnsFromAngle(getCurrentOrientationAngle());
+    const rotateBy90 = autoTurns % 2 === 1;
+    const rotatedCanvas = document.createElement('canvas');
+    rotatedCanvas.width = rotateBy90 ? height : width;
+    rotatedCanvas.height = rotateBy90 ? width : height;
+    const rotatedCtx = rotatedCanvas.getContext('2d');
+    if (!rotatedCtx) {
+      setCameraError('Unable to process captured image.');
+      return;
+    }
+    rotatedCtx.save();
+    if (autoTurns === 1) {
+      rotatedCtx.translate(rotatedCanvas.width, 0);
+      rotatedCtx.rotate(Math.PI / 2);
+    } else if (autoTurns === 2) {
+      rotatedCtx.translate(rotatedCanvas.width, rotatedCanvas.height);
+      rotatedCtx.rotate(Math.PI);
+    } else if (autoTurns === 3) {
+      rotatedCtx.translate(0, rotatedCanvas.height);
+      rotatedCtx.rotate(-Math.PI / 2);
+    }
+    rotatedCtx.drawImage(sourceCanvas, 0, 0, width, height);
+    rotatedCtx.restore();
+    const blob = await new Promise((resolve) => rotatedCanvas.toBlob(resolve, 'image/jpeg', 0.92));
     if (!blob) {
       setCameraError('Failed to capture image.');
       return;
@@ -600,6 +847,7 @@ export function DocumentsWizard() {
     setRawCapturedUrl(URL.createObjectURL(file));
     setCapturedPhotoFile(null);
     setCapturedPhotoUrl('');
+    setCaptureQuarterTurns(autoTurns);
     setCropRectNatural(null);
     setNaturalImageSize(null);
     setCropImageLayout(null);
@@ -610,34 +858,30 @@ export function DocumentsWizard() {
   const saveCroppedPhoto = async () => {
     if (!rawCapturedFile || cameraTargetIndex === null || !cropRectNatural || !naturalImageSize) return;
     const targetItem = checklist[cameraTargetIndex];
-    const captureSize = getNormalizedCaptureSize(targetItem);
-
-    const image = await new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => resolve(img);
-      img.onerror = () => reject(new Error('Failed to load captured image.'));
-      img.src = rawCapturedUrl;
-    });
+    const targetAspect = getTargetCropAspect(targetItem, deviceOrientation);
+    const image = await loadImageElement(rawCapturedUrl);
 
     const imageWidth = image.naturalWidth || image.width;
     const imageHeight = image.naturalHeight || image.height;
-    const targetAspect = captureSize.width / captureSize.height;
     const r = clampCropRect(cropRectNatural, imageWidth, imageHeight, targetAspect);
     const sx = Math.floor(r.sx);
     const sy = Math.floor(r.sy);
     const cropWidth = Math.max(1, Math.floor(r.sw));
     const cropHeight = Math.max(1, Math.floor(r.sh));
 
+    const outputSize = getPreferredCaptureSizeForAspect(targetItem, targetAspect);
     const canvas = document.createElement('canvas');
-    canvas.width = captureSize.width;
-    canvas.height = captureSize.height;
+    canvas.width = outputSize.width;
+    canvas.height = outputSize.height;
     const ctx = canvas.getContext('2d');
     if (!ctx) {
       setCameraError('Unable to process cropped image.');
       return;
     }
 
-    ctx.drawImage(image, sx, sy, cropWidth, cropHeight, 0, 0, captureSize.width, captureSize.height);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(image, sx, sy, cropWidth, cropHeight, 0, 0, outputSize.width, outputSize.height);
     const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92));
     if (!blob) {
       setCameraError('Failed to save cropped image.');
@@ -664,9 +908,8 @@ export function DocumentsWizard() {
 
   const cameraTargetAspect = useMemo(() => {
     if (cameraTargetIndex === null || !checklist[cameraTargetIndex]) return 1;
-    const s = getNormalizedCaptureSize(checklist[cameraTargetIndex]);
-    return s.width / s.height;
-  }, [cameraTargetIndex, checklist]);
+    return getTargetCropAspect(checklist[cameraTargetIndex], deviceOrientation);
+  }, [cameraTargetIndex, checklist, deviceOrientation]);
 
   const updateCropLayout = useCallback(() => {
     const stage = cropStageRef.current;
@@ -689,8 +932,7 @@ export function DocumentsWizard() {
       return;
     }
     const targetItem = checklist[cameraTargetIndex];
-    const captureSize = getNormalizedCaptureSize(targetItem);
-    const targetAspect = captureSize.width / captureSize.height;
+    const targetAspect = getTargetCropAspect(targetItem, deviceOrientation);
     const img = new Image();
     img.onload = () => {
       const iw = img.naturalWidth;
@@ -702,7 +944,7 @@ export function DocumentsWizard() {
     return () => {
       img.onload = null;
     };
-  }, [rawCapturedUrl, cameraTargetIndex, checklist]);
+  }, [rawCapturedUrl, cameraTargetIndex, checklist, deviceOrientation]);
 
   useLayoutEffect(() => {
     updateCropLayout();
@@ -909,8 +1151,9 @@ export function DocumentsWizard() {
     : 0;
   const cameraTargetItem = cameraTargetIndex !== null ? checklist[cameraTargetIndex] : null;
   const activeCaptureSize = getNormalizedCaptureSize(cameraTargetItem);
-  const activeCaptureAspect = `${activeCaptureSize.width} / ${activeCaptureSize.height}`;
+  const activeCaptureAspect = String(cameraTargetAspect || 1);
   const isPhotoCameraTarget = cameraTargetItem?.id === PHOTO_ID_REQUIREMENT_ID;
+  const captureOrientationLabel = cameraTargetAspect >= 1 ? 'landscape' : 'portrait';
 
   return (
     <div>
@@ -1214,6 +1457,9 @@ export function DocumentsWizard() {
             <p className="mt-1 text-sm text-slate-600">
               Scanner capture size: {activeCaptureSize.label} ({activeCaptureSize.width} x {activeCaptureSize.height} px)
             </p>
+            <p className="mt-1 text-xs text-slate-500">
+              Crop mode: {captureOrientationLabel} ({deviceOrientation} device orientation), rotation: {captureQuarterTurns * 90}°
+            </p>
             <div
               className={`mt-3 overflow-hidden rounded-lg border border-slate-200 bg-black ${isPhotoCameraTarget ? '' : 'h-[min(62vh,560px)] min-h-[300px]'
                 }`}
@@ -1222,8 +1468,8 @@ export function DocumentsWizard() {
                 <img
                   src={capturedPhotoUrl}
                   alt="Captured preview"
-                  className={isPhotoCameraTarget ? 'w-full object-cover' : 'h-full w-full object-contain'}
-                  style={isPhotoCameraTarget ? { aspectRatio: activeCaptureAspect } : undefined}
+                  className="h-full w-full object-contain"
+                  style={{ aspectRatio: activeCaptureAspect }}
                 />
               ) : rawCapturedUrl ? (
                 <div
@@ -1352,8 +1598,8 @@ export function DocumentsWizard() {
               ) : (
                 <video
                   ref={videoRef}
-                  className={isPhotoCameraTarget ? 'w-full object-cover' : 'h-full w-full object-contain'}
-                  style={isPhotoCameraTarget ? { aspectRatio: activeCaptureAspect } : undefined}
+                  className="h-full w-full object-contain"
+                  style={{ aspectRatio: activeCaptureAspect }}
                   playsInline
                   muted
                 />
@@ -1362,7 +1608,7 @@ export function DocumentsWizard() {
             {rawCapturedUrl && !capturedPhotoUrl && (
               <p className="mt-2 text-xs text-slate-600">
                 Drag the frame to move, or drag corners and edges to resize. Output keeps scanner aspect (
-                {activeCaptureSize.width}×{activeCaptureSize.height} px). Then tap <strong>Crop</strong>.
+                {activeCaptureSize.width}×{activeCaptureSize.height} px). Guide lines show framing. Then tap <strong>Crop</strong>.
               </p>
             )}
             {cameraError && <p className="mt-2 text-sm text-red-600">{cameraError}</p>}
@@ -1387,6 +1633,14 @@ export function DocumentsWizard() {
                 </>
               ) : rawCapturedUrl ? (
                 <>
+                  <button
+                    type="button"
+                    onClick={() => rotateCurrentRawCapture(1)}
+                    disabled={cameraBusy}
+                    className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    Rotate 90°
+                  </button>
                   <button
                     type="button"
                     onClick={saveCroppedPhoto}
