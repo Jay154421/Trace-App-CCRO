@@ -4,34 +4,8 @@ import toast from 'react-hot-toast';
 import { childrenApi } from '../../services/api';
 import { formatDateDDMMYYYY } from '../../utils/date';
 import { buildFieldPositionPdfBase64, buildMergedCertData, buildPdfFilename } from '../../utils/pdfUtils';
-
-function isTruthyFlag(value) {
-  if (typeof value === 'boolean') return value;
-  if (typeof value === 'number') return value === 1;
-  if (typeof value === 'string') {
-    const normalized = value.trim().toLowerCase();
-    if (!normalized || normalized === '0' || normalized === 'false' || normalized === 'no' || normalized === 'off') {
-      return false;
-    }
-    if (normalized === '1' || normalized === 'true' || normalized === 'yes' || normalized === 'on') {
-      return true;
-    }
-  }
-  return Boolean(value);
-}
-
-const emptyEditForm = {
-  first_name: '',
-  middle_name: '',
-  last_name: '',
-  date_of_birth: '',
-  place_of_birth: '',
-  contact_no: '',
-  registrant_deceased: false,
-  hilot_deceased: false,
-  parent_foreigner: false,
-  out_of_town: false,
-};
+import { ApplicantFormFields } from '../../components/applicant/ApplicantFormFields';
+import { emptyApplicantForm, mapApplicantToForm, buildApplicantPayload, isTruthyFlag } from '../../utils/applicantForm';
 
 export function ChildDetail() {
   const { id } = useParams();
@@ -40,7 +14,7 @@ export function ChildDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
-  const [editForm, setEditForm] = useState(emptyEditForm);
+  const [editForm, setEditForm] = useState(emptyApplicantForm);
   const [editSaving, setEditSaving] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteDeleting, setDeleteDeleting] = useState(false);
@@ -55,18 +29,7 @@ export function ChildDetail() {
 
   const openEditModal = () => {
     if (child) {
-      setEditForm({
-        first_name: child.first_name ?? '',
-        middle_name: child.middle_name ?? '',
-        last_name: child.last_name ?? '',
-        date_of_birth: child.date_of_birth ?? '',
-        place_of_birth: child.place_of_birth ?? '',
-        contact_no: child.contact_no ?? '',
-        registrant_deceased: isTruthyFlag(child.registrant_deceased),
-        hilot_deceased: isTruthyFlag(child.hilot_deceased),
-        parent_foreigner: isTruthyFlag(child.parent_foreigner),
-        out_of_town: isTruthyFlag(child.out_of_town),
-      });
+      setEditForm(mapApplicantToForm(child));
       setEditModalOpen(true);
     }
   };
@@ -76,18 +39,7 @@ export function ChildDetail() {
   const submitEdit = (e) => {
     e.preventDefault();
     setEditSaving(true);
-    const payload = {
-      first_name: editForm.first_name.trim(),
-      middle_name: editForm.middle_name.trim() || undefined,
-      last_name: editForm.last_name.trim(),
-      date_of_birth: editForm.date_of_birth,
-      place_of_birth: editForm.place_of_birth.trim() || undefined,
-      contact_no: editForm.contact_no.trim() || undefined,
-      registrant_deceased: editForm.registrant_deceased,
-      hilot_deceased: editForm.hilot_deceased,
-      parent_foreigner: editForm.parent_foreigner,
-      out_of_town: editForm.out_of_town,
-    };
+    const payload = buildApplicantPayload(editForm);
     childrenApi
       .update(id, payload)
       .then(() => {
@@ -335,106 +287,7 @@ export function ChildDetail() {
             </div>
             <form onSubmit={submitEdit} className="flex flex-col flex-1 min-h-0">
               <div className="space-y-6 overflow-y-auto p-6">
-                <div className="space-y-4">
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Basic details</h3>
-                  <div className="grid gap-4 sm:grid-cols-3">
-                    <label className="block">
-                      <span className="text-sm font-medium text-slate-700">First name *</span>
-                      <input
-                        type="text"
-                        required
-                        value={editForm.first_name}
-                        onChange={(e) => updateEditForm('first_name', e.target.value)}
-                        className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
-                        autoComplete="given-name"
-                      />
-                    </label>
-                    <label className="block">
-                      <span className="text-sm font-medium text-slate-700">Middle name</span>
-                      <input
-                        type="text"
-                        value={editForm.middle_name}
-                        onChange={(e) => updateEditForm('middle_name', e.target.value)}
-                        className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
-                        autoComplete="additional-name"
-                      />
-                    </label>
-                    <label className="block">
-                      <span className="text-sm font-medium text-slate-700">Last name *</span>
-                      <input
-                        type="text"
-                        required
-                        value={editForm.last_name}
-                        onChange={(e) => updateEditForm('last_name', e.target.value)}
-                        className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
-                        autoComplete="family-name"
-                      />
-                    </label>
-                  </div>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="block">
-                    <span className="text-sm font-medium text-slate-700">Date of birth *</span>
-                    <input
-                      type="date"
-                      required
-                      value={editForm.date_of_birth}
-                      onChange={(e) => updateEditForm('date_of_birth', e.target.value)}
-                      className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="text-sm font-medium text-slate-700">Contact no.</span>
-                    <input
-                      type="text"
-                      value={editForm.contact_no}
-                      onChange={(e) => updateEditForm('contact_no', e.target.value)}
-                      className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
-                    />
-                  </label>
-                </div>
-                <label className="block">
-                  <span className="text-sm font-medium text-slate-700">Place of birth</span>
-                  <input
-                    type="text"
-                    value={editForm.place_of_birth}
-                    onChange={(e) => updateEditForm('place_of_birth', e.target.value)}
-                    className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
-                  />
-                </label>
-                <fieldset className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
-                  <legend className="px-1 text-sm font-semibold text-slate-700">Conditional document requirements</legend>
-                  <p className="mb-4 mt-2 text-sm text-slate-500">Choose all that apply and required supporting documents will be added to the checklist.</p>
-                  <div className="space-y-2">
-                    <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 transition hover:border-emerald-200 hover:bg-emerald-50/50">
-                      <input
-                        type="checkbox"
-                        checked={editForm.out_of_town}
-                        onChange={(e) => updateEditForm('out_of_town', e.target.checked)}
-                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                      />
-                      <span className="text-sm text-slate-700">Out of Town</span>
-                    </label>
-                    <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 transition hover:border-emerald-200 hover:bg-emerald-50/50">
-                      <input
-                        type="checkbox"
-                        checked={editForm.registrant_deceased}
-                        onChange={(e) => updateEditForm('registrant_deceased', e.target.checked)}
-                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                      />
-                      <span className="text-sm text-slate-700">Registrant is deceased (attach death certificate)</span>
-                    </label>
-                    <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 transition hover:border-emerald-200 hover:bg-emerald-50/50">
-                      <input
-                        type="checkbox"
-                        checked={editForm.parent_foreigner}
-                        onChange={(e) => updateEditForm('parent_foreigner', e.target.checked)}
-                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                      />
-                      <span className="text-sm text-slate-700">One parent is foreigner (attach passport or Bureau of Immigration cert.)</span>
-                    </label>
-                  </div>
-                </fieldset>
+                <ApplicantFormFields form={editForm} onFieldChange={updateEditForm} />
               </div>
               <div className="flex flex-col-reverse gap-3 border-t border-slate-200 bg-white px-6 py-4 sm:flex-row sm:justify-end">
                 <button

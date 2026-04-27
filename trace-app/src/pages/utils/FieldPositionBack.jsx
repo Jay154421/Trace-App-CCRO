@@ -47,31 +47,31 @@ const RADIO_CHECK_SHAPE_EXTENT = { horizontal: 0.95, vertical: 0.7 };
 // Field position coordinates (layout pixels) for BACK SIDE (Affidavits)
 const FIELD_POSITIONS = {
     // --- AFFIDAVIT OF ACKNOWLEDGMENT/ADMISSION OF PATERNITY ---
-    pa_mother_name: { x: 399, y: 318, width: 840 },
-    pa_father_name: { x: 1368, y: 318, width: 885 },
-    pa_child_name: { x: 1122, y: 375, width: 990 },
-    pa_dob: { x: 294, y: 435, width: 567 },
+    pa_mother_name: { x: 399, y: 306, width: 840 },
+    pa_father_name: { x: 1368, y: 306, width: 885 },
+    pa_child_name: { x: 1122, y: 354, width: 990 },
+    pa_dob: { x: 294, y: 399, width: 567 },
     pa_pob: { x: 954, y: 435, width: 876 },
     pa_sworn_day: { x: 1140, y: 861 },
     pa_sworn_month: { x: 1428, y: 861, width: 495 },
     pa_sworn_year: { x: 1995, y: 861, width: 177 },
-    pa_sworn_by_1: { x: 165, y: 942, width: 696 },
-    pa_sworn_by_2: { x: 990, y: 942, width: 687 },
-    pa_ctc_no: { x: 387, y: 1002, width: 864 },
-    pa_issued_on: { x: 1533, y: 1002, width: 639 },
-    pa_issued_at: { x: 165, y: 1062, width: 861 },
+    pa_sworn_by_1: { x: 165, y: 921, width: 696 },
+    pa_sworn_by_2: { x: 990, y: 921, width: 687 },
+    pa_ctc_no: { x: 387, y: 978, width: 864 },
+    pa_issued_on: { x: 1533, y: 978, width: 639 },
+    pa_issued_at: { x: 234, y: 1050, width: 861 },
     pa_admin_officer: { x: 1275, y: 1275, width: 897 },
-    pa_name_in_print: { x: 246, y: 1392, width: 897 },
-    pa_position: { x: 1275, y: 1275, width: 897 },
-    pa_address: { x: 1275, y: 1380, width: 897 },
+    pa_name_in_print: { x: 246, y: 1356, width: 897 },
+    pa_position: { x: 1275, y: 1265, width: 897 },
+    pa_address: { x: 1275, y: 1356, width: 897 },
 
     // --- AFFIDAVIT FOR DELAYED REGISTRATION OF BIRTH ---
-    dra_affiant_name: { x: 318, y: 1653, width: 921 },
-    dra_residence: { x: 744, y: 1737, width: 1521 },
-    dra_self_birth_place: { x: 696, y: 1959, width: 885 },
-    dra_self_birth_date: { x: 1710, y: 1959, width: 534 },
-    dra_other_birth_name: { x: 696, y: 2043, width: 708 },
-    dra_other_birth_place: { x: 1770, y: 2043, width: 495 },
+    dra_affiant_name: { x: 318, y: 1641, width: 921 },
+    dra_residence: { x: 744, y: 1710, width: 1521 },
+    dra_self_birth_place: { x: 696, y: 1947, width: 885 },
+    dra_self_birth_date: { x: 1710, y: 1947, width: 534 },
+    dra_other_birth_name: { x: 696, y: 2031, width: 708 },
+    dra_other_birth_place: { x: 1770, y: 2031, width: 495 },
     dra_other_birth_date: { x: 1191, y: 2112, width: 567 },
     dra_attended_by: { x: 1062, y: 2196, width: 945 },
     dra_attendant_address: { x: 399, y: 2244, width: 1620 },
@@ -98,8 +98,8 @@ const FIELD_POSITIONS = {
     dra_address: { x: 1332, y: 3978, width: 852 },
 
     // DRA Checkboxes
-    dra_chk_self_birth: { x: 387, y: 1959 },
-    dra_chk_other_birth: { x: 387, y: 2055 },
+    dra_chk_self_birth: { x: 387, y: 1947 },
+    dra_chk_other_birth: { x: 387, y: 2031 },
     dra_chk_married: { x: 954, y: 2442 },
     dra_chk_not_married: { x: 954, y: 2598 },
 };
@@ -569,21 +569,21 @@ function buildFieldPositionPdfBase64(merged) {
         }
     }
 
-    // Draw attendant type radio button marks
-    const radioPositions = {
-        physician: { x: 282, y: 2227 },
-        nurse: { x: 600, y: 2277 },
-        midwife: { x: 875, y: 2277 },
-        hilot: { x: 1179, y: 2277 },
-        other: { x: 1794, y: 2277 },
-    };
+    // // Draw attendant type radio button marks
+    // const radioPositions = {
+    //     physician: { x: 282, y: 2227 },
+    //     nurse: { x: 600, y: 2277 },
+    //     midwife: { x: 875, y: 2277 },
+    //     hilot: { x: 1179, y: 2277 },
+    //     other: { x: 1794, y: 2277 },
+    // };
 
-    if (attendantType && radioPositions[attendantType]) {
-        const pos = radioPositions[attendantType];
-        const xIn = (pos.x / docWidth) * pageWidthInches;
-        const yIn = ((pos.y + 10) / docHeight) * pageHeightInches;
-        drawRadioMark(doc, xIn, yIn);
-    }
+    // if (attendantType && radioPositions[attendantType]) {
+    //     const pos = radioPositions[attendantType];
+    //     const xIn = (pos.x / docWidth) * pageWidthInches;
+    //     const yIn = ((pos.y + 10) / docHeight) * pageHeightInches;
+    //     drawRadioMark(doc, xIn, yIn);
+    // }
 
     // Draw DRA checkboxes
     const dra = merged.delayed_registration_affidavit || {};
@@ -723,21 +723,21 @@ function buildCombinedPdfBase64(merged) {
         }
     }
 
-    // Draw attendant type radio button marks
-    const radioPositions = {
-        physician: { x: 282, y: 2227 },
-        nurse: { x: 600, y: 2277 },
-        midwife: { x: 875, y: 2277 },
-        hilot: { x: 1179, y: 2277 },
-        other: { x: 1794, y: 2277 },
-    };
+    // // Draw attendant type radio button marks
+    // const radioPositions = {
+    //     physician: { x: 282, y: 2227 },
+    //     nurse: { x: 600, y: 2277 },
+    //     midwife: { x: 875, y: 2277 },
+    //     hilot: { x: 1179, y: 2277 },
+    //     other: { x: 1794, y: 2277 },
+    // };
 
-    if (attendantType && radioPositions[attendantType]) {
-        const pos = radioPositions[attendantType];
-        const xIn = (pos.x / docWidth) * pageWidthInches;
-        const yIn = ((pos.y + 10) / docHeight) * pageHeightInches;
-        drawRadioMark(doc, xIn, yIn);
-    }
+    // if (attendantType && radioPositions[attendantType]) {
+    //     const pos = radioPositions[attendantType];
+    //     const xIn = (pos.x / docWidth) * pageWidthInches;
+    //     const yIn = ((pos.y + 10) / docHeight) * pageHeightInches;
+    //     drawRadioMark(doc, xIn, yIn);
+    // }
 
     // Draw DRA checkboxes
     const dra = merged.delayed_registration_affidavit || {};

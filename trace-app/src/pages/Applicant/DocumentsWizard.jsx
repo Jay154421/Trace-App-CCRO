@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useLayoutEffect, useCallback, useMemo } fr
 import toast from 'react-hot-toast';
 import { childrenApi } from '../../services/api';
 import { apiUrl } from '../../config/api';
+import { isTruthyFlag } from '../../utils/applicantForm';
 
 const PHOTO_ID_REQUIREMENT_ID = 'photo_2x2';
 const OUT_OF_TOWN_AFFIDAVIT_REQUIREMENT = {
@@ -58,21 +59,6 @@ function toSafeFilenamePart(value) {
     .trim()
     .replace(/\s+/g, '_')
     .replace(/[^a-zA-Z0-9_-]/g, '');
-}
-
-function isTruthyFlag(value) {
-  if (typeof value === 'boolean') return value;
-  if (typeof value === 'number') return value === 1;
-  if (typeof value === 'string') {
-    const normalized = value.trim().toLowerCase();
-    if (!normalized || normalized === '0' || normalized === 'false' || normalized === 'no' || normalized === 'off') {
-      return false;
-    }
-    if (normalized === '1' || normalized === 'true' || normalized === 'yes' || normalized === 'on') {
-      return true;
-    }
-  }
-  return Boolean(value);
 }
 
 function isOutOfTownAffidavitRequirement(requirement) {
