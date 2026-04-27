@@ -210,18 +210,6 @@ function getPreferredCaptureSize(item) {
   };
 }
 
-function normalizeQuarterTurns(turns) {
-  return ((Math.round(turns) % 4) + 4) % 4;
-}
-
-function getQuarterTurnsFromAngle(angle = 0) {
-  const normalized = ((Math.round(angle) % 360) + 360) % 360;
-  if (normalized >= 315 || normalized < 45) return 0;
-  if (normalized < 135) return 1;
-  if (normalized < 225) return 2;
-  return 3;
-}
-
 function getCurrentDeviceOrientation() {
   if (typeof window === 'undefined') return 'portrait';
   const orientationType = window.screen?.orientation?.type;
@@ -229,17 +217,6 @@ function getCurrentDeviceOrientation() {
     return orientationType.includes('landscape') ? 'landscape' : 'portrait';
   }
   return window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
-}
-
-function getCurrentOrientationAngle() {
-  if (typeof window === 'undefined') return 0;
-  if (typeof window.screen?.orientation?.angle === 'number') {
-    return window.screen.orientation.angle;
-  }
-  if (typeof window.orientation === 'number') {
-    return window.orientation;
-  }
-  return 0;
 }
 
 function getTargetCropAspect(item, orientation = 'portrait') {
@@ -293,17 +270,9 @@ function buildVideoConstraintPresets(item) {
 
 const MIN_CROP_NATURAL = 48;
 
-function computeMaxCenteredCrop(iw, ih, targetAspect) {
-  const srcAspect = iw / ih;
-  let sw;
-  let sh;
-  if (srcAspect > targetAspect) {
-    sh = ih;
-    sw = sh * targetAspect;
-  } else {
-    sw = iw;
-    sh = sw / targetAspect;
-  }
+function computeMaxCenteredCrop(iw, ih) {
+  const sw = Math.max(MIN_CROP_NATURAL, iw * 0.9);
+  const sh = Math.max(MIN_CROP_NATURAL, ih * 0.9);
   const sx = (iw - sw) / 2;
   const sy = (ih - sh) / 2;
   return { sx, sy, sw, sh };
@@ -320,17 +289,9 @@ function naturalRectToCropOverlayPx(rect, natural, layout) {
   };
 }
 
-function clampCropRect({ sx, sy, sw, sh }, iw, ih, targetAspect) {
-  let w = Math.max(MIN_CROP_NATURAL, sw);
-  let h = w / targetAspect;
-  if (h > ih) {
-    h = ih;
-    w = h * targetAspect;
-  }
-  if (w > iw) {
-    w = iw;
-    h = w / targetAspect;
-  }
+function clampCropRect({ sx, sy, sw, sh }, iw, ih) {
+  let w = Math.min(iw, Math.max(MIN_CROP_NATURAL, sw));
+  let h = Math.min(ih, Math.max(MIN_CROP_NATURAL, sh));
   let x = Math.min(Math.max(0, sx), iw - w);
   let y = Math.min(Math.max(0, sy), ih - h);
   if (x + w > iw) x = iw - w;
@@ -339,9 +300,9 @@ function clampCropRect({ sx, sy, sw, sh }, iw, ih, targetAspect) {
 }
 
 /**
- * Fixed-aspect resize from pointer (natural image coords). mode: nw | ne | sw | se | n | s | e | w
+ * Freeform resize from pointer (natural image coords). mode: nw | ne | sw | se | n | s | e | w
  */
-function cropRectFromResize(mode, mx, my, rect, iw, ih, k) {
+function cropRectFromResize(mode, mx, my, rect, iw, ih) {
   const mxC = Math.min(Math.max(0, mx), iw);
   const myC = Math.min(Math.max(0, my), ih);
   const { sx, sy, sw, sh } = rect;
@@ -353,77 +314,41 @@ function cropRectFromResize(mode, mx, my, rect, iw, ih, k) {
     case 'move':
       return rect;
     case 'se': {
-      let nw = mxC - sx;
-      let nh = nw / k;
-      next = { sx, sy, sw: nw, sh: nh };
+      next = { sx, sy, sw: mxC - sx, sh: myC - sy };
       break;
     }
     case 'nw': {
-      let nw = brx - mxC;
-      let nh = nw / k;
-      next = { sx: mxC, sy: bry - nh, sw: nw, sh: nh };
+      next = { sx: mxC, sy: myC, sw: brx - mxC, sh: bry - myC };
       break;
     }
     case 'ne': {
-      let nw = mxC - sx;
-      let nh = nw / k;
-      next = { sx, sy: bry - nh, sw: nw, sh: nh };
+      next = { sx, sy: myC, sw: mxC - sx, sh: bry - myC };
       break;
     }
     case 'sw': {
-      let nw = brx - mxC;
-      let nh = nw / k;
-      next = { sx: mxC, sy, sw: nw, sh: nh };
+      next = { sx: mxC, sy, sw: brx - mxC, sh: myC - sy };
       break;
     }
     case 'n': {
-      let nh = bry - myC;
-      let nw = nh * k;
-      next = {
-        sx: sx + (sw - nw) / 2,
-        sy: myC,
-        sw: nw,
-        sh: nh,
-      };
+      next = { sx, sy: myC, sw, sh: bry - myC };
       break;
     }
     case 's': {
-      let nh = myC - sy;
-      let nw = nh * k;
-      next = {
-        sx: sx + (sw - nw) / 2,
-        sy,
-        sw: nw,
-        sh: nh,
-      };
+      next = { sx, sy, sw, sh: myC - sy };
       break;
     }
     case 'e': {
-      let nw = mxC - sx;
-      let nh = nw / k;
-      next = {
-        sx,
-        sy: sy + (sh - nh) / 2,
-        sw: nw,
-        sh: nh,
-      };
+      next = { sx, sy, sw: mxC - sx, sh };
       break;
     }
     case 'w': {
-      let nw = brx - mxC;
-      let nh = nw / k;
-      next = {
-        sx: mxC,
-        sy: sy + (sh - nh) / 2,
-        sw: nw,
-        sh: nh,
-      };
+      next = { sx: mxC, sy, sw: brx - mxC, sh };
       break;
     }
     default:
       return rect;
   }
-  return clampCropRect(next, iw, ih, k);
+  return clampCropRect(next, iw, ih);
 }
 
 export function DocumentsWizard() {
@@ -447,13 +372,15 @@ export function DocumentsWizard() {
   const [capturedPhotoFile, setCapturedPhotoFile] = useState(null);
   const [capturedPhotoUrl, setCapturedPhotoUrl] = useState('');
   const [deviceOrientation, setDeviceOrientation] = useState(getCurrentDeviceOrientation);
-  const [captureQuarterTurns, setCaptureQuarterTurns] = useState(0);
+  const [cropModeActive, setCropModeActive] = useState(false);
   const [cropRectNatural, setCropRectNatural] = useState(null);
   const [naturalImageSize, setNaturalImageSize] = useState(null);
   const [cropImageLayout, setCropImageLayout] = useState(null);
   const [photoPreviewOpen, setPhotoPreviewOpen] = useState(false);
   const [photoPreviewSrc, setPhotoPreviewSrc] = useState('');
   const [photoPreviewLocalUrl, setPhotoPreviewLocalUrl] = useState('');
+  const [photoPreviewName, setPhotoPreviewName] = useState('');
+  const [photoPreviewZoom, setPhotoPreviewZoom] = useState(1);
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const cropStageRef = useRef(null);
@@ -466,58 +393,6 @@ export function DocumentsWizard() {
     img.onerror = () => reject(new Error('Failed to load captured image.'));
     img.src = src;
   }), []);
-
-  const drawRotatedImageToCanvas = useCallback((image, quarterTurns = 0) => {
-    const turns = normalizeQuarterTurns(quarterTurns);
-    const srcWidth = image.naturalWidth || image.width;
-    const srcHeight = image.naturalHeight || image.height;
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error('Unable to process captured image.');
-    const rotateBy90 = turns % 2 === 1;
-    canvas.width = rotateBy90 ? srcHeight : srcWidth;
-    canvas.height = rotateBy90 ? srcWidth : srcHeight;
-    ctx.save();
-    if (turns === 1) {
-      ctx.translate(canvas.width, 0);
-      ctx.rotate(Math.PI / 2);
-    } else if (turns === 2) {
-      ctx.translate(canvas.width, canvas.height);
-      ctx.rotate(Math.PI);
-    } else if (turns === 3) {
-      ctx.translate(0, canvas.height);
-      ctx.rotate(-Math.PI / 2);
-    }
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(image, 0, 0, srcWidth, srcHeight);
-    ctx.restore();
-    return canvas;
-  }, []);
-
-  const rotateCurrentRawCapture = useCallback(async (deltaTurns = 1) => {
-    if (!rawCapturedUrl) return;
-    try {
-      const image = await loadImageElement(rawCapturedUrl);
-      const rotatedCanvas = drawRotatedImageToCanvas(image, deltaTurns);
-      const blob = await new Promise((resolve) => rotatedCanvas.toBlob(resolve, 'image/jpeg', 0.92));
-      if (!blob) throw new Error('Failed to rotate image.');
-      const file = new File([blob], `raw_capture_${Date.now()}.jpg`, { type: 'image/jpeg' });
-      if (rawCapturedUrl) URL.revokeObjectURL(rawCapturedUrl);
-      if (capturedPhotoUrl) URL.revokeObjectURL(capturedPhotoUrl);
-      setRawCapturedFile(file);
-      setRawCapturedUrl(URL.createObjectURL(file));
-      setCapturedPhotoFile(null);
-      setCapturedPhotoUrl('');
-      setCropRectNatural(null);
-      setNaturalImageSize(null);
-      setCropImageLayout(null);
-      setCaptureQuarterTurns((prev) => normalizeQuarterTurns(prev + deltaTurns));
-      setCameraError('');
-    } catch (err) {
-      setCameraError(err?.message || 'Unable to rotate captured image.');
-    }
-  }, [capturedPhotoUrl, drawRotatedImageToCanvas, loadImageElement, rawCapturedUrl]);
 
   useEffect(() => {
     childrenApi
@@ -701,6 +576,10 @@ export function DocumentsWizard() {
   const startCamera = async (targetIndex = cameraTargetIndex) => {
     setCameraBusy(true);
     setCameraError('');
+    setCropModeActive(false);
+    setCropRectNatural(null);
+    setNaturalImageSize(null);
+    setCropImageLayout(null);
     if (rawCapturedUrl) {
       URL.revokeObjectURL(rawCapturedUrl);
       setRawCapturedUrl('');
@@ -711,7 +590,6 @@ export function DocumentsWizard() {
       setCapturedPhotoUrl('');
       setCapturedPhotoFile(null);
     }
-    setCaptureQuarterTurns(0);
     try {
       stopCamera();
       const targetItem = targetIndex !== null ? checklist[targetIndex] : null;
@@ -788,7 +666,7 @@ export function DocumentsWizard() {
     setRawCapturedUrl('');
     setCapturedPhotoFile(null);
     setCapturedPhotoUrl('');
-    setCaptureQuarterTurns(0);
+    setCropModeActive(false);
     setCropRectNatural(null);
     setNaturalImageSize(null);
     setCropImageLayout(null);
@@ -812,32 +690,9 @@ export function DocumentsWizard() {
       return;
     }
     ctx.drawImage(video, 0, 0, width, height);
-    const autoTurns = getQuarterTurnsFromAngle(getCurrentOrientationAngle());
-    const rotateBy90 = autoTurns % 2 === 1;
-    const rotatedCanvas = document.createElement('canvas');
-    rotatedCanvas.width = rotateBy90 ? height : width;
-    rotatedCanvas.height = rotateBy90 ? width : height;
-    const rotatedCtx = rotatedCanvas.getContext('2d');
-    if (!rotatedCtx) {
-      setCameraError('Unable to process captured image.');
-      return;
-    }
-    rotatedCtx.save();
-    if (autoTurns === 1) {
-      rotatedCtx.translate(rotatedCanvas.width, 0);
-      rotatedCtx.rotate(Math.PI / 2);
-    } else if (autoTurns === 2) {
-      rotatedCtx.translate(rotatedCanvas.width, rotatedCanvas.height);
-      rotatedCtx.rotate(Math.PI);
-    } else if (autoTurns === 3) {
-      rotatedCtx.translate(0, rotatedCanvas.height);
-      rotatedCtx.rotate(-Math.PI / 2);
-    }
-    rotatedCtx.drawImage(sourceCanvas, 0, 0, width, height);
-    rotatedCtx.restore();
-    const blob = await new Promise((resolve) => rotatedCanvas.toBlob(resolve, 'image/jpeg', 0.92));
+    const blob = await new Promise((resolve) => sourceCanvas.toBlob(resolve, 'image/jpeg', 0.92));
     if (!blob) {
-      setCameraError('Failed to capture image.');
+      setCameraError('Unable to process captured image.');
       return;
     }
     const file = new File([blob], `raw_capture_${Date.now()}.jpg`, { type: 'image/jpeg' });
@@ -847,7 +702,7 @@ export function DocumentsWizard() {
     setRawCapturedUrl(URL.createObjectURL(file));
     setCapturedPhotoFile(null);
     setCapturedPhotoUrl('');
-    setCaptureQuarterTurns(autoTurns);
+    setCropModeActive(false);
     setCropRectNatural(null);
     setNaturalImageSize(null);
     setCropImageLayout(null);
@@ -856,20 +711,26 @@ export function DocumentsWizard() {
   };
 
   const saveCroppedPhoto = async () => {
-    if (!rawCapturedFile || cameraTargetIndex === null || !cropRectNatural || !naturalImageSize) return;
+    if (!rawCapturedFile || !rawCapturedUrl || cameraTargetIndex === null) return;
     const targetItem = checklist[cameraTargetIndex];
-    const targetAspect = getTargetCropAspect(targetItem, deviceOrientation);
     const image = await loadImageElement(rawCapturedUrl);
 
     const imageWidth = image.naturalWidth || image.width;
     const imageHeight = image.naturalHeight || image.height;
-    const r = clampCropRect(cropRectNatural, imageWidth, imageHeight, targetAspect);
+    const fullImageRect = { sx: 0, sy: 0, sw: imageWidth, sh: imageHeight };
+    const fallbackRect = computeMaxCenteredCrop(imageWidth, imageHeight);
+    const shouldApplyCrop = cropModeActive || Boolean(cropRectNatural);
+    const activeRect = shouldApplyCrop
+      ? (cropRectNatural || fallbackRect)
+      : fullImageRect;
+    const r = clampCropRect(activeRect, imageWidth, imageHeight);
     const sx = Math.floor(r.sx);
     const sy = Math.floor(r.sy);
     const cropWidth = Math.max(1, Math.floor(r.sw));
     const cropHeight = Math.max(1, Math.floor(r.sh));
 
-    const outputSize = getPreferredCaptureSizeForAspect(targetItem, targetAspect);
+    const selectedAspect = cropWidth / cropHeight;
+    const outputSize = getPreferredCaptureSizeForAspect(targetItem, selectedAspect);
     const canvas = document.createElement('canvas');
     canvas.width = outputSize.width;
     canvas.height = outputSize.height;
@@ -892,6 +753,7 @@ export function DocumentsWizard() {
     if (capturedPhotoUrl) URL.revokeObjectURL(capturedPhotoUrl);
     setCapturedPhotoFile(file);
     setCapturedPhotoUrl(URL.createObjectURL(file));
+    setCropModeActive(false);
     setCameraError('');
   };
 
@@ -926,25 +788,23 @@ export function DocumentsWizard() {
   }, [naturalImageSize]);
 
   useEffect(() => {
-    if (!rawCapturedUrl || cameraTargetIndex === null) {
+    if (!rawCapturedUrl || cameraTargetIndex === null || !cropModeActive) {
       setNaturalImageSize(null);
       setCropRectNatural(null);
       return;
     }
-    const targetItem = checklist[cameraTargetIndex];
-    const targetAspect = getTargetCropAspect(targetItem, deviceOrientation);
     const img = new Image();
     img.onload = () => {
       const iw = img.naturalWidth;
       const ih = img.naturalHeight;
       setNaturalImageSize({ w: iw, h: ih });
-      setCropRectNatural(computeMaxCenteredCrop(iw, ih, targetAspect));
+      setCropRectNatural(computeMaxCenteredCrop(iw, ih));
     };
     img.src = rawCapturedUrl;
     return () => {
       img.onload = null;
     };
-  }, [rawCapturedUrl, cameraTargetIndex, checklist, deviceOrientation]);
+  }, [rawCapturedUrl, cameraTargetIndex, cropModeActive]);
 
   useLayoutEffect(() => {
     updateCropLayout();
@@ -993,7 +853,6 @@ export function DocumentsWizard() {
       const d = cropDragRef.current;
       if (!d || !naturalImageSize || !cropImageLayout) return;
       const { w: iw, h: ih } = naturalImageSize;
-      const k = cameraTargetAspect;
       const { nx, ny } = clientToNatural(e.clientX, e.clientY);
 
       if (d.mode === 'move') {
@@ -1008,16 +867,15 @@ export function DocumentsWizard() {
               sh: d.startRect.sh,
             },
             iw,
-            ih,
-            k
+            ih
           )
         );
         return;
       }
 
-      setCropRectNatural(cropRectFromResize(d.mode, nx, ny, d.startRect, iw, ih, k));
+      setCropRectNatural(cropRectFromResize(d.mode, nx, ny, d.startRect, iw, ih));
     },
-    [naturalImageSize, cropImageLayout, clientToNatural, cameraTargetAspect]
+    [naturalImageSize, cropImageLayout, clientToNatural]
   );
 
   const onCropPointerUp = useCallback(
@@ -1066,9 +924,17 @@ export function DocumentsWizard() {
     }
   };
 
+  const handleCropAction = async () => {
+    if (!cropModeActive) {
+      setCropModeActive(true);
+      return;
+    }
+    await saveCroppedPhoto();
+  };
+
   const isImageFilename = (filename = '') => /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(filename);
 
-  const open2x2Preview = (src, isLocal = false) => {
+  const open2x2Preview = (src, isLocal = false, name = '') => {
     if (photoPreviewLocalUrl) {
       URL.revokeObjectURL(photoPreviewLocalUrl);
       setPhotoPreviewLocalUrl('');
@@ -1076,6 +942,8 @@ export function DocumentsWizard() {
     if (isLocal) {
       setPhotoPreviewLocalUrl(src);
     }
+    setPhotoPreviewName(name);
+    setPhotoPreviewZoom(1);
     setPhotoPreviewSrc(src);
     setPhotoPreviewOpen(true);
   };
@@ -1083,6 +951,8 @@ export function DocumentsWizard() {
   const closePhotoPreview = () => {
     setPhotoPreviewOpen(false);
     setPhotoPreviewSrc('');
+    setPhotoPreviewName('');
+    setPhotoPreviewZoom(1);
     if (photoPreviewLocalUrl) {
       URL.revokeObjectURL(photoPreviewLocalUrl);
       setPhotoPreviewLocalUrl('');
@@ -1091,7 +961,7 @@ export function DocumentsWizard() {
 
   const openLocalAttachment = (file) => {
     const objectUrl = URL.createObjectURL(file);
-    if (file.type.startsWith('image/')) open2x2Preview(objectUrl, true);
+    if (file.type.startsWith('image/')) open2x2Preview(objectUrl, true, file.name);
     else {
       window.open(objectUrl, '_blank', 'noopener,noreferrer');
       setTimeout(() => URL.revokeObjectURL(objectUrl), 30000);
@@ -1106,14 +976,23 @@ export function DocumentsWizard() {
         if (!res.ok) throw new Error('Failed to load image');
         const blob = await res.blob();
         const localUrl = URL.createObjectURL(blob);
-        open2x2Preview(localUrl, true);
+        open2x2Preview(localUrl, true, filename);
       } catch {
-        open2x2Preview(fileUrl);
+        open2x2Preview(fileUrl, false, filename);
       }
       return;
     }
     window.open(fileUrl, '_blank', 'noopener,noreferrer');
   };
+
+  useEffect(() => {
+    if (!photoPreviewOpen) return undefined;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') closePhotoPreview();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [photoPreviewOpen, photoPreviewLocalUrl]);
 
   useEffect(() => () => {
     stopCamera();
@@ -1153,7 +1032,6 @@ export function DocumentsWizard() {
   const activeCaptureSize = getNormalizedCaptureSize(cameraTargetItem);
   const activeCaptureAspect = String(cameraTargetAspect || 1);
   const isPhotoCameraTarget = cameraTargetItem?.id === PHOTO_ID_REQUIREMENT_ID;
-  const captureOrientationLabel = cameraTargetAspect >= 1 ? 'landscape' : 'portrait';
 
   return (
     <div>
@@ -1458,7 +1336,7 @@ export function DocumentsWizard() {
               Scanner capture size: {activeCaptureSize.label} ({activeCaptureSize.width} x {activeCaptureSize.height} px)
             </p>
             <p className="mt-1 text-xs text-slate-500">
-              Crop mode: {captureOrientationLabel} ({deviceOrientation} device orientation), rotation: {captureQuarterTurns * 90}°
+              Crop mode: {deviceOrientation} device orientation
             </p>
             <div
               className={`mt-3 overflow-hidden rounded-lg border border-slate-200 bg-black ${isPhotoCameraTarget ? '' : 'h-[min(62vh,560px)] min-h-[300px]'
@@ -1486,7 +1364,7 @@ export function DocumentsWizard() {
                       }`}
                     onLoad={updateCropLayout}
                   />
-                  {cropOverlayPx && (
+                  {cropModeActive && cropOverlayPx && (
                     <div className="absolute inset-0 z-10 pointer-events-none">
                       <div
                         role="presentation"
@@ -1605,10 +1483,10 @@ export function DocumentsWizard() {
                 />
               )}
             </div>
-            {rawCapturedUrl && !capturedPhotoUrl && (
+            {rawCapturedUrl && !capturedPhotoUrl && cropModeActive && (
               <p className="mt-2 text-xs text-slate-600">
-                Drag the frame to move, or drag corners and edges to resize. Output keeps scanner aspect (
-                {activeCaptureSize.width}×{activeCaptureSize.height} px). Guide lines show framing. Then tap <strong>Crop</strong>.
+                Drag the frame to move, or drag corners and edges to resize freely. Your selected crop shape is preserved on save.
+                Guide lines show framing. Then tap <strong>Crop</strong>.
               </p>
             )}
             {cameraError && <p className="mt-2 text-sm text-red-600">{cameraError}</p>}
@@ -1635,19 +1513,18 @@ export function DocumentsWizard() {
                 <>
                   <button
                     type="button"
-                    onClick={() => rotateCurrentRawCapture(1)}
-                    disabled={cameraBusy}
-                    className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                    onClick={handleCropAction}
+                    disabled={cameraBusy || (cropModeActive && (!cropRectNatural || !naturalImageSize))}
+                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
                   >
-                    Rotate 90°
+                    {cropModeActive ? 'Apply Crop' : 'Crop'}
                   </button>
                   <button
                     type="button"
                     onClick={saveCroppedPhoto}
-                    disabled={cameraBusy || !cropRectNatural || !naturalImageSize}
-                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                    className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
                   >
-                    Crop
+                    Save
                   </button>
                   <button
                     type="button"
@@ -1692,37 +1569,81 @@ export function DocumentsWizard() {
 
       {photoPreviewOpen && (
         <div
-          className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60"
+          className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-[1px]"
           onClick={closePhotoPreview}
           role="dialog"
           aria-modal="true"
           aria-labelledby="photo-preview-title"
         >
-          <div className="flex min-h-full items-center justify-center p-4">
+          <div className="flex min-h-full items-center justify-center p-3 sm:p-5">
             <div
-              className="my-auto w-full max-w-xl max-h-[min(90vh,calc(100vh-2rem))] overflow-y-auto rounded-xl border border-slate-200 bg-white p-5 shadow-lg"
+              className="my-auto flex h-[min(92vh,880px)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <h2 id="photo-preview-title" className="text-lg font-semibold text-slate-800">
-                Preview
-              </h2>
-              <div className="mt-4 flex justify-center">
-                <div className="relative rounded-lg border border-slate-300 bg-white p-6">
+              <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 sm:px-6">
+                <div>
+                  <h2 id="photo-preview-title" className="text-base font-semibold text-slate-800 sm:text-lg">
+                    Document Preview
+                  </h2>
+                  <p className="max-w-[48ch] truncate text-xs text-slate-500 sm:text-sm">
+                    {photoPreviewName || 'Review the uploaded image before closing.'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPhotoPreviewZoom((prev) => Math.max(0.5, prev - 0.1))}
+                    className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                    aria-label="Zoom out"
+                  >
+                    -
+                  </button>
+                  <p className="min-w-12 text-center text-xs font-medium text-slate-600 sm:text-sm">
+                    {Math.round(photoPreviewZoom * 100)}%
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setPhotoPreviewZoom((prev) => Math.min(3, prev + 0.1))}
+                    className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                    aria-label="Zoom in"
+                  >
+                    +
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPhotoPreviewZoom(1)}
+                    className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 sm:text-sm"
+                  >
+                    Reset
+                  </button>
+                  <button
+                    type="button"
+                    onClick={closePhotoPreview}
+                    className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-auto bg-slate-100/70 p-4 sm:p-6">
+                <div className="flex min-h-full items-center justify-center rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:p-5">
                   <img
                     src={photoPreviewSrc}
                     alt="2x2 uploaded preview"
-                    className="block border border-slate-300 bg-white object-cover"
+                    style={{ transform: `scale(${photoPreviewZoom})`, transformOrigin: 'center center' }}
+                    className="max-h-[72vh] w-auto max-w-full rounded-md border border-slate-200 bg-white object-contain shadow-sm transition-transform"
                   />
                 </div>
               </div>
 
-              <div className="mt-4 flex justify-center">
+              <div className="flex justify-end gap-2 border-t border-slate-200 bg-white px-4 py-3 sm:px-6">
                 <button
                   type="button"
                   onClick={closePhotoPreview}
-                  className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                 >
-                  Close Preview
+                  Done
                 </button>
               </div>
             </div>
