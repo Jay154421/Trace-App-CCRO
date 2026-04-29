@@ -4,6 +4,11 @@ import toast from 'react-hot-toast';
 import { childrenApi } from '../../services/api';
 import { formatDateDDMMYYYY } from '../../utils/date';
 import { buildFieldPositionPdfBase64, buildMergedCertData, buildPdfFilename } from '../../utils/pdfUtils';
+import {
+  buildFieldPositionPdfBase64 as buildFieldPositionBackPdfBase64,
+  buildMergedCertData as buildMergedBackCertData,
+  buildPdfFilename as buildBackPdfFilename,
+} from '../utils/FieldPositionBack';
 import { ApplicantFormFields } from '../../components/applicant/ApplicantFormFields';
 import { emptyApplicantForm, mapApplicantToForm, buildApplicantPayload, isTruthyFlag } from '../../utils/applicantForm';
 
@@ -99,6 +104,34 @@ export function ChildDetail() {
     }
   }, [child]);
 
+  const handleSavePdfBack = useCallback(async () => {
+    const checklist = child?.checklist ?? [];
+    const checklistTotal = checklist.length;
+    const checklistChecked = checklist.filter((item) => item.checked).length;
+    const isChecklistComplete = checklistTotal > 0 && checklistChecked === checklistTotal;
+
+    if (!isChecklistComplete) {
+      toast.error('Complete the document checklist before saving PDF.');
+      return;
+    }
+
+    if (!window.electron?.saveFieldPositionPdf) return;
+    try {
+      const cert = child?.certificate_of_live_birth && typeof child.certificate_of_live_birth === 'object'
+        ? child.certificate_of_live_birth
+        : {};
+      const merged = buildMergedBackCertData(child, cert);
+      const base64 = buildFieldPositionBackPdfBase64(merged);
+      const suggestedFilename = `BACK-${buildBackPdfFilename(child, cert)}`;
+      const result = await window.electron.saveFieldPositionPdf(base64, suggestedFilename);
+      if (result?.ok) {
+        toast.success('Back PDF saved.');
+      }
+    } catch (err) {
+      toast.error(err?.message || 'Failed to save back PDF.');
+    }
+  }, [child]);
+
   if (loading) return <p className="text-slate-500">Loading…</p>;
   if (error) return <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">{error.message}</div>;
   if (!child) return null;
@@ -131,12 +164,6 @@ export function ChildDetail() {
             Document checklist
           </Link>
           <Link
-            to={`/children/${id}/field-position`}
-            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-          >
-            Field Position
-          </Link>
-          <Link
             to={`/children/${id}/paternity-affidavit`}
             className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
@@ -148,12 +175,6 @@ export function ChildDetail() {
           >
             Delayed Birth Affidavit
           </Link>
-          <Link
-            to={`/children/${id}/field-position-back`}
-            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-          >
-            Field Position Back
-          </Link>
           <button
             type="button"
             onClick={handleSavePdf}
@@ -161,7 +182,16 @@ export function ChildDetail() {
             title={!isChecklistComplete ? 'Complete the document checklist first' : undefined}
             className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white"
           >
-            Save as PDF
+            Save Front as PDF
+          </button>
+          <button
+            type="button"
+            onClick={handleSavePdfBack}
+            disabled={!isChecklistComplete}
+            title={!isChecklistComplete ? 'Complete the document checklist first' : undefined}
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white"
+          >
+            Save Back as PDF
           </button>
           <button
             type="button"

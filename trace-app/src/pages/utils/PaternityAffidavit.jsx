@@ -79,15 +79,9 @@ export function PaternityAffidavit() {
   return (
     <div className="mx-auto max-w-4xl p-4 sm:p-8 bg-slate-50 min-h-screen">
       <div className="mb-6 flex items-center justify-between print:hidden">
-        <Link to={`/children/${id}`} className="text-sm font-medium text-emerald-600 hover:underline">
+        <Link to={`/children/${id}`} className="text-sm font-medium text-emerald-600">
           ← Back to Applicant
         </Link>
-        <button
-          onClick={() => window.print()}
-          className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700"
-        >
-          Print Affidavit
-        </button>
       </div>
 
       <div 

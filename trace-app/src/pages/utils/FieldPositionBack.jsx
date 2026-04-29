@@ -406,7 +406,7 @@ const FIELD_VALUE_MAP = [
  * Merge child and certificate data into a unified object
  * Handles both camelCase and snake_case key variations
  */
-function buildMergedCertData(child, cert) {
+export function buildMergedCertData(child, cert) {
     if (!child) return {};
 
     return {
@@ -460,7 +460,7 @@ function pickPdfFontPtForColumn(doc, line, maxWidthIn, preferredPt) {
 /**
  * Generate PDF filename suggestion
  */
-function buildPdfFilename(child, cert) {
+export function buildPdfFilename(child, cert) {
     const merged = buildMergedCertData(child, cert);
     const parts = [merged.childFirst, merged.childMiddle, merged.childLast].filter(
         (p) => p && String(p).trim()
@@ -505,7 +505,7 @@ function drawRadioMark(doc, x, y) {
 /**
  * Build PDF as base64 data URI
  */
-function buildFieldPositionPdfBase64(merged) {
+export function buildFieldPositionPdfBase64(merged) {
     const doc = new jsPDF({ orientation: 'portrait', unit: 'in', format: 'legal' });
     doc.setFont('helvetica');
     doc.setFontSize(PDF_LAYOUT.pdfDefaultFontSize);
