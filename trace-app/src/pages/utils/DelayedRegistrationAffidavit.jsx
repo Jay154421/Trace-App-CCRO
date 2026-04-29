@@ -34,7 +34,6 @@ function Checkbox({ checked, onChange, label }) {
 
 export function DelayedRegistrationAffidavit() {
   const { id } = useParams();
-  const [child, setChild] = useState(null);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({
     affiantName: '',
@@ -77,17 +76,10 @@ export function DelayedRegistrationAffidavit() {
     if (!id) return;
     childrenApi.get(id)
       .then(data => {
-        setChild(data);
         const stored = data.delayed_registration_affidavit || {};
-        setForm(prev => ({
-          ...prev,
-          ...stored,
-          otherBirthName: stored.otherBirthName || `${data.first_name} ${data.middle_name || ''} ${data.last_name}`.trim(),
-          otherBirthDate: stored.otherBirthDate || data.date_of_birth || '',
-          otherBirthPlace: stored.otherBirthPlace || data.place_of_birth || '',
-        }));
+        setForm(prev => ({ ...prev, ...stored }));
       })
-      .catch(err => toast.error('Failed to load child data'))
+      .catch(() => toast.error('Failed to load child data'))
       .finally(() => setLoading(false));
   }, [id]);
 

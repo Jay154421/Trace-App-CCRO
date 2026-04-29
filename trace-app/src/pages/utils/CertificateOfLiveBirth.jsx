@@ -176,22 +176,7 @@ function parseDateOfBirth(dateStr) {
 function parsePlaceOfBirth(raw) {
   const text = typeof raw === 'string' ? raw.trim() : '';
   if (!text) return { name: '', city: '', province: '' };
-  const parts = text.split(',').map((p) => p.trim()).filter(Boolean);
-  if (parts.length >= 3) {
-    return {
-      name: parts.slice(0, -2).join(', '),
-      city: parts[parts.length - 2],
-      province: parts[parts.length - 1],
-    };
-  }
-  if (parts.length === 2) {
-    return {
-      name: parts[0],
-      city: parts[1],
-      province: '',
-    };
-  }
-  return { name: parts[0], city: '', province: '' };
+  return { name: text, city: '', province: '' };
 }
 
 // Pixel-perfect colors from Certificate of Live Birth (Municipal Form No. 102)

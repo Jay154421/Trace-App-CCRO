@@ -28,7 +28,6 @@ function FormLine({ value = '', onChange, placeholder, width = 'flex-1', classNa
 
 export function PaternityAffidavit() {
   const { id } = useParams();
-  const [child, setChild] = useState(null);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({
     motherName: '',
@@ -56,17 +55,10 @@ export function PaternityAffidavit() {
     if (!id) return;
     childrenApi.get(id)
       .then(data => {
-        setChild(data);
         const stored = data.paternity_affidavit || {};
-        setForm(prev => ({
-          ...prev,
-          ...stored,
-          childName: stored.childName || `${data.first_name} ${data.middle_name || ''} ${data.last_name}`.trim(),
-          dob: stored.dob || data.date_of_birth || '',
-          pob: stored.pob || data.place_of_birth || '',
-        }));
+        setForm(prev => ({ ...prev, ...stored }));
       })
-      .catch(err => toast.error('Failed to load child data'))
+      .catch(() => toast.error('Failed to load child data'))
       .finally(() => setLoading(false));
   }, [id]);
 
