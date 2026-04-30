@@ -167,129 +167,285 @@ function display(v) {
   return s || '—';
 }
 
-function docLineHeight(doc, sizePt, factor = 1.35) {
-  return ((sizePt * factor) / 72);
+function docLineHeight(sizePt, factor = 1.35) {
+  return (sizePt * factor) / 72;
 }
+
+function trimTrailingWhitespaceTokens(tokens) {
+  const trimmed = [...tokens];
+  while (trimmed.length && /^\s+$/.test(trimmed[trimmed.length - 1].text)) {
+    trimmed.pop();
+  }
+  return trimmed;
+}
+
+function lineTextWidth(doc, tokens) {
+  let width = 0;
+  for (const token of tokens) {
+    doc.setFont('helvetica', token.bold ? 'bold' : 'normal');
+    width += doc.getTextWidth(token.text);
+  }
+  return width;
+}
+
+function countStretchableSpaces(tokens) {
+  let count = 0;
+  for (const token of tokens) {
+    if (/^\s+$/.test(token.text)) count += token.text.length;
+  }
+  return count;
+}
+
+const CM_TO_INCH = 1 / 2.54;
 
 /**
  * Portrait long-sized PDF (8.5 x 13 in) matching the scanned certification format.
  */
 export async function buildCertificationLetterPdfBase64(child, cert) {
-  const p = buildDelayedCertificationPayload(child, cert);
+  const payload = buildDelayedCertificationPayload(child, cert);
   const { leftSeal, rightSeal } = await loadCertificateHeaderImages();
   const doc = new jsPDF({ orientation: 'portrait', unit: 'in', format: [8.5, 13] });
   doc.setTextColor(0, 0, 0);
 
-  const margin = 0.9;
+  // Match the same visual proportions used by the on-screen preview layout.
+  const margin = 0.55;
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
-  const cx = pageW / 2;
-  const maxW = pageW - margin * 2;
-  const bodyW = maxW - 0.35;
-  let y = 0.64;
+  const centerX = pageW / 2;
+  const maxContentWidth = pageW - margin * 2;
+  const bodyWidth = maxContentWidth * 0.8;
+  const bodyX = (pageW - bodyWidth) / 2;
+  const footerStartY = pageH - margin - 0.58;
+  let currentY = 0.74;
 
-  const emitCenter = (lines, size, bold = false, lhFactor = 1.3) => {
+  const emitCenteredLines = (lines, size, bold = false, lineHeightFactor = 1.3) => {
     doc.setFont('helvetica', bold ? 'bold' : 'normal');
     doc.setFontSize(size);
-    const lh = docLineHeight(doc, size, lhFactor);
+    const lineHeight = docLineHeight(size, lineHeightFactor);
     for (const line of lines) {
-      doc.text(line, cx, y, { align: 'center' });
-      y += lh;
+      doc.text(line, centerX, currentY, { align: 'center' });
+      currentY += lineHeight;
     }
     doc.setFont('helvetica', 'normal');
+  };
+
+  const splitStyledParagraphLines = (segments, size = 11) => {
+    doc.setFontSize(size);
+    const tokens = [];
+    for (const segment of segments) {
+      const parts = String(segment.text ?? '').split(/(\s+)/);
+      for (const part of parts) {
+        if (part) tokens.push({ text: part, bold: Boolean(segment.bold) });
+      }
+    }
+
+    const lines = [];
+    let line = [];
+    let lineWidth = 0;
+
+    const pushLine = () => {
+      if (line.length) {
+        lines.push(line);
+        line = [];
+        lineWidth = 0;
+      }
+    };
+
+    for (const token of tokens) {
+      doc.setFont('helvetica', token.bold ? 'bold' : 'normal');
+      const tokenWidth = doc.getTextWidth(token.text);
+      const nextWidth = lineWidth + tokenWidth;
+
+      if (nextWidth <= bodyWidth) {
+        line.push(token);
+        lineWidth = nextWidth;
+        continue;
+      }
+
+      if (!line.length || /^\s+$/.test(token.text)) {
+        continue;
+      }
+
+      pushLine();
+      line.push(token);
+      lineWidth = tokenWidth;
+    }
+
+    pushLine();
+    return lines;
+  };
+
+  const emitStyledParagraph = (segments, size = 11, extraGap = 0.16) => {
+    doc.setFontSize(size);
+    const lineHeight = docLineHeight(size, 1.6);
+    const lines = splitStyledParagraphLines(segments, size);
+    lines.forEach((line, lineIndex) => {
+      const currentLine = trimTrailingWhitespaceTokens(line);
+      let x = bodyX;
+      const naturalLineWidth = lineTextWidth(doc, currentLine);
+      const isLastLine = lineIndex === lines.length - 1;
+      const stretchableSpaces = countStretchableSpaces(currentLine);
+      const extraPerSpace =
+        !isLastLine && stretchableSpaces > 0 && naturalLineWidth < bodyWidth
+          ? (bodyWidth - naturalLineWidth) / stretchableSpaces
+          : 0;
+
+      for (const token of currentLine) {
+        doc.setFont('helvetica', token.bold ? 'bold' : 'normal');
+        doc.text(token.text, x, currentY);
+        let tokenWidth = doc.getTextWidth(token.text);
+        if (extraPerSpace > 0 && /^\s+$/.test(token.text)) {
+          tokenWidth += extraPerSpace * token.text.length;
+        }
+        x += tokenWidth;
+      }
+      currentY += lineHeight;
+    });
+    doc.setFont('helvetica', 'normal');
+    currentY += extraGap;
   };
 
   doc.setDrawColor(0, 0, 0);
   doc.setLineWidth(0.01);
-  doc.line(margin, y + 0.18, pageW - margin, y + 0.18);
+  const dividerY = currentY + 0.84;
+  doc.line(margin, dividerY, pageW - margin, dividerY);
 
   // Draw header seals first so text appears centered between them.
-  const sealY = y - 0.04;
-  const sealSize = 0.74;
+  const sealY = currentY - 0.05;
+  const sealSize = 0.62;
   if (leftSeal) doc.addImage(leftSeal, 'PNG', margin, sealY, sealSize, sealSize);
   if (rightSeal) doc.addImage(rightSeal, 'JPEG', pageW - margin - sealSize, sealY, sealSize, sealSize);
 
-  emitCenter(['Republic of the Philippines'], 10, false);
-  emitCenter(["CITY CIVIL REGISTRAR'S OFFICE"], 12, true);
-  emitCenter(['City of Iligan'], 10, false);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.5);
-  for (const line of doc.splitTextToSize(
-    'Ground Flr., Pedro Generalao Bldg., Buhanginan Hill, Pala-o, Iligan City',
-    maxW,
-  )) {
-    doc.text(line, cx, y, { align: 'center' });
-    y += docLineHeight(doc, 8.5, 1.2);
-  }
-  y += 0.18;
-
-  emitCenter(['CERTIFICATION'], 20, true, 1.1);
-  y += 0.16;
-
-  const childN = display(p.childName);
-  const dob = display(p.birthDateLine);
-  const pob = display(p.placeOfBirth);
-  const mom = display(p.motherName);
-  const dad = display(p.fatherName);
-  const req = display(p.requestPerson);
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.text('TO WHOM IT MAY CONCERN:', margin, y);
-  y += docLineHeight(doc, 12, 1.45);
-
-  const emitWrapped = (text, size = 11, bold = false, extraGap = 0.16) => {
-    doc.setFont('helvetica', bold ? 'bold' : 'normal');
-    doc.setFontSize(size);
-    const lh = docLineHeight(doc, size, 1.45);
-    for (const line of doc.splitTextToSize(text, bodyW)) {
-      doc.text(line, margin, y);
-      y += lh;
-    }
-    doc.setFont('helvetica', 'normal');
-    y += extraGap;
-  };
-
-  emitWrapped(
-    `This is to certify that the application for Delayed Registration of Birth in favor of ${childN} alleged to have been born on ${dob} at ${pob} to parents ${mom} and ${dad} is ${p.processStatus} in this office.`,
-  );
-  emitWrapped(
-    `This certification is issued upon the request of ${req} for ${p.purpose} requirement purposes.`,
-  );
-  emitWrapped(
-    `Issued this ${display(p.issuedDayOrdinal)} day of ${display(p.issuedMonthUpper)} ${display(p.issuedYearStr)} in Iligan City, Philippines.`,
-  );
-
-  const footerStartY = pageH - margin - 0.55;
-  const signatureTopLimit = footerStartY - 1.65;
-  y = Math.min(y + 0.24, signatureTopLimit);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.text(p.signatoryName, cx, y, { align: 'center' });
-  y += docLineHeight(doc, 12, 1.25);
-
+  emitCenteredLines(['Republic of the Philippines'], 12, true, 1.15);
+  emitCenteredLines(["CITY CIVIL REGISTRAR'S OFFICE"], 14, true, 1.1);
+  emitCenteredLines(['City of Iligan'], 12, true, 1.15);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
-  for (const line of doc.splitTextToSize(p.signatoryTitle, bodyW)) {
-    doc.text(line, cx, y, { align: 'center' });
-    y += docLineHeight(doc, 10, 1.15);
+  for (const line of doc.splitTextToSize(
+    'Ground Flr., Pedro Generalao Bldg., Buhanginan Hill, Pala-o, Iligan City',
+    maxContentWidth,
+  )) {
+    doc.text(line, centerX, currentY, { align: 'center' });
+    currentY += docLineHeight(10, 1.15);
+  }
+  currentY = dividerY + 0.38;
+  const certificationSectionOffsetY = 2 * CM_TO_INCH;
+  currentY += certificationSectionOffsetY;
+
+  emitCenteredLines(['CERTIFICATION'], 24, true, 1.05);
+  currentY += 0.22;
+
+  const childName = display(payload.childName);
+  const dateOfBirth = display(payload.birthDateLine);
+  const placeOfBirth = display(payload.placeOfBirth);
+  const motherName = display(payload.motherName);
+  const fatherName = display(payload.fatherName);
+  const requestPerson = display(payload.requestPerson);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.text('TO WHOM IT MAY CONCERN:', bodyX, currentY);
+  currentY += docLineHeight(12, 1.45);
+
+  const signatureNameLh = docLineHeight(14, 1.25);
+  const signatureTitleLh = docLineHeight(12, 1.15);
+  const signatureTitleLines = doc.splitTextToSize(payload.signatoryTitle, bodyWidth).length;
+  const signatureBlockHeight = signatureNameLh + signatureTitleLines * signatureTitleLh;
+  const signatureTopLimit = footerStartY - 0.2 - signatureBlockHeight;
+
+  const certificationParagraphs = [
+    [
+      { text: 'This is to certify that the application for Delayed Registration of Birth in favor of ' },
+      { text: childName, bold: true },
+      { text: ' alleged to have been born on ' },
+      { text: dateOfBirth, bold: true },
+      { text: ' at ' },
+      { text: placeOfBirth, bold: true },
+      { text: ' to parents ' },
+      { text: motherName, bold: true },
+      { text: ' and ' },
+      { text: fatherName, bold: true },
+      { text: ' is ' },
+      { text: payload.processStatus, bold: true },
+      { text: ' in this office.' },
+    ],
+    [
+      { text: 'This certification is issued upon the request of ' },
+      { text: requestPerson, bold: true },
+      { text: ' for ' },
+      { text: payload.purpose, bold: true },
+      { text: ' requirement purposes.' },
+    ],
+    [
+      { text: 'Issued this ' },
+      { text: display(payload.issuedDayOrdinal), bold: true },
+      { text: ' day of ' },
+      { text: display(payload.issuedMonthUpper), bold: true },
+      { text: ' ' },
+      { text: display(payload.issuedYearStr), bold: true },
+      { text: ' in Iligan City, Philippines.' },
+    ],
+  ];
+
+  const paragraphGap = 0.15;
+  const paragraphLh = docLineHeight(12, 1.6);
+  const projectedBodyHeight = certificationParagraphs.reduce((total, paragraphSegments) => {
+    const lines = splitStyledParagraphLines(paragraphSegments, 12).length;
+    return total + lines * paragraphLh + paragraphGap;
+  }, 0);
+
+  // Reduce paragraph gap when body text is long so signature/footer stays clear.
+  const bodyEndLimit = signatureTopLimit - 0.24;
+  if (currentY + projectedBodyHeight > bodyEndLimit) {
+    const compactGap = 0.08;
+    for (const paragraphSegments of certificationParagraphs) {
+      emitStyledParagraph(paragraphSegments, 12, compactGap);
+    }
+  } else {
+    for (const paragraphSegments of certificationParagraphs) {
+      emitStyledParagraph(paragraphSegments, 12, paragraphGap);
+    }
   }
 
-  y = footerStartY;
-  doc.setFontSize(7.6);
-  const footerLh = docLineHeight(doc, 8, 1.4);
+  currentY = Math.min(currentY + 0.28, signatureTopLimit);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.text(payload.signatoryName, centerX, currentY, { align: 'center' });
+  currentY += docLineHeight(14, 1.25);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(12);
+  for (const line of doc.splitTextToSize(payload.signatoryTitle, bodyWidth)) {
+    doc.text(line, centerX, currentY, { align: 'center' });
+    currentY += docLineHeight(12, 1.15);
+  }
+
+  doc.setDrawColor(0, 0, 0);
+  doc.setLineWidth(0.01);
+  const footerDividerY = footerStartY - 0.11;
+  doc.line(margin, footerDividerY, pageW - margin, footerDividerY);
+  currentY = footerStartY + 0.06;
+  doc.setFontSize(10);
+  const footerLh = docLineHeight(10, 1.2);
   for (const line of [
     'CONTACT DETAILS:',
     'Telephone No.: (063) 224-5038',
     'Email: civilregistrar.iligan@gmail.com',
   ]) {
-    doc.text(line, margin, y);
-    y += footerLh;
+    doc.text(line, bodyX, currentY);
+    currentY += footerLh;
   }
   doc.setFont('helvetica', 'italic');
-  doc.setFontSize(11);
-  doc.text('Be counted', pageW - margin, pageH - margin - 0.32, { align: 'right' });
-  doc.text('Get REGISTERED!', pageW - margin, pageH - margin - 0.14, { align: 'right' });
+  doc.setFontSize(10);
+  const rightFooterX = pageW - bodyX;
+  doc.text('Be counted,', rightFooterX, footerStartY + 0.11, {
+    align: 'right',
+    maxWidth: bodyWidth * 0.52,
+  });
+  doc.text('Get REGISTERED!', rightFooterX, footerStartY + 0.26, {
+    align: 'right',
+    maxWidth: bodyWidth * 0.52,
+  });
   doc.setFont('helvetica', 'normal');
 
   const dataUri = doc.output('datauristring');

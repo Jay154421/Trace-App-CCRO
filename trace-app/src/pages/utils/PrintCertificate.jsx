@@ -134,7 +134,7 @@ export function PrintCertificate() {
             </h2>
             <img
               src={certificateReferenceImageSrc}
-              alt="Scanned certification screenshot"
+              alt="Scanned certification"
               className="w-full rounded-lg border border-slate-200 object-contain"
               loading="lazy"
             />

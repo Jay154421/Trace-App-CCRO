@@ -15,7 +15,10 @@ const Footer = () => {
       {/* Right Section (Tagline) */}
       <div style={styles.tagline}>
         <p style={styles.taglineText}>
-          Births, Marriages and Deaths matter, Register them all!
+            Be counted,
+        </p>
+        <p style={styles.taglineText}>
+            Get REGISTERED!
         </p>
       </div>
     </div>
