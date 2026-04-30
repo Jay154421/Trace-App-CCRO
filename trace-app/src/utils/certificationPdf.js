@@ -82,6 +82,15 @@ function buildPlaceUpper(cert, child) {
   return fallback && String(fallback).trim() ? String(fallback).trim().toUpperCase() : '';
 }
 
+function resolveCertificationPurpose(cert) {
+  const value =
+    cert?.certificationPurpose ??
+    cert?.certification_purpose ??
+    cert?.purpose;
+  const normalized = String(value || '').trim().replace(/\s+/g, ' ');
+  return normalized ? normalized.toUpperCase() : 'ANY LEGAL';
+}
+
 /**
  * Canonical copy payload for Delayed Registration certification (letter + PDF).
  */
@@ -140,7 +149,7 @@ export function buildDelayedCertificationPayload(child, cert) {
     motherName,
     fatherName,
     requestPerson,
-    purpose: 'ANY LEGAL',
+    purpose: resolveCertificationPurpose(c),
     processStatus: 'UNDER PROCESS',
     issuedDayOrdinal,
     issuedMonthUpper,
@@ -171,6 +180,11 @@ function docLineHeight(sizePt, factor = 1.35) {
   return (sizePt * factor) / 72;
 }
 
+function drawTextUnderline(doc, startX, endX, baselineY, fontSizePt) {
+  const underlineOffset = Math.max(0.012, (fontSizePt / 72) * 0.08);
+  doc.line(startX, baselineY + underlineOffset, endX, baselineY + underlineOffset);
+}
+
 function trimTrailingWhitespaceTokens(tokens) {
   const trimmed = [...tokens];
   while (trimmed.length && /^\s+$/.test(trimmed[trimmed.length - 1].text)) {
@@ -182,7 +196,7 @@ function trimTrailingWhitespaceTokens(tokens) {
 function lineTextWidth(doc, tokens) {
   let width = 0;
   for (const token of tokens) {
-    doc.setFont('helvetica', token.bold ? 'bold' : 'normal');
+    doc.setFont('times', token.bold ? 'bold' : 'normal');
     width += doc.getTextWidth(token.text);
   }
   return width;
@@ -194,6 +208,25 @@ function countStretchableSpaces(tokens) {
     if (/^\s+$/.test(token.text)) count += token.text.length;
   }
   return count;
+}
+
+function splitTokenToFitWidth(doc, text, bold, maxWidth) {
+  if (!text) return [];
+  doc.setFont('times', bold ? 'bold' : 'normal');
+  if (doc.getTextWidth(text) <= maxWidth) return [text];
+  const parts = [];
+  let chunk = '';
+  for (const ch of text) {
+    const nextChunk = chunk + ch;
+    if (doc.getTextWidth(nextChunk) <= maxWidth || !chunk) {
+      chunk = nextChunk;
+    } else {
+      parts.push(chunk);
+      chunk = ch;
+    }
+  }
+  if (chunk) parts.push(chunk);
+  return parts;
 }
 
 const CM_TO_INCH = 1 / 2.54;
@@ -208,34 +241,51 @@ export async function buildCertificationLetterPdfBase64(child, cert) {
   doc.setTextColor(0, 0, 0);
 
   // Match the same visual proportions used by the on-screen preview layout.
-  const margin = 0.55;
+  const margin = 0.5;
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
   const centerX = pageW / 2;
   const maxContentWidth = pageW - margin * 2;
   const bodyWidth = maxContentWidth * 0.8;
   const bodyX = (pageW - bodyWidth) / 2;
-  const footerStartY = pageH - margin - 0.58;
-  let currentY = 0.74;
+  const footerStartY = pageH - margin - 0.5;
+  let currentY = margin + 0.2;
 
-  const emitCenteredLines = (lines, size, bold = false, lineHeightFactor = 1.3) => {
-    doc.setFont('helvetica', bold ? 'bold' : 'normal');
+  const emitCenteredLines = (
+    lines,
+    size,
+    bold = false,
+    lineHeightFactor = 1.3,
+    underlineBold = true,
+  ) => {
+    doc.setFont('times', bold ? 'bold' : 'normal');
     doc.setFontSize(size);
     const lineHeight = docLineHeight(size, lineHeightFactor);
     for (const line of lines) {
       doc.text(line, centerX, currentY, { align: 'center' });
+      if (bold && underlineBold) {
+        const textWidth = doc.getTextWidth(line);
+        const textStartX = centerX - textWidth / 2;
+        drawTextUnderline(doc, textStartX, textStartX + textWidth, currentY, size);
+      }
       currentY += lineHeight;
     }
-    doc.setFont('helvetica', 'normal');
+    doc.setFont('times', 'normal');
   };
 
-  const splitStyledParagraphLines = (segments, size = 11) => {
+  const splitStyledParagraphLines = (segments, size = 11, firstLineIndent = 0) => {
     doc.setFontSize(size);
     const tokens = [];
     for (const segment of segments) {
       const parts = String(segment.text ?? '').split(/(\s+)/);
       for (const part of parts) {
-        if (part) tokens.push({ text: part, bold: Boolean(segment.bold) });
+        if (part) {
+          tokens.push({
+            text: part,
+            bold: Boolean(segment.bold),
+            underline: segment.underline !== false && Boolean(segment.bold),
+          });
+        }
       }
     }
 
@@ -252,48 +302,88 @@ export async function buildCertificationLetterPdfBase64(child, cert) {
     };
 
     for (const token of tokens) {
-      doc.setFont('helvetica', token.bold ? 'bold' : 'normal');
+      doc.setFont('times', token.bold ? 'bold' : 'normal');
       const tokenWidth = doc.getTextWidth(token.text);
+      const activeLineMaxWidth = lines.length === 0 ? bodyWidth - firstLineIndent : bodyWidth;
       const nextWidth = lineWidth + tokenWidth;
 
-      if (nextWidth <= bodyWidth) {
+      if (nextWidth <= activeLineMaxWidth) {
         line.push(token);
         lineWidth = nextWidth;
         continue;
       }
 
-      if (!line.length || /^\s+$/.test(token.text)) {
+      // Keep normal words intact; move them to the next line when needed.
+      if (tokenWidth <= activeLineMaxWidth) {
+        if (!line.length || /^\s+$/.test(token.text)) continue;
+        pushLine();
+        line.push(token);
+        lineWidth = tokenWidth;
         continue;
       }
 
-      pushLine();
-      line.push(token);
-      lineWidth = tokenWidth;
+      // If a single token is longer than a full line, split that token only.
+      const subTokens = splitTokenToFitWidth(doc, token.text, token.bold, activeLineMaxWidth).map(
+        (textPart) => ({
+          text: textPart,
+          bold: token.bold,
+          underline: token.underline,
+        }),
+      );
+
+      for (const subToken of subTokens) {
+        doc.setFont('times', subToken.bold ? 'bold' : 'normal');
+        const subTokenWidth = doc.getTextWidth(subToken.text);
+        const currentMaxWidth = lines.length === 0 ? bodyWidth - firstLineIndent : bodyWidth;
+        const subNextWidth = lineWidth + subTokenWidth;
+
+        if (subNextWidth <= currentMaxWidth) {
+          line.push(subToken);
+          lineWidth = subNextWidth;
+          continue;
+        }
+
+        if (!line.length || /^\s+$/.test(subToken.text)) continue;
+        pushLine();
+        line.push(subToken);
+        lineWidth = subTokenWidth;
+      }
     }
 
     pushLine();
     return lines;
   };
 
-  const emitStyledParagraph = (segments, size = 11, extraGap = 0.16) => {
+  const emitStyledParagraph = (
+    segments,
+    size = 11,
+    extraGap = 0.16,
+    firstLineIndent = 0,
+  ) => {
     doc.setFontSize(size);
     const lineHeight = docLineHeight(size, 1.6);
-    const lines = splitStyledParagraphLines(segments, size);
+    const lines = splitStyledParagraphLines(segments, size, firstLineIndent);
     lines.forEach((line, lineIndex) => {
       const currentLine = trimTrailingWhitespaceTokens(line);
-      let x = bodyX;
+      const paragraphIndent = lineIndex === 0 ? firstLineIndent : 0;
+      let x = bodyX + paragraphIndent;
       const naturalLineWidth = lineTextWidth(doc, currentLine);
       const isLastLine = lineIndex === lines.length - 1;
       const stretchableSpaces = countStretchableSpaces(currentLine);
       const extraPerSpace =
-        !isLastLine && stretchableSpaces > 0 && naturalLineWidth < bodyWidth
-          ? (bodyWidth - naturalLineWidth) / stretchableSpaces
+        !isLastLine &&
+        stretchableSpaces > 0 &&
+        naturalLineWidth < bodyWidth - paragraphIndent
+          ? (bodyWidth - paragraphIndent - naturalLineWidth) / stretchableSpaces
           : 0;
 
       for (const token of currentLine) {
-        doc.setFont('helvetica', token.bold ? 'bold' : 'normal');
+        doc.setFont('times', token.bold ? 'bold' : 'normal');
         doc.text(token.text, x, currentY);
         let tokenWidth = doc.getTextWidth(token.text);
+        if (token.underline && !/^\s+$/.test(token.text)) {
+          drawTextUnderline(doc, x, x + tokenWidth, currentY, size);
+        }
         if (extraPerSpace > 0 && /^\s+$/.test(token.text)) {
           tokenWidth += extraPerSpace * token.text.length;
         }
@@ -301,25 +391,25 @@ export async function buildCertificationLetterPdfBase64(child, cert) {
       }
       currentY += lineHeight;
     });
-    doc.setFont('helvetica', 'normal');
+    doc.setFont('times', 'normal');
     currentY += extraGap;
   };
 
   doc.setDrawColor(0, 0, 0);
   doc.setLineWidth(0.01);
   const dividerY = currentY + 0.84;
-  doc.line(margin, dividerY, pageW - margin, dividerY);
+  doc.line(bodyX, dividerY, pageW - bodyX, dividerY);
 
   // Draw header seals first so text appears centered between them.
   const sealY = currentY - 0.05;
   const sealSize = 0.62;
-  if (leftSeal) doc.addImage(leftSeal, 'PNG', margin, sealY, sealSize, sealSize);
-  if (rightSeal) doc.addImage(rightSeal, 'JPEG', pageW - margin - sealSize, sealY, sealSize, sealSize);
+  if (leftSeal) doc.addImage(leftSeal, 'PNG', bodyX, sealY, sealSize, sealSize);
+  if (rightSeal) doc.addImage(rightSeal, 'JPEG', pageW - bodyX - sealSize, sealY, sealSize, sealSize);
 
-  emitCenteredLines(['Republic of the Philippines'], 12, true, 1.15);
-  emitCenteredLines(["CITY CIVIL REGISTRAR'S OFFICE"], 14, true, 1.1);
-  emitCenteredLines(['City of Iligan'], 12, true, 1.15);
-  doc.setFont('helvetica', 'normal');
+  emitCenteredLines(['Republic of the Philippines'], 12, true, 1.15, false);
+  emitCenteredLines(["CITY CIVIL REGISTRAR'S OFFICE"], 14, true, 1.1, false);
+  emitCenteredLines(['City of Iligan'], 12, true, 1.15, false);
+  doc.setFont('times', 'normal');
   doc.setFontSize(10);
   for (const line of doc.splitTextToSize(
     'Ground Flr., Pedro Generalao Bldg., Buhanginan Hill, Pala-o, Iligan City',
@@ -332,7 +422,7 @@ export async function buildCertificationLetterPdfBase64(child, cert) {
   const certificationSectionOffsetY = 2 * CM_TO_INCH;
   currentY += certificationSectionOffsetY;
 
-  emitCenteredLines(['CERTIFICATION'], 24, true, 1.05);
+  emitCenteredLines(['CERTIFICATION'], 24, true, 1.05, false);
   currentY += 0.22;
 
   const childName = display(payload.childName);
@@ -342,10 +432,11 @@ export async function buildCertificationLetterPdfBase64(child, cert) {
   const fatherName = display(payload.fatherName);
   const requestPerson = display(payload.requestPerson);
 
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('times', 'bold');
   doc.setFontSize(12);
-  doc.text('TO WHOM IT MAY CONCERN:', bodyX, currentY);
-  currentY += docLineHeight(12, 1.45);
+  const salutation = 'TO WHOM IT MAY CONCERN:';
+  doc.text(salutation, bodyX, currentY);
+  currentY += docLineHeight(12, 1.45) * 2;
 
   const signatureNameLh = docLineHeight(14, 1.25);
   const signatureTitleLh = docLineHeight(12, 1.15);
@@ -366,14 +457,14 @@ export async function buildCertificationLetterPdfBase64(child, cert) {
       { text: ' and ' },
       { text: fatherName, bold: true },
       { text: ' is ' },
-      { text: payload.processStatus, bold: true },
+      { text: payload.processStatus, bold: true, underline: false },
       { text: ' in this office.' },
     ],
     [
       { text: 'This certification is issued upon the request of ' },
       { text: requestPerson, bold: true },
       { text: ' for ' },
-      { text: payload.purpose, bold: true },
+      { text: payload.purpose, bold: true, underline: false },
       { text: ' requirement purposes.' },
     ],
     [
@@ -388,9 +479,9 @@ export async function buildCertificationLetterPdfBase64(child, cert) {
   ];
 
   const paragraphGap = 0.15;
-  const paragraphLh = docLineHeight(12, 1.6);
+  const paragraphLh = docLineHeight(14, 1.6);
   const projectedBodyHeight = certificationParagraphs.reduce((total, paragraphSegments) => {
-    const lines = splitStyledParagraphLines(paragraphSegments, 12).length;
+    const lines = splitStyledParagraphLines(paragraphSegments, 14).length;
     return total + lines * paragraphLh + paragraphGap;
   }, 0);
 
@@ -398,32 +489,44 @@ export async function buildCertificationLetterPdfBase64(child, cert) {
   const bodyEndLimit = signatureTopLimit - 0.24;
   if (currentY + projectedBodyHeight > bodyEndLimit) {
     const compactGap = 0.08;
-    for (const paragraphSegments of certificationParagraphs) {
-      emitStyledParagraph(paragraphSegments, 12, compactGap);
+    for (const [paragraphIndex, paragraphSegments] of certificationParagraphs.entries()) {
+      emitStyledParagraph(
+        paragraphSegments,
+        14,
+        compactGap,
+        paragraphIndex === 0 || paragraphIndex === 2 ? 0.5 : 0,
+      );
     }
   } else {
-    for (const paragraphSegments of certificationParagraphs) {
-      emitStyledParagraph(paragraphSegments, 12, paragraphGap);
+    for (const [paragraphIndex, paragraphSegments] of certificationParagraphs.entries()) {
+      emitStyledParagraph(
+        paragraphSegments,
+        14,
+        paragraphGap,
+        paragraphIndex === 0 || paragraphIndex === 2 ? 0.5 : 0,
+      );
     }
   }
 
-  currentY = Math.min(currentY + 0.28, signatureTopLimit);
-  doc.setFont('helvetica', 'bold');
+  const signatoryRightX = pageW - bodyX;
+  const signatoryVerticalOffset = docLineHeight(12, 1.45) * 3;
+  currentY = Math.min(currentY + 0.28 + signatoryVerticalOffset, signatureTopLimit);
+  doc.setFont('times', 'bold');
   doc.setFontSize(14);
-  doc.text(payload.signatoryName, centerX, currentY, { align: 'center' });
+  doc.text(payload.signatoryName, signatoryRightX, currentY, { align: 'right' });
   currentY += docLineHeight(14, 1.25);
 
-  doc.setFont('helvetica', 'normal');
+  doc.setFont('times', 'normal');
   doc.setFontSize(12);
   for (const line of doc.splitTextToSize(payload.signatoryTitle, bodyWidth)) {
-    doc.text(line, centerX, currentY, { align: 'center' });
+    doc.text(line, signatoryRightX, currentY, { align: 'right' });
     currentY += docLineHeight(12, 1.15);
   }
 
   doc.setDrawColor(0, 0, 0);
   doc.setLineWidth(0.01);
   const footerDividerY = footerStartY - 0.11;
-  doc.line(margin, footerDividerY, pageW - margin, footerDividerY);
+  doc.line(bodyX, footerDividerY, pageW - bodyX, footerDividerY);
   currentY = footerStartY + 0.06;
   doc.setFontSize(10);
   const footerLh = docLineHeight(10, 1.2);
@@ -435,7 +538,7 @@ export async function buildCertificationLetterPdfBase64(child, cert) {
     doc.text(line, bodyX, currentY);
     currentY += footerLh;
   }
-  doc.setFont('helvetica', 'italic');
+  doc.setFont('times', 'italic');
   doc.setFontSize(10);
   const rightFooterX = pageW - bodyX;
   doc.text('Be counted,', rightFooterX, footerStartY + 0.11, {
@@ -446,7 +549,7 @@ export async function buildCertificationLetterPdfBase64(child, cert) {
     align: 'right',
     maxWidth: bodyWidth * 0.52,
   });
-  doc.setFont('helvetica', 'normal');
+  doc.setFont('times', 'normal');
 
   const dataUri = doc.output('datauristring');
   return dataUri.indexOf(',') >= 0 ? dataUri.split(',')[1] : '';

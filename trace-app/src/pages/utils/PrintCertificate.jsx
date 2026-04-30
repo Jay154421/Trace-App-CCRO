@@ -17,6 +17,7 @@ export function PrintCertificate() {
   const [cert, setCert] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [savingPurpose, setSavingPurpose] = useState(false);
   const {
     url: pdfPreviewUrl,
     isOpen: pdfPreviewOpen,
@@ -26,6 +27,29 @@ export function PrintCertificate() {
 
   const certificateReferenceImageSrc =
     cert?.certificateReferenceImage || cert?.certificate_reference_image || null;
+  const certificationPurpose = String(
+    cert?.certificationPurpose ?? cert?.certification_purpose ?? cert?.purpose ?? "ANY LEGAL",
+  );
+
+  const purposeOptions = useMemo(() => {
+    const seen = new Set();
+    const merged = [];
+    const add = (value) => {
+      const normalized = String(value || "");
+      if (!normalized) return;
+      const key = normalized.toUpperCase();
+      if (seen.has(key)) return;
+      seen.add(key);
+      merged.push(normalized);
+    };
+    (Array.isArray(cert?.certificationPurposeOptions)
+      ? cert.certificationPurposeOptions
+      : []
+    ).forEach(add);
+    add(certificationPurpose);
+    add("ANY LEGAL");
+    return merged;
+  }, [cert, certificationPurpose]);
 
   useEffect(() => {
     setLoading(true);
@@ -44,6 +68,47 @@ export function PrintCertificate() {
     () => (child ? buildDelayedCertificationPayload(child, cert) : null),
     [child, cert],
   );
+
+  const updateCertificationPurpose = useCallback(
+    (value) => {
+      const normalized = String(value ?? "");
+      setCert((prev) => {
+        const current = prev && typeof prev === "object" ? prev : {};
+        const existingOptions = Array.isArray(current.certificationPurposeOptions)
+          ? current.certificationPurposeOptions
+          : [];
+        const options = [...existingOptions];
+        const cleaned = normalized.trim();
+        if (cleaned) {
+          const exists = options.some(
+            (option) => String(option || "").trim().toUpperCase() === cleaned.toUpperCase(),
+          );
+          if (!exists) options.push(cleaned);
+        }
+        return {
+          ...current,
+          certificationPurpose: normalized,
+          certificationPurposeOptions: options,
+        };
+      });
+    },
+    [setCert],
+  );
+
+  useEffect(() => {
+    if (!id || cert === null) return;
+    const timeout = setTimeout(async () => {
+      try {
+        setSavingPurpose(true);
+        await childrenApi.updateCertificateOfLiveBirth(id, cert);
+      } catch (err) {
+        toast.error(err?.message || "Failed to save certification purpose.");
+      } finally {
+        setSavingPurpose(false);
+      }
+    }, 700);
+    return () => clearTimeout(timeout);
+  }, [id, cert?.certificationPurpose, cert?.certificationPurposeOptions]);
 
   const handlePreviewPdf = useCallback(async () => {
     if (!child) {
@@ -73,6 +138,13 @@ export function PrintCertificate() {
 
   return (
     <>
+      <style>{`
+        @media print {
+          @page {
+            margin: 0.5in;
+          }
+        }
+      `}</style>
       {pdfPreviewOpen && pdfPreviewUrl && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 print:hidden"
@@ -111,7 +183,7 @@ export function PrintCertificate() {
         </div>
       )}
 
-      <div className="mx-auto min-h-screen max-w-4xl bg-slate-50 p-4 sm:p-8">
+      <div className="mx-auto min-h-screen max-w-4xl bg-slate-50 p-4 sm:p-8 print:p-0">
         <div className="mb-6 flex items-center justify-between print:hidden">
           <Link
             to={`/children/${id}`}
@@ -127,6 +199,11 @@ export function PrintCertificate() {
             Preview PDF
           </button>
         </div>
+        {savingPurpose && (
+          <p className="mb-3 text-xs font-medium text-emerald-600 print:hidden">
+            Saving certification purpose...
+          </p>
+        )}
         {certificateReferenceImageSrc && (
           <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4 print:hidden">
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-700">
@@ -140,9 +217,14 @@ export function PrintCertificate() {
             />
           </div>
         )}
-        <div className="mx-auto max-w-4xl rounded-xl border border-slate-200 bg-white p-6 print:border-0 print:p-4 print:shadow-none">
+        <div className="mx-auto max-w-4xl rounded-xl border border-slate-200 bg-white p-6 print:border-0 print:p-0 print:shadow-none">
           <Header />
-          <Certification copy={certificationCopy} />
+          <Certification
+            copy={certificationCopy}
+            editablePurpose={certificationPurpose}
+            purposeOptions={purposeOptions}
+            onPurposeChange={updateCertificationPurpose}
+          />
           <Footer />
         </div>
       </div>

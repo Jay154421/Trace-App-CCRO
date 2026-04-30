@@ -9,6 +9,7 @@ const DEFAULT_PROVINCE = 'Lanao Del Norte';
 const DEFAULT_CITY_MUNICIPALITY = 'Iligan City';
 const DEFAULT_COUNTRY_CODE = 'PH';
 const DEFAULT_COUNTRY_TEXT = 'PHILIPPINES';
+const DEFAULT_CERTIFICATION_PURPOSE = 'ANY LEGAL';
 
 const DEFAULT_CERT = {
   registryNo: '',
@@ -81,6 +82,7 @@ const DEFAULT_CERT = {
   registeredByTitle: '',
   registeredByDate: '',
   remarks: '',
+  certificationPurpose: DEFAULT_CERTIFICATION_PURPOSE,
 };
 
 const AUTO_SAVE_MS = 700;
@@ -152,6 +154,10 @@ function countryCodeToDisplayName(value) {
     return code;
   }
   return t;
+}
+
+function sanitizePurpose(value) {
+  return String(value || '').trim().replace(/\s+/g, ' ');
 }
 
 const SECTION_IDS = ['header', 'child', 'mother', 'father', 'marriage', 'attendant', 'signatures'];
@@ -342,6 +348,10 @@ export function CertificateOfLiveBirth() {
           const fatherCountryName = countryCodeToDisplayName(base.fatherResidenceCountry);
           base.fatherCountry = fatherCountryName ? fatherCountryName.toUpperCase() : DEFAULT_COUNTRY_TEXT;
         }
+        const loadedPurpose = sanitizePurpose(
+          base.certificationPurpose ?? base.certification_purpose ?? base.purpose,
+        );
+        base.certificationPurpose = loadedPurpose || DEFAULT_CERTIFICATION_PURPOSE;
         const fromChild = {
           province: base.province || DEFAULT_PROVINCE,
           cityMunicipality: base.cityMunicipality || DEFAULT_CITY_MUNICIPALITY,
@@ -869,6 +879,16 @@ export function CertificateOfLiveBirth() {
 
           <div className={`certificate-tab-panel certificate-card ${activeTabIndex === 6 ? 'active' : ''}`} id="signatures">
         <SectionPanel title="Signatures">
+        <div className="mb-4 rounded-md border border-slate-200 bg-slate-50 p-3">
+          <p className="mb-2 text-sm font-semibold text-slate-700">Certification Purpose (Print PDF)</p>
+          <input
+            type="text"
+            value={form.certificationPurpose}
+            onChange={(e) => update('certificationPurpose', sanitizePurpose(e.target.value))}
+            placeholder="Type purpose manually"
+            className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm"
+          />
+        </div>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2" style={{ fontFamily: FONT_FAMILY, color: COLORS.black }}>
           <div>
             <h3 className="mb-2 text-base font-bold">22. CERTIFICATION OF INFORMANT</h3>

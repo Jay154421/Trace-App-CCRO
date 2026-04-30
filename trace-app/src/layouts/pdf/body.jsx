@@ -1,12 +1,20 @@
-import React from 'react';
+import React, { useId, useState } from 'react';
 
 function show(v) {
   const s = (v ?? '').trim();
   return s || '—';
 }
 
-export default function Certification({ copy }) {
+export default function Certification({
+  copy,
+  editablePurpose = '',
+  purposeOptions = [],
+  onPurposeChange,
+}) {
   if (!copy) return null;
+  const [isEditingPurpose, setIsEditingPurpose] = useState(false);
+  const purposeDatalistId = useId();
+  const displayedPurpose = show(editablePurpose || copy.purpose);
 
   return (
     <div style={styles.container}>
@@ -23,7 +31,38 @@ export default function Certification({ copy }) {
         </p>
         <p style={styles.text}>
           This certification is issued upon the request of <strong>{show(copy.requestPerson)}</strong> for{' '}
-          <strong>{copy.purpose}</strong> requirement purposes.
+          {isEditingPurpose ? (
+            <input
+              type="text"
+              value={editablePurpose}
+              onChange={(e) => onPurposeChange?.(e.target.value)}
+              onBlur={() => setIsEditingPurpose(false)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === 'Escape') {
+                  e.currentTarget.blur();
+                }
+              }}
+              placeholder="Type certification purpose"
+              list={purposeDatalistId}
+              autoFocus
+              style={styles.purposeInput}
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsEditingPurpose(true)}
+              style={styles.purposeButton}
+              title="Click to edit certification purpose"
+            >
+              {displayedPurpose}
+            </button>
+          )}{' '}
+          <datalist id={purposeDatalistId}>
+            {purposeOptions.map((option) => (
+              <option key={option} value={option} />
+            ))}
+          </datalist>
+          requirement purposes.
         </p>
         <p style={styles.text}>
           Issued this <strong>{show(copy.issuedDayOrdinal)}</strong> day of{' '}
@@ -65,6 +104,32 @@ const styles = {
   },
   text: {
     marginBottom: '15px',
+  },
+  purposeButton: {
+    border: 'none',
+    background: 'transparent',
+    padding: 0,
+    margin: 0,
+    fontSize: 'inherit',
+    fontFamily: 'inherit',
+    lineHeight: 'inherit',
+    fontWeight: 'bold',
+    cursor: 'text',
+    textTransform: 'uppercase',
+  },
+  purposeInput: {
+    width: '220px',
+    maxWidth: '100%',
+    fontSize: 'inherit',
+    fontFamily: 'inherit',
+    lineHeight: 'inherit',
+    fontWeight: 'bold',
+    border: 'none',
+    borderBottom: '1px solid #000',
+    outline: 'none',
+    backgroundColor: 'transparent',
+    textTransform: 'uppercase',
+    padding: '0 2px',
   },
   signatureSection: {
     marginTop: '30px',
