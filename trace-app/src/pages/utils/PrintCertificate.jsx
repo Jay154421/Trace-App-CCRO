@@ -30,6 +30,9 @@ export function PrintCertificate() {
   const certificationPurpose = String(
     cert?.certificationPurpose ?? cert?.certification_purpose ?? cert?.purpose ?? "ANY LEGAL",
   );
+  const requestPerson = String(
+    cert?.requestPerson ?? cert?.request_person ?? cert?.informantName ?? cert?.informant_name ?? "",
+  );
 
   const purposeOptions = useMemo(() => {
     const seen = new Set();
@@ -50,6 +53,22 @@ export function PrintCertificate() {
     add("ANY LEGAL");
     return merged;
   }, [cert, certificationPurpose]);
+
+  const requestPersonOptions = useMemo(() => {
+    const seen = new Set();
+    const merged = [];
+    const add = (value) => {
+      const normalized = String(value || "");
+      if (!normalized) return;
+      const key = normalized.toUpperCase();
+      if (seen.has(key)) return;
+      seen.add(key);
+      merged.push(normalized);
+    };
+    (Array.isArray(cert?.requestPersonOptions) ? cert.requestPersonOptions : []).forEach(add);
+    add(requestPerson);
+    return merged;
+  }, [cert, requestPerson]);
 
   useEffect(() => {
     setLoading(true);
@@ -95,6 +114,32 @@ export function PrintCertificate() {
     [setCert],
   );
 
+  const updateRequestPerson = useCallback(
+    (value) => {
+      const normalized = String(value ?? "");
+      setCert((prev) => {
+        const current = prev && typeof prev === "object" ? prev : {};
+        const existingOptions = Array.isArray(current.requestPersonOptions)
+          ? current.requestPersonOptions
+          : [];
+        const options = [...existingOptions];
+        const cleaned = normalized.trim();
+        if (cleaned) {
+          const exists = options.some(
+            (option) => String(option || "").trim().toUpperCase() === cleaned.toUpperCase(),
+          );
+          if (!exists) options.push(cleaned);
+        }
+        return {
+          ...current,
+          requestPerson: normalized,
+          requestPersonOptions: options,
+        };
+      });
+    },
+    [setCert],
+  );
+
   useEffect(() => {
     if (!id || cert === null) return;
     const timeout = setTimeout(async () => {
@@ -108,7 +153,13 @@ export function PrintCertificate() {
       }
     }, 700);
     return () => clearTimeout(timeout);
-  }, [id, cert?.certificationPurpose, cert?.certificationPurposeOptions]);
+  }, [
+    id,
+    cert?.certificationPurpose,
+    cert?.certificationPurposeOptions,
+    cert?.requestPerson,
+    cert?.requestPersonOptions,
+  ]);
 
   const handlePreviewPdf = useCallback(async () => {
     if (!child) {
@@ -224,6 +275,9 @@ export function PrintCertificate() {
             editablePurpose={certificationPurpose}
             purposeOptions={purposeOptions}
             onPurposeChange={updateCertificationPurpose}
+            editableRequestPerson={requestPerson}
+            requestPersonOptions={requestPersonOptions}
+            onRequestPersonChange={updateRequestPerson}
           />
           <Footer />
         </div>

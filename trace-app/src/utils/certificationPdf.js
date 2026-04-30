@@ -129,7 +129,7 @@ export function buildDelayedCertificationPayload(child, cert) {
   ]);
 
   const informantRaw = (
-    (c.informantName ?? c.informant_name ?? '') + ''
+    (c.requestPerson ?? c.request_person ?? c.informantName ?? c.informant_name ?? '') + ''
   ).trim();
   const requestPerson =
     upperJoin([informantRaw]) ||
@@ -377,18 +377,34 @@ export async function buildCertificationLetterPdfBase64(child, cert) {
           ? (bodyWidth - paragraphIndent - naturalLineWidth) / stretchableSpaces
           : 0;
 
+      let underlineRunStartX = null;
+      let underlineRunEndX = null;
+      const flushUnderlineRun = () => {
+        if (underlineRunStartX != null && underlineRunEndX != null && underlineRunEndX > underlineRunStartX) {
+          drawTextUnderline(doc, underlineRunStartX, underlineRunEndX, currentY, size);
+        }
+        underlineRunStartX = null;
+        underlineRunEndX = null;
+      };
+
       for (const token of currentLine) {
         doc.setFont('times', token.bold ? 'bold' : 'normal');
         doc.text(token.text, x, currentY);
         let tokenWidth = doc.getTextWidth(token.text);
-        if (token.underline && !/^\s+$/.test(token.text)) {
-          drawTextUnderline(doc, x, x + tokenWidth, currentY, size);
-        }
+        const isSpaceToken = /^\s+$/.test(token.text);
         if (extraPerSpace > 0 && /^\s+$/.test(token.text)) {
           tokenWidth += extraPerSpace * token.text.length;
         }
+        const tokenEndX = x + tokenWidth;
+        if (token.underline) {
+          if (underlineRunStartX == null) underlineRunStartX = x;
+          if (!isSpaceToken) underlineRunEndX = tokenEndX;
+        } else {
+          flushUnderlineRun();
+        }
         x += tokenWidth;
       }
+      flushUnderlineRun();
       currentY += lineHeight;
     });
     doc.setFont('times', 'normal');
@@ -471,9 +487,7 @@ export async function buildCertificationLetterPdfBase64(child, cert) {
       { text: 'Issued this ' },
       { text: display(payload.issuedDayOrdinal), bold: true },
       { text: ' day of ' },
-      { text: display(payload.issuedMonthUpper), bold: true },
-      { text: ' ' },
-      { text: display(payload.issuedYearStr), bold: true },
+      { text: `${display(payload.issuedMonthUpper)} ${display(payload.issuedYearStr)}`, bold: true },
       { text: ' in Iligan City, Philippines.' },
     ],
   ];

@@ -10,11 +10,17 @@ export default function Certification({
   editablePurpose = '',
   purposeOptions = [],
   onPurposeChange,
+  editableRequestPerson = '',
+  requestPersonOptions = [],
+  onRequestPersonChange,
 }) {
   if (!copy) return null;
   const [isEditingPurpose, setIsEditingPurpose] = useState(false);
+  const [isEditingRequestPerson, setIsEditingRequestPerson] = useState(false);
   const purposeDatalistId = useId();
+  const requestPersonDatalistId = useId();
   const displayedPurpose = show(editablePurpose || copy.purpose);
+  const displayedRequestPerson = show(editableRequestPerson || copy.requestPerson);
 
   return (
     <div style={styles.container}>
@@ -30,7 +36,39 @@ export default function Certification({
           <strong>{copy.processStatus}</strong> in this office.
         </p>
         <p style={styles.text}>
-          This certification is issued upon the request of <strong>{show(copy.requestPerson)}</strong> for{' '}
+          This certification is issued upon the request of{' '}
+          {isEditingRequestPerson ? (
+            <input
+              type="text"
+              value={editableRequestPerson}
+              onChange={(e) => onRequestPersonChange?.(e.target.value)}
+              onBlur={() => setIsEditingRequestPerson(false)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === 'Escape') {
+                  e.currentTarget.blur();
+                }
+              }}
+              placeholder="Type request person"
+              list={requestPersonDatalistId}
+              autoFocus
+              style={styles.purposeInput}
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsEditingRequestPerson(true)}
+              style={styles.purposeButton}
+              title="Click to edit request person"
+            >
+              {displayedRequestPerson}
+            </button>
+          )}{' '}
+          <datalist id={requestPersonDatalistId}>
+            {requestPersonOptions.map((option) => (
+              <option key={option} value={option} />
+            ))}
+          </datalist>{' '}
+          for{' '}
           {isEditingPurpose ? (
             <input
               type="text"
