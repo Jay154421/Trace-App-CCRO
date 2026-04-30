@@ -542,11 +542,12 @@ export async function buildCertificationLetterPdfBase64(child, cert) {
   const footerDividerY = footerStartY - 0.11;
   doc.line(bodyX, footerDividerY, pageW - bodyX, footerDividerY);
   currentY = footerStartY + 0.06;
+  doc.setTextColor(37, 99, 235);
   doc.setFontSize(10);
   const footerLh = docLineHeight(10, 1.2);
   for (const line of [
     'CONTACT DETAILS:',
-    'Telephone No.: (063) 224-5038',
+    'Telephone No.: (063) 228-1311',
     'Email: civilregistrar.iligan@gmail.com',
   ]) {
     doc.text(line, bodyX, currentY);
@@ -563,6 +564,7 @@ export async function buildCertificationLetterPdfBase64(child, cert) {
     align: 'right',
     maxWidth: bodyWidth * 0.52,
   });
+  doc.setTextColor(0, 0, 0);
   doc.setFont('times', 'normal');
 
   const dataUri = doc.output('datauristring');
