@@ -16,6 +16,7 @@ import { FieldPosition } from './pages/utils/FieldPosition';
 import { FieldPositionBack } from './pages/utils/FieldPositionBack';
 import { PaternityAffidavit } from './pages/utils/PaternityAffidavit';
 import { DelayedRegistrationAffidavit } from './pages/utils/DelayedRegistrationAffidavit';
+import { PrintCertificate } from './pages/utils/PrintCertificate';
 import { Login } from './pages/Login';
 
 function RequireAuth({ children }) {
@@ -48,6 +49,7 @@ export const router = createBrowserRouter(
         <Route path="/children/:id/field-position-back" element={<FieldPositionBack />} />
         <Route path="/children/:id/paternity-affidavit" element={<PaternityAffidavit />} />
         <Route path="/children/:id/delayed-registration-affidavit" element={<DelayedRegistrationAffidavit />} />
+        <Route path="/children/:id/print-certificate" element={<PrintCertificate />} />
       </Route>
     </>
   )

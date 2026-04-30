@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { jsPDF } from 'jspdf';
 import { childrenApi } from '../../services/api';
+import { usePdfPreviewUrl } from '../../hooks/usePdfPreviewUrl';
 
 // ============================================================================
 // CONSTANTS
@@ -479,17 +480,6 @@ export function buildPdfFilename(child, cert) {
     return `${sanitized}-${dateStr}.pdf`;
 }
 
-/**
- * Convert base64 to blob URL
- */
-function base64ToBlobUrl(base64) {
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    return URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
-}
-
-
 function drawRadioMark(doc, x, y) {
     const { widthIn, heightIn, lineWidthIn } = ATTENDANT_RADIO_CHECK_MARK;
     const wX = widthIn / RADIO_CHECK_SHAPE_EXTENT.horizontal;
@@ -850,31 +840,6 @@ function RadioMark({ x, y, show }) {
             {show ? '✓' : ''}
         </span>
     );
-}
-
-/**
- * Hook to manage PDF preview URL state
- */
-function usePdfPreviewUrl() {
-    const [url, setUrl] = useState(null);
-    const [isOpen, setIsOpen] = useState(false);
-
-    const openPreview = useCallback((base64) => {
-        const blobUrl = base64ToBlobUrl(base64);
-        setUrl(blobUrl);
-        setIsOpen(true);
-    }, []);
-
-    const closePreview = useCallback(() => {
-        setIsOpen(false);
-        // Clean up blob URL
-        if (url) {
-            URL.revokeObjectURL(url);
-            setUrl(null);
-        }
-    }, [url]);
-
-    return { url, isOpen, openPreview, closePreview };
 }
 
 /**

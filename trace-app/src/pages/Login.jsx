@@ -51,7 +51,7 @@ export function Login() {
             </div>
           </div>
           <p className="text-xs text-center text-white/80">
-            {`© ${new Date().getFullYear()} City Civil Registrar Office • Archive Locator System`}
+            {`© ${new Date().getFullYear()} City Civil Registrar Office • Trace System`}
           </p>
           <p className="text-xs text-center text-white/60">
             Developed by CS students, St. Peter&apos;s College
