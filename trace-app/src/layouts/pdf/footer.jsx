@@ -14,12 +14,8 @@ const Footer = () => {
 
       {/* Right Section (Tagline) */}
       <div style={styles.tagline}>
-        <p className="text-blue-600" style={styles.taglineText}>
-            Be counted,
-        </p>
-        <p className="text-blue-600" style={styles.taglineText}>
-            Get REGISTERED!
-        </p>
+        <p style={styles.taglineText}>Be counted,</p>
+        <p style={styles.taglineText}>Get REGISTERED!</p>
       </div>
     </div>
   );
@@ -48,6 +44,7 @@ const styles = {
   taglineText: {
     fontStyle: "italic",
     fontSize: "10px",
+    color: "#2563eb",
   },
 };
 

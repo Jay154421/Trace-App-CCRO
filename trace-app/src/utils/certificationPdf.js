@@ -545,13 +545,15 @@ export async function buildCertificationLetterPdfBase64(child, cert) {
   currentY = Math.min(currentY + 0.28 + signatoryVerticalOffset, signatureTopLimit);
   doc.setFont('times', 'bold');
   doc.setFontSize(14);
+  const signatoryNameWidth = doc.getTextWidth(payload.signatoryName);
   doc.text(payload.signatoryName, signatoryRightX, currentY, { align: 'right' });
+  const signatoryNameCenterX = signatoryRightX - signatoryNameWidth / 2;
   currentY += docLineHeight(14, 1.25);
 
   doc.setFont('times', 'normal');
   doc.setFontSize(12);
   for (const line of doc.splitTextToSize(payload.signatoryTitle, bodyWidth)) {
-    doc.text(line, signatoryRightX, currentY, { align: 'right' });
+    doc.text(line, signatoryNameCenterX, currentY, { align: 'center' });
     currentY += docLineHeight(12, 1.15);
   }
 
@@ -560,19 +562,19 @@ export async function buildCertificationLetterPdfBase64(child, cert) {
   const footerDividerY = footerStartY - 0.11;
   doc.line(bodyX, footerDividerY, pageW - bodyX, footerDividerY);
   currentY = footerStartY + 0.06;
-  doc.setTextColor(37, 99, 235);
   doc.setFontSize(10);
   const footerLh = docLineHeight(10, 1.2);
-  for (const line of [
-    'CONTACT DETAILS:',
-    'Telephone No.: (063) 228-1311',
-    'Email: civilregistrar.iligan@gmail.com',
-  ]) {
-    doc.text(line, bodyX, currentY);
-    currentY += footerLh;
-  }
+  doc.setTextColor(37, 99, 235);
+  doc.text('CONTACT DETAILS:', bodyX, currentY);
+  currentY += footerLh;
+  doc.setTextColor(0, 0, 0);
+  doc.text('Telephone No.: (063) 228-1311', bodyX, currentY);
+  currentY += footerLh;
+  doc.text('Email: civilregistrar.iligan@gmail.com', bodyX, currentY);
+  currentY += footerLh;
   doc.setFont('times', 'italic');
   doc.setFontSize(10);
+  doc.setTextColor(37, 99, 235);
   const rightFooterX = pageW - bodyX;
   doc.text('Be counted,', rightFooterX, footerStartY + 0.11, {
     align: 'right',

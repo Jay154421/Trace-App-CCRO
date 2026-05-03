@@ -186,10 +186,51 @@ function parseDateOfBirth(dateStr) {
   };
 }
 
+function trimStr(value) {
+  if (value == null || typeof value !== 'string') return '';
+  return value.trim();
+}
+
+/** YYYY-MM-DD for the applicant row when certificate day/month/year are all set. */
+function certBirthPartsToIsoDate(yearStr, monthStr, dayStr) {
+  const y = trimStr(yearStr);
+  const m = trimStr(monthStr);
+  const d = trimStr(dayStr);
+  if (!y || !m || !d) return '';
+  const yi = Number(y);
+  const mi = Number(m);
+  const di = Number(d);
+  if (!Number.isInteger(yi) || yi < 1000 || yi > 9999) return '';
+  if (!Number.isInteger(mi) || mi < 1 || mi > 12) return '';
+  if (!Number.isInteger(di) || di < 1 || di > 31) return '';
+  return `${yi}-${String(mi).padStart(2, '0')}-${String(di).padStart(2, '0')}`;
+}
+
+function normalizeChildDobForCompare(value) {
+  if (!value || typeof value !== 'string') return '';
+  return value.trim().slice(0, 10);
+}
+
+/**
+ * Parse applicant `place_of_birth` when certificate JSON does not hold split fields.
+ * `formatPlaceOfBirthForApplicant` joins [name, city, province] with ", " (skipping blanks).
+ */
 function parsePlaceOfBirth(raw) {
   const text = typeof raw === 'string' ? raw.trim() : '';
   if (!text) return { name: '', city: '', province: '' };
-  return { name: text, city: '', province: '' };
+
+  const segments = text.split(/,\s*/).map((s) => s.trim()).filter(Boolean);
+  if (segments.length === 0) return { name: '', city: '', province: '' };
+  if (segments.length === 1) return { name: segments[0], city: '', province: '' };
+  // Two segments: ambiguous (institution+city vs city+province); keep legacy single-field behavior.
+  if (segments.length === 2) return { name: text, city: '', province: '' };
+  if (segments.length === 3) {
+    return { name: segments[0], city: segments[1], province: segments[2] };
+  }
+  const province = segments.pop();
+  const city = segments.pop();
+  const name = segments.join(', ');
+  return { name, city, province };
 }
 
 function formatPlaceOfBirthForApplicant(form) {
@@ -343,6 +384,10 @@ export function CertificateOfLiveBirth() {
           ? data.certificate_of_live_birth
           : {};
         const base = { ...DEFAULT_CERT, ...cert };
+        // Prefer split place-of-birth from saved certificate (camelCase or snake_case).
+        base.placeOfBirthName = trimStr(base.placeOfBirthName) || trimStr(base.place_of_birth_name);
+        base.placeOfBirthCity = trimStr(base.placeOfBirthCity) || trimStr(base.place_of_birth_city);
+        base.placeOfBirthProvince = trimStr(base.placeOfBirthProvince) || trimStr(base.place_of_birth_province);
         base.motherResidenceCountry = normalizeStoredCountry(base.motherResidenceCountry);
         base.fatherResidenceCountry = normalizeStoredCountry(base.fatherResidenceCountry);
         if (!String(base.motherResidenceCountry || '').trim()) {
@@ -378,10 +423,17 @@ export function CertificateOfLiveBirth() {
         fromChild.birthDay = day;
         fromChild.birthMonth = month;
         fromChild.birthYear = year;
-        const parsedPlace = parsePlaceOfBirth(data.place_of_birth);
-        fromChild.placeOfBirthName = parsedPlace.name;
-        fromChild.placeOfBirthCity = parsedPlace.city;
-        fromChild.placeOfBirthProvince = parsedPlace.province;
+        const certHasSplitPlace = Boolean(base.placeOfBirthCity || base.placeOfBirthProvince);
+        if (certHasSplitPlace) {
+          fromChild.placeOfBirthName = base.placeOfBirthName;
+          fromChild.placeOfBirthCity = base.placeOfBirthCity;
+          fromChild.placeOfBirthProvince = base.placeOfBirthProvince;
+        } else {
+          const parsedPlace = parsePlaceOfBirth(data.place_of_birth);
+          fromChild.placeOfBirthName = parsedPlace.name;
+          fromChild.placeOfBirthCity = parsedPlace.city;
+          fromChild.placeOfBirthProvince = parsedPlace.province;
+        }
         setForm({ ...base, ...fromChild });
       })
       .catch(setError)
@@ -450,9 +502,27 @@ export function CertificateOfLiveBirth() {
       await childrenApi.updateCertificateOfLiveBirth(id, payload);
       const nextPlaceOfBirth = formatPlaceOfBirthForApplicant(payload);
       const currentPlaceOfBirth = typeof child?.place_of_birth === 'string' ? child.place_of_birth.trim() : '';
+
+      const applicantPatch = {};
       if (nextPlaceOfBirth !== currentPlaceOfBirth) {
-        await childrenApi.update(id, { place_of_birth: nextPlaceOfBirth || null });
-        setChild((prev) => (prev ? { ...prev, place_of_birth: nextPlaceOfBirth } : prev));
+        applicantPatch.place_of_birth = nextPlaceOfBirth || null;
+      }
+
+      const nextFirst = trimStr(payload.childFirst);
+      const nextMiddle = trimStr(payload.childMiddle);
+      const nextLast = trimStr(payload.childLast);
+      const dobIso = certBirthPartsToIsoDate(payload.birthYear, payload.birthMonth, payload.birthDay);
+      const childDob = normalizeChildDobForCompare(child?.date_of_birth);
+
+      if (nextFirst && nextFirst !== trimStr(child?.first_name)) applicantPatch.first_name = nextFirst;
+      if (nextLast && nextLast !== trimStr(child?.last_name)) applicantPatch.last_name = nextLast;
+      if (nextMiddle !== trimStr(child?.middle_name)) applicantPatch.middle_name = nextMiddle;
+      if (dobIso && dobIso !== childDob) applicantPatch.date_of_birth = dobIso;
+
+      if (Object.keys(applicantPatch).length > 0) {
+        await childrenApi.update(id, applicantPatch);
+        const refreshed = await childrenApi.get(id);
+        setChild(refreshed);
       }
       toast.success('Saved');
     } catch (err) {

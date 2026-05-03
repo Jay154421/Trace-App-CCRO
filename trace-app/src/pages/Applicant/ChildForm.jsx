@@ -58,7 +58,7 @@ export function ChildForm() {
       </h1>
 
       <form onSubmit={submit} className="max-w-3xl space-y-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <ApplicantFormFields form={form} onFieldChange={update} />
+        <ApplicantFormFields form={form} onFieldChange={update} hideCoreIdentityFields={isEdit} />
 
         <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
           <button

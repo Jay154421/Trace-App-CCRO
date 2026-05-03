@@ -245,6 +245,12 @@ export function ChildDetail() {
           Child identification
         </h2>
         <dl className="grid gap-3 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <dt className="text-sm text-slate-500">Name</dt>
+            <dd className="font-medium text-slate-800">
+              {[child.first_name, child.middle_name, child.last_name].filter(Boolean).join(' ') || '—'}
+            </dd>
+          </div>
           <div>
             <dt className="text-sm text-slate-500">Date of birth</dt>
             <dd className="font-medium text-slate-800">{formatDateDDMMYYYY(child.date_of_birth)}</dd>
@@ -347,7 +353,7 @@ export function ChildDetail() {
             </div>
             <form onSubmit={submitEdit} className="flex flex-col flex-1 min-h-0">
               <div className="space-y-6 overflow-y-auto p-6">
-                <ApplicantFormFields form={editForm} onFieldChange={updateEditForm} />
+                <ApplicantFormFields form={editForm} onFieldChange={updateEditForm} hideCoreIdentityFields />
               </div>
               <div className="flex flex-col-reverse gap-3 border-t border-slate-200 bg-white px-6 py-4 sm:flex-row sm:justify-end">
                 <button
