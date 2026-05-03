@@ -1,13 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const ctrl = require('../controllers/children');
-const { handleValidationErrors, childCreate, childUpdate, idParam } = require('../middleware/validate');
+const { handleValidationErrors, childCreate, childUpdate, idParam, staffProcessStatusUpdate } = require('../middleware/validate');
 const { body } = require('express-validator');
 
 router.get('/', ctrl.list);
 router.get('/:id/attachments/:filename', idParam, ctrl.getChecklistAttachment);
 router.get('/:id', idParam, handleValidationErrors, ctrl.get);
 router.post('/', childCreate, handleValidationErrors, ctrl.create);
+router.put(
+  '/:id/staff-process-status',
+  staffProcessStatusUpdate,
+  handleValidationErrors,
+  ctrl.updateStaffProcessStatus
+);
 router.put('/:id', childUpdate, handleValidationErrors, ctrl.update);
 router.delete('/bulk', ctrl.bulkRemove);
 router.delete('/:id', idParam, handleValidationErrors, ctrl.remove);

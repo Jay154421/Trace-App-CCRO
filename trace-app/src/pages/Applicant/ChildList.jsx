@@ -5,12 +5,13 @@ import { childrenApi } from '../../services/api';
 import { AddApplicantModal } from '../../components/AddApplicantModal';
 import { formatDateDDMMYYYY } from '../../utils/date';
 import toast from 'react-hot-toast';
+import { getApplicantStatusDisplay, applicantStatusBadgeClass } from '../../utils/applicantStatus';
 
-/** Derive a simple "Complete" / "Pending" status from checklist progress. */
-function isComplete(c) {
-  const total = c.checklist_total ?? 0;
-  const checked = c.checklist_checked ?? 0;
-  return total > 0 && checked === total;
+function statusFilterPillActiveClass(value) {
+  if (value === 'verified') return 'bg-emerald-600 text-white shadow-inner';
+  if (value === 'under_process') return 'bg-sky-600 text-white shadow-inner';
+  if (value === 'incomplete_checklist') return 'bg-amber-500 text-white shadow-inner';
+  return 'bg-slate-700 text-white shadow-inner';
 }
 
 function normalizeSearchText(value) {
@@ -59,8 +60,9 @@ function getApplicantFullName(applicant) {
 
 const STATUS_FILTERS = [
   { value: 'all', label: 'All' },
-  { value: 'pending', label: 'Pending' },
-  { value: 'complete', label: 'Complete' },
+  { value: 'incomplete_checklist', label: 'Incomplete Checklist' },
+  { value: 'under_process', label: 'UNDER PROCESS' },
+  { value: 'verified', label: 'Verified' },
 ];
 
 export function ChildList() {
@@ -83,9 +85,13 @@ export function ChildList() {
 
   const filteredList = list.filter((c) => {
     if (!matchApplicant(c, searchQuery)) return false;
-    if (statusFilter === 'complete') return isComplete(c);
-    if (statusFilter === 'pending') return !isComplete(c);
-    return true;
+    if (statusFilter === 'all') return true;
+    const { key } = getApplicantStatusDisplay({
+      checklist_total: c.checklist_total,
+      checklist_checked: c.checklist_checked,
+      staff_process_status: c.staff_process_status,
+    });
+    return key === statusFilter;
   });
 
   useEffect(() => {
@@ -256,11 +262,7 @@ export function ChildList() {
                 onClick={() => setStatusFilter(value)}
                 className={`px-3 py-2 text-sm font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
                   statusFilter === value
-                    ? value === 'complete'
-                      ? 'bg-emerald-600 text-white shadow-inner'
-                      : value === 'pending'
-                      ? 'bg-amber-500 text-white shadow-inner'
-                      : 'bg-slate-700 text-white shadow-inner'
+                    ? statusFilterPillActiveClass(value)
                     : 'text-slate-600 hover:bg-slate-50'
                 }`}
                 aria-pressed={statusFilter === value}
@@ -374,7 +376,11 @@ export function ChildList() {
 
           <ul className="space-y-3">
             {paginatedList.map((c) => {
-              const complete = isComplete(c);
+              const statusDisplay = getApplicantStatusDisplay({
+                checklist_total: c.checklist_total,
+                checklist_checked: c.checklist_checked,
+                staff_process_status: c.staff_process_status,
+              });
               const isSelected = selectedIds.has(c.id);
 
               return (
@@ -452,13 +458,11 @@ export function ChildList() {
 
                     {/* Status badge */}
                     <span
-                      className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        complete
-                          ? 'bg-emerald-100 text-emerald-700'
-                          : 'bg-amber-100 text-amber-700'
-                      }`}
+                      className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${applicantStatusBadgeClass(
+                        statusDisplay.key
+                      )}`}
                     >
-                      {complete ? 'Complete' : 'Pending'}
+                      {statusDisplay.label}
                     </span>
 
                     {/* Chevron (hidden in select mode) */}

@@ -137,8 +137,9 @@ async function importDatabase(req, res) {
         const inserted = db.prepare(
           `INSERT INTO children (
             first_name, middle_name, last_name, date_of_birth, place_of_birth, contact_no, age_group,
-            registrant_deceased, hilot_deceased, parent_foreigner, out_of_town, certificate_of_live_birth, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            registrant_deceased, hilot_deceased, parent_foreigner, out_of_town, certificate_of_live_birth,
+            staff_process_status, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
         ).run(
           normalizedChild.first_name,
           normalizedChild.middle_name,
@@ -152,6 +153,7 @@ async function importDatabase(req, res) {
           normalizedChild.parent_foreigner,
           normalizedChild.out_of_town,
           normalizedChild.certificate_of_live_birth,
+          normalizedChild.staff_process_status,
           normalizedChild.created_at,
           normalizedChild.updated_at
         );
@@ -294,6 +296,10 @@ function normalizeImportChildRow(child) {
   const lastName = normalizeRequiredText(child.last_name);
   const dateOfBirth = normalizeDateOnly(child.date_of_birth || '');
   if (!firstName || !lastName || !dateOfBirth) return null;
+  const rawStaff = child.staff_process_status;
+  const staff_process_status =
+    rawStaff === 'under_process' || rawStaff === 'verified' ? rawStaff : null;
+
   return {
     first_name: firstName,
     middle_name: normalizeOptionalText(child.middle_name),
@@ -307,6 +313,7 @@ function normalizeImportChildRow(child) {
     parent_foreigner: toIntBool(child.parent_foreigner),
     out_of_town: toIntBool(child.out_of_town),
     certificate_of_live_birth: normalizeOptionalText(child.certificate_of_live_birth),
+    staff_process_status,
     created_at: normalizeOptionalText(child.created_at),
     updated_at: normalizeOptionalText(child.updated_at),
   };

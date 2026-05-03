@@ -37,4 +37,9 @@ const childUpdate = [
 
 const idParam = [param('id').isInt({ min: 1 })];
 
-module.exports = { handleValidationErrors, childCreate, childUpdate, idParam };
+const staffProcessStatusUpdate = [
+  param('id').isInt({ min: 1 }),
+  body('staff_process_status').isIn(['under_process', 'verified']),
+];
+
+module.exports = { handleValidationErrors, childCreate, childUpdate, idParam, staffProcessStatusUpdate };

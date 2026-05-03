@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useLayoutEffect, useCallback, useMemo } fr
 import toast from 'react-hot-toast';
 import { childrenApi } from '../../services/api';
 import { apiUrl } from '../../config/api';
+import { ApplicantStaffStatusPanel } from '../../components/ApplicantStaffStatusPanel';
 import { isTruthyFlag } from '../../utils/applicantForm';
 
 const PHOTO_ID_REQUIREMENT_ID = 'photo_2x2';
@@ -358,6 +359,7 @@ export function DocumentsWizard() {
   const [checklist, setChecklist] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [staffStatusUpdating, setStaffStatusUpdating] = useState(false);
   const [error, setError] = useState(null);
   const [step, setStep] = useState(0);
   /** Pending confirmation before removing an attachment (pending upload or saved file). */
@@ -440,6 +442,21 @@ export function DocumentsWizard() {
 
   const handleBackClick = () => {
     navigate(`/children/${id}`);
+  };
+
+  const handleStaffProcessStatus = async (status) => {
+    setStaffStatusUpdating(true);
+    try {
+      const res = await childrenApi.updateStaffProcessStatus(id, status);
+      setChild((prev) =>
+        prev ? { ...prev, staff_process_status: res.staff_process_status } : prev
+      );
+      toast.success(status === 'verified' ? 'Marked verified.' : 'Marked under process.');
+    } catch (err) {
+      toast.error(err?.message || 'Could not update status.');
+    } finally {
+      setStaffStatusUpdating(false);
+    }
   };
 
   const updateNotes = (index, notes) => {
@@ -1053,6 +1070,15 @@ export function DocumentsWizard() {
           Age group: {child.age_group?.replace(/_/g, ' ')} · {Math.round(progress * 100)}% complete
         </p>
       </div>
+
+      <ApplicantStaffStatusPanel
+        checklistTotal={checklist.length}
+        checklistChecked={checklist.filter((item) => !!item.checked).length}
+        staffProcessStatus={child.staff_process_status}
+        updating={staffStatusUpdating}
+        blockStaffActions={Boolean(hasUnsavedChanges)}
+        onUpdateStaffStatus={handleStaffProcessStatus}
+      />
 
       <div className="mb-4 h-2 w-full rounded-full bg-slate-200 overflow-hidden" role="progressbar" aria-valuenow={Math.round(progress * 100)} aria-valuemin={0} aria-valuemax={100}>
         <div className="h-full bg-emerald-600 transition-all" style={{ width: `${progress * 100}%` }} />

@@ -10,6 +10,7 @@ import {
   buildPdfFilename as buildBackPdfFilename,
 } from '../utils/FieldPositionBack';
 import { ApplicantFormFields } from '../../components/applicant/ApplicantFormFields';
+import { ApplicantStaffStatusPanel } from '../../components/ApplicantStaffStatusPanel';
 import { emptyApplicantForm, mapApplicantToForm, buildApplicantPayload, isTruthyFlag } from '../../utils/applicantForm';
 
 export function ChildDetail() {
@@ -23,6 +24,7 @@ export function ChildDetail() {
   const [editSaving, setEditSaving] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteDeleting, setDeleteDeleting] = useState(false);
+  const [staffStatusUpdating, setStaffStatusUpdating] = useState(false);
 
   useEffect(() => {
     childrenApi
@@ -56,6 +58,20 @@ export function ChildDetail() {
       })
       .catch((err) => toast.error(err.message || 'Failed to save.'))
       .finally(() => setEditSaving(false));
+  };
+
+  const handleStaffProcessStatus = async (status) => {
+    setStaffStatusUpdating(true);
+    try {
+      await childrenApi.updateStaffProcessStatus(id, status);
+      toast.success(status === 'verified' ? 'Marked verified.' : 'Marked under process.');
+      const data = await childrenApi.get(id);
+      setChild(data);
+    } catch (err) {
+      toast.error(err?.message || 'Could not update status.');
+    } finally {
+      setStaffStatusUpdating(false);
+    }
   };
 
   const confirmDelete = () => {
@@ -221,6 +237,14 @@ export function ChildDetail() {
           </button>
         </div>
       </div>
+
+      <ApplicantStaffStatusPanel
+        checklistTotal={checklistTotal}
+        checklistChecked={checklistChecked}
+        staffProcessStatus={child.staff_process_status}
+        updating={staffStatusUpdating}
+        onUpdateStaffStatus={handleStaffProcessStatus}
+      />
 
       <section className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 mb-6" aria-labelledby="info-heading">
         <h2 id="info-heading" className="text-sm font-medium text-slate-500 uppercase tracking-wide mb-4">

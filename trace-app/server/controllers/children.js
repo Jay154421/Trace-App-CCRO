@@ -143,6 +143,17 @@ function updateChecklist(req, res) {
           attachmentPath
         );
       }
+      const progress = db
+        .prepare('SELECT COUNT(*) AS n, COALESCE(SUM(checked), 0) AS s FROM checklist_items WHERE child_id = ?')
+        .get(childId);
+      const n = Number(progress?.n || 0);
+      const s = Number(progress?.s || 0);
+      const checklistComplete = n > 0 && s === n;
+      if (!checklistComplete) {
+        db.prepare(`UPDATE children SET staff_process_status = NULL, updated_at = datetime('now') WHERE id = ?`).run(
+          childId
+        );
+      }
     });
     res.json({ ok: true });
   } catch (err) {
@@ -211,4 +222,29 @@ function updateDelayedRegistrationAffidavit(req, res) {
   res.json({ ok: true });
 }
 
-module.exports = { list, get, create, update, remove, bulkRemove, updateChecklist, getChecklistAttachment, updateCertificateOfLiveBirth, updatePaternityAffidavit, updateDelayedRegistrationAffidavit };
+function updateStaffProcessStatus(req, res) {
+  const id = Number(req.params.id);
+  const status = req.body?.staff_process_status;
+  const result = childModel.updateStaffProcessStatus(id, status);
+  if (result.reason === 'not_found') return res.status(404).json({ error: 'Not found' });
+  if (result.reason === 'checklist_incomplete') {
+    return res.status(400).json({ error: 'Complete the document checklist before setting status.' });
+  }
+  if (!result.ok) return res.status(400).json({ error: 'Invalid status' });
+  res.json({ ok: true, staff_process_status: result.staff_process_status });
+}
+
+module.exports = {
+  list,
+  get,
+  create,
+  update,
+  remove,
+  bulkRemove,
+  updateChecklist,
+  getChecklistAttachment,
+  updateCertificateOfLiveBirth,
+  updatePaternityAffidavit,
+  updateDelayedRegistrationAffidavit,
+  updateStaffProcessStatus,
+};

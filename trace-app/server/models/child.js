@@ -116,6 +116,29 @@ function updateDelayedRegistrationAffidavit(id, data) {
   return true;
 }
 
+/** @param {number} id @param {'under_process' | 'verified'} status */
+function updateStaffProcessStatus(id, status) {
+  if (status !== 'under_process' && status !== 'verified') return { ok: false, reason: 'invalid_status' };
+  const db = getDb();
+  const existing = db.prepare('SELECT id FROM children WHERE id = ?').get(id);
+  if (!existing) {
+    db.close();
+    return { ok: false, reason: 'not_found' };
+  }
+  const row = db
+    .prepare('SELECT COUNT(*) AS n, COALESCE(SUM(checked), 0) AS s FROM checklist_items WHERE child_id = ?')
+    .get(id);
+  const n = Number(row?.n || 0);
+  const s = Number(row?.s || 0);
+  if (!(n > 0 && s === n)) {
+    db.close();
+    return { ok: false, reason: 'checklist_incomplete' };
+  }
+  db.prepare(`UPDATE children SET staff_process_status = ?, updated_at = datetime('now') WHERE id = ?`).run(status, id);
+  db.close();
+  return { ok: true, staff_process_status: status };
+}
+
 function create(data) {
   const age = calculateAge(data.date_of_birth);
   const age_group = getAgeGroup(age);
@@ -203,4 +226,17 @@ function bulkRemove(ids) {
   });
 }
 
-module.exports = { all, findById, create, update, remove, bulkRemove, getAgeGroup, calculateAge, updateCertificateOfLiveBirth, updatePaternityAffidavit, updateDelayedRegistrationAffidavit };
+module.exports = {
+  all,
+  findById,
+  create,
+  update,
+  remove,
+  bulkRemove,
+  getAgeGroup,
+  calculateAge,
+  updateCertificateOfLiveBirth,
+  updatePaternityAffidavit,
+  updateDelayedRegistrationAffidavit,
+  updateStaffProcessStatus,
+};
