@@ -197,12 +197,6 @@ export function ChildDetail() {
           >
             Print certification
           </Link>
-          <Link
-            to={`/children/${id}/field-position-back`}
-            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-          >
-            Field Position Back
-          </Link>
           <button
             type="button"
             onClick={handleSavePdf}

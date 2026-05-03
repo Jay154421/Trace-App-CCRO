@@ -18,6 +18,7 @@ import { useQuery } from '../hooks/useQuery';
 import { childrenApi } from '../services/api';
 import { exportDatabaseFile, fetchDatabaseInfo, importDatabaseFile } from '../services/databaseApi';
 import { AddApplicantModal } from '../components/AddApplicantModal';
+import { getApplicantStatusDisplay } from '../utils/applicantStatus';
 
 function formatAgeGroupLabel(value) {
   if (!value || value === 'unknown') return 'Unknown';
@@ -34,12 +35,24 @@ export function Dashboard() {
   const list = Array.isArray(data) ? data : [];
   const recentApplicants = list.slice(0, 5);
 
-  const completedCount = list.filter((child) => {
-    const total = child.checklist_total ?? 0;
-    const checked = child.checklist_checked ?? 0;
-    return total > 0 && checked === total;
-  }).length;
+  const registrationCounts = useMemo(() => {
+    let verified = 0;
+    let underProcess = 0;
+    let incomplete = 0;
+    for (const child of list) {
+      const { key } = getApplicantStatusDisplay({
+        checklist_total: child.checklist_total,
+        checklist_checked: child.checklist_checked,
+        staff_process_status: child.staff_process_status,
+      });
+      if (key === 'verified') verified += 1;
+      else if (key === 'under_process') underProcess += 1;
+      else incomplete += 1;
+    }
+    return { verified, underProcess, incomplete };
+  }, [list]);
 
+  const completedCount = registrationCounts.verified;
   const pendingCount = list.length - completedCount;
 
   const applicantsByAgeGroup = useMemo(() => {
@@ -57,17 +70,19 @@ export function Dashboard() {
   }, [list]);
 
   const registrationStatusPie = useMemo(() => {
+    const { verified, underProcess, incomplete } = registrationCounts;
     const rows = [
-      { name: 'Completed', value: completedCount, color: '#059669' },
-      { name: 'Pending', value: pendingCount, color: '#94a3b8' },
+      { name: 'Verified', value: verified, color: '#059669' },
+      { name: 'Under process', value: underProcess, color: '#0284c7' },
+      { name: 'Incomplete checklist', value: incomplete, color: '#d97706' },
     ];
     return rows.filter((d) => d.value > 0);
-  }, [completedCount, pendingCount]);
+  }, [registrationCounts]);
 
   const stats = [
     { id: 'total', label: 'Total Applicants', value: list.length, hint: 'All recorded applicants' },
-    { id: 'completed', label: 'Completed Registrations', value: completedCount, hint: 'All required documents complete' },
-    { id: 'pending', label: 'Pending Registrations', value: pendingCount, hint: 'Missing or incomplete documents' },
+    { id: 'completed', label: 'Completed Registrations', value: completedCount, hint: 'Staff-verified applicants' },
+    { id: 'pending', label: 'Pending Registrations', value: pendingCount, hint: 'Everyone not yet verified' },
   ];
 
   const [importConfirmFile, setImportConfirmFile] = useState(null);
@@ -280,7 +295,7 @@ export function Dashboard() {
 
         <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Registration status</h2>
-          <p className="mt-1 text-xs text-slate-500">Completed vs pending document checklists.</p>
+          <p className="mt-1 text-xs text-slate-500">Same statuses as the applicant list: verified, under process, or incomplete checklist.</p>
           <div className="mt-4 h-72 w-full min-h-[280px]">
             {loading ? (
               <div className="flex h-full items-center justify-center rounded-lg bg-slate-50">
