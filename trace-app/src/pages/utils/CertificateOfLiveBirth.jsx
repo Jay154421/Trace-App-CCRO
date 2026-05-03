@@ -107,6 +107,13 @@ const FALLBACK_COUNTRY_OPTIONS = [
   { code: 'MY', name: 'Malaysia' },
 ];
 
+const ATTENDANT_HOUR_OPTIONS = Array.from({ length: 12 }, (_, hourIdx) =>
+  String(hourIdx + 1).padStart(2, '0'),
+);
+const ATTENDANT_MINUTE_OPTIONS = Array.from({ length: 60 }, (_, minuteIdx) =>
+  String(minuteIdx).padStart(2, '0'),
+);
+
 function buildIso3166CountryOptions() {
   try {
     const dn = new Intl.DisplayNames(['en'], { type: 'region' });
@@ -853,7 +860,55 @@ export function CertificateOfLiveBirth() {
             <p style={{ fontFamily: FONT_FAMILY, fontSize: '14px', color: COLORS.black, marginBottom: '8px' }}>
             I hereby certify that I attended the birth of the child who was born alive at
             <span className="inline-flex items-baseline gap-1 mx-1 align-middle">
-              <FormLine value={form.attendantTime} onChange={(v) => update('attendantTime', v)} placeholder="_ _ : _ _" className="w-16" width="w-16" />
+              {(() => {
+                const timeValue = String(form.attendantTime || '');
+                const validTime = /^\d{2}:\d{2}$/.test(timeValue) ? timeValue : '01:00';
+                const [hourValue, minuteValue] = validTime.split(':');
+
+                return (
+                  <>
+                    <select
+                      value={hourValue}
+                      onChange={(e) => update('attendantTime', `${e.target.value}:${minuteValue}`)}
+                      style={{
+                        fontFamily: FONT_FAMILY,
+                        fontSize: '14px',
+                        backgroundColor: COLORS.white,
+                        border: `1px solid ${COLORS.accentGreen}`,
+                        borderRadius: 0,
+                        padding: '2px 4px',
+                        color: COLORS.black,
+                      }}
+                    >
+                      {ATTENDANT_HOUR_OPTIONS.map((hour) => (
+                        <option key={hour} value={hour}>
+                          {hour}
+                        </option>
+                      ))}
+                    </select>
+                    <span>:</span>
+                    <select
+                      value={minuteValue}
+                      onChange={(e) => update('attendantTime', `${hourValue}:${e.target.value}`)}
+                      style={{
+                        fontFamily: FONT_FAMILY,
+                        fontSize: '14px',
+                        backgroundColor: COLORS.white,
+                        border: `1px solid ${COLORS.accentGreen}`,
+                        borderRadius: 0,
+                        padding: '2px 4px',
+                        color: COLORS.black,
+                      }}
+                    >
+                      {ATTENDANT_MINUTE_OPTIONS.map((minute) => (
+                        <option key={minute} value={minute}>
+                          {minute}
+                        </option>
+                      ))}
+                    </select>
+                  </>
+                );
+              })()}
               <select value={form.attendantAmpm} onChange={(e) => update('attendantAmpm', e.target.value)} style={{ fontFamily: FONT_FAMILY, fontSize: '14px', backgroundColor: COLORS.white, border: `1px solid ${COLORS.accentGreen}`, borderRadius: 0, padding: '2px 4px', color: COLORS.black }}>
                 <option value="am">am</option>
                 <option value="pm">pm</option>

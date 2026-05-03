@@ -61,7 +61,7 @@ function getApplicantFullName(applicant) {
 const STATUS_FILTERS = [
   { value: 'all', label: 'All' },
   { value: 'incomplete_checklist', label: 'Incomplete Checklist' },
-  { value: 'under_process', label: 'UNDER PROCESS' },
+  { value: 'under_process', label: 'Under Process' },
   { value: 'verified', label: 'Verified' },
 ];
 

@@ -11,6 +11,13 @@ import {
   buildDelayedCertificationPayload,
 } from "../../utils/certificationPdf";
 
+const SIGNATORY_OPTIONS = [
+  { name: "ATTY. YUSSIF DON JUSTIN F. MARTIL", title: "CITY CIVIL REGISTRAR" },
+  { name: "LORELIE L. CANTO", title: "REGISTRATION OFFICER IV" },
+  { name: "PHOEBE L. BENIGA", title: "REGISTRATION OFFICER II" },
+  { name: "JAN FLAURENCE A. OBLENDA", title: "REGISTRATION OFFICER II" },
+];
+
 export function PrintCertificate() {
   const { id } = useParams();
   const [child, setChild] = useState(null);
@@ -32,6 +39,12 @@ export function PrintCertificate() {
   );
   const requestPerson = String(
     cert?.requestPerson ?? cert?.request_person ?? cert?.informantName ?? cert?.informant_name ?? "",
+  );
+  const selectedSignatoryName = String(
+    cert?.signatoryName ?? cert?.signatory_name ?? "PHOEBE L. BENIGA",
+  );
+  const selectedSignatoryTitle = String(
+    cert?.signatoryTitle ?? cert?.signatory_title ?? "REGISTRATION OFFICER II",
   );
 
   const purposeOptions = useMemo(() => {
@@ -140,6 +153,21 @@ export function PrintCertificate() {
     [setCert],
   );
 
+  const updateSignatory = useCallback(
+    (name) => {
+      const chosen = SIGNATORY_OPTIONS.find((option) => option.name === name);
+      setCert((prev) => {
+        const current = prev && typeof prev === "object" ? prev : {};
+        return {
+          ...current,
+          signatoryName: name,
+          signatoryTitle: chosen?.title || "",
+        };
+      });
+    },
+    [setCert],
+  );
+
   useEffect(() => {
     if (!id || cert === null) return;
     const timeout = setTimeout(async () => {
@@ -159,6 +187,8 @@ export function PrintCertificate() {
     cert?.certificationPurposeOptions,
     cert?.requestPerson,
     cert?.requestPersonOptions,
+    cert?.signatoryName,
+    cert?.signatoryTitle,
   ]);
 
   const handlePreviewPdf = useCallback(async () => {
@@ -252,7 +282,7 @@ export function PrintCertificate() {
         </div>
         {savingPurpose && (
           <p className="mb-3 text-xs font-medium text-emerald-600 print:hidden">
-            Saving certification purpose...
+            Saving certificate details...
           </p>
         )}
         {certificateReferenceImageSrc && (
@@ -278,6 +308,10 @@ export function PrintCertificate() {
             editableRequestPerson={requestPerson}
             requestPersonOptions={requestPersonOptions}
             onRequestPersonChange={updateRequestPerson}
+            editableSignatoryName={selectedSignatoryName}
+            editableSignatoryTitle={selectedSignatoryTitle}
+            signatoryOptions={SIGNATORY_OPTIONS}
+            onSignatoryChange={updateSignatory}
           />
           <Footer />
         </div>

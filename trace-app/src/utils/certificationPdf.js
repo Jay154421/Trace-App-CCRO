@@ -91,11 +91,29 @@ function resolveCertificationPurpose(cert) {
   return normalized ? normalized.toUpperCase() : 'ANY LEGAL';
 }
 
+function resolveSignatory(cert) {
+  const c = cert && typeof cert === 'object' ? cert : {};
+  const pickedName =
+    c.signatoryName ??
+    c.signatory_name ??
+    '';
+  const pickedTitle =
+    c.signatoryTitle ??
+    c.signatory_title ??
+    '';
+
+  const signatoryName = String(pickedName || '').trim() || DEFAULT_SIGNATORY_NAME;
+  const signatoryTitle = String(pickedTitle || '').trim() || DEFAULT_SIGNATORY_TITLE;
+
+  return { signatoryName, signatoryTitle };
+}
+
 /**
  * Canonical copy payload for Delayed Registration certification (letter + PDF).
  */
 export function buildDelayedCertificationPayload(child, cert) {
   const c = cert && typeof cert === 'object' ? cert : {};
+  const { signatoryName, signatoryTitle } = resolveSignatory(c);
   const iso = parseIsoBirth(child?.date_of_birth);
   const monthNum = Number(c.birthMonth ?? c.birth_month) || iso?.month;
   const dayNum = Number(c.birthDay ?? c.birth_day) || iso?.day;
@@ -150,12 +168,12 @@ export function buildDelayedCertificationPayload(child, cert) {
     fatherName,
     requestPerson,
     purpose: resolveCertificationPurpose(c),
-    processStatus: 'UNDER PROCESS',
+    processStatus: 'Under Process',
     issuedDayOrdinal,
     issuedMonthUpper,
     issuedYearStr,
-    signatoryName: DEFAULT_SIGNATORY_NAME,
-    signatoryTitle: DEFAULT_SIGNATORY_TITLE,
+    signatoryName,
+    signatoryTitle,
   };
 }
 

@@ -13,6 +13,10 @@ export default function Certification({
   editableRequestPerson = '',
   requestPersonOptions = [],
   onRequestPersonChange,
+  editableSignatoryName = '',
+  editableSignatoryTitle = '',
+  signatoryOptions = [],
+  onSignatoryChange,
 }) {
   if (!copy) return null;
   const [isEditingPurpose, setIsEditingPurpose] = useState(false);
@@ -21,6 +25,8 @@ export default function Certification({
   const requestPersonDatalistId = useId();
   const displayedPurpose = show(editablePurpose || copy.purpose);
   const displayedRequestPerson = show(editableRequestPerson || copy.requestPerson);
+  const displayedSignatoryName = show(editableSignatoryName || copy.signatoryName);
+  const displayedSignatoryTitle = show(editableSignatoryTitle || copy.signatoryTitle);
 
   return (
     <div style={styles.container}>
@@ -111,8 +117,23 @@ export default function Certification({
         </p>
 
         <div style={styles.signatureSection}>
-          <p style={styles.signatureText}>{copy.signatoryName}</p>
-          <p style={styles.signatureTitle}>{copy.signatoryTitle}</p>
+          <select
+            value={editableSignatoryName || copy.signatoryName || ''}
+            onChange={(e) => onSignatoryChange?.(e.target.value)}
+            style={styles.signatorySelect}
+            className="print:hidden"
+            aria-label="Signatory name"
+          >
+            {signatoryOptions.map((option) => (
+              <option key={option.name} value={option.name}>
+                {option.name}
+              </option>
+            ))}
+          </select>
+          <p className="hidden print:block" style={styles.signatureText}>
+            {displayedSignatoryName}
+          </p>
+          <p style={styles.signatureTitle}>{displayedSignatoryTitle}</p>
         </div>
       </div>
     </div>
@@ -172,6 +193,22 @@ const styles = {
   signatureSection: {
     marginTop: '30px',
     textAlign: 'center',
+  },
+  signatorySelect: {
+    minWidth: '260px',
+    maxWidth: '100%',
+    margin: '0 auto',
+    display: 'inline-block',
+    fontSize: '14px',
+    fontFamily: 'Arial, sans-serif',
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    textAlign: 'center',
+    border: 'none',
+    borderBottom: '1px solid #000',
+    borderRadius: 0,
+    padding: '0 2px',
+    backgroundColor: 'transparent',
   },
   signatureText: {
     fontSize: '14px',

@@ -19,7 +19,7 @@ export function getApplicantStatusDisplay(row) {
   }
   const s = row.staff_process_status;
   if (s === 'verified') return { key: 'verified', label: 'Verified' };
-  if (s === 'under_process') return { key: 'under_process', label: 'UNDER PROCESS' };
+  if (s === 'under_process') return { key: 'under_process', label: 'Under Process' };
   return { key: 'incomplete_checklist', label: 'Incomplete Checklist' };
 }
 

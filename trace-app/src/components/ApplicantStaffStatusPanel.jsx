@@ -49,9 +49,9 @@ export function ApplicantStaffStatusPanel({
               type="button"
               disabled={updating}
               onClick={() => onUpdateStaffStatus('under_process')}
-              className="rounded-lg border border-sky-300 bg-white px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-sky-800 hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-lg border border-sky-300 bg-white px-3 py-1.5 text-xs font-semibold text-sky-800 hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Mark UNDER PROCESS
+              Mark Under Process
             </button>
             <button
               type="button"
@@ -65,8 +65,8 @@ export function ApplicantStaffStatusPanel({
         ) : (
           <p className="text-xs text-slate-500">
             {blockStaffActions && checklistComplete
-              ? 'Save the checklist before setting UNDER PROCESS or Verified.'
-              : 'Complete every checklist item to enable UNDER PROCESS and Verified.'}
+              ? 'Save the checklist before setting Under Process or Verified.'
+              : 'Complete every checklist item to enable Under Process and Verified.'}
           </p>
         )}
       </div>
