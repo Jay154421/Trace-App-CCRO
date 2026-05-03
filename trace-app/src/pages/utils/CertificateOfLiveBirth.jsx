@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
@@ -266,6 +266,218 @@ function CalendarIcon() {
   );
 }
 
+const CALENDAR_WEEKDAY_LABELS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+const CALENDAR_MONTH_LABELS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+/** Valid calendar date from separate fields, or null. */
+function dateFromOptionalParts(yearStr, monthStr, dayStr) {
+  const y = trimStr(yearStr);
+  const m = trimStr(monthStr);
+  const d = trimStr(dayStr);
+  if (!y || !m || !d) return null;
+  const yi = Number(y);
+  const mi = Number(m);
+  const di = Number(d);
+  if (!Number.isInteger(yi) || yi < 1000 || yi > 9999) return null;
+  if (!Number.isInteger(mi) || mi < 1 || mi > 12) return null;
+  if (!Number.isInteger(di) || di < 1 || di > 31) return null;
+  const dt = new Date(yi, mi - 1, di);
+  if (dt.getFullYear() !== yi || dt.getMonth() !== mi - 1 || dt.getDate() !== di) return null;
+  return dt;
+}
+
+/** Parse ISO prefix or Date-parsable text for calendar seed / single-line date fields. */
+function parseFlexibleDateSeed(text) {
+  const t = trimStr(text);
+  if (!t) return null;
+  const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(t);
+  if (iso) {
+    const yi = Number(iso[1]);
+    const mi = Number(iso[2]);
+    const di = Number(iso[3]);
+    if (!Number.isInteger(yi) || !Number.isInteger(mi) || !Number.isInteger(di)) return null;
+    const dt = new Date(yi, mi - 1, di);
+    if (dt.getFullYear() === yi && dt.getMonth() === mi - 1 && dt.getDate() === di) return dt;
+  }
+  const parsed = new Date(t);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed;
+}
+
+function sameCalendarDate(a, b) {
+  if (!a || !b) return false;
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+function formatIsoDateLocal(d) {
+  const y = d.getFullYear();
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  return `${y}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+function buildMonthCells(viewYear, viewMonthIndex) {
+  const firstDow = new Date(viewYear, viewMonthIndex, 1).getDay();
+  const daysInMonth = new Date(viewYear, viewMonthIndex + 1, 0).getDate();
+  const cells = [];
+  for (let i = 0; i < firstDow; i += 1) cells.push(null);
+  for (let day = 1; day <= daysInMonth; day += 1) cells.push(day);
+  return cells;
+}
+
+/**
+ * Opens a month grid popover; calls onPick with the chosen Date then closes.
+ * Use seedParts for day/month/year fields, or seedText for a single string field.
+ */
+function CertificateDatePicker({
+  pickerId,
+  openPickerId,
+  setOpenPickerId,
+  seedParts,
+  seedText = '',
+  onPick,
+  ariaLabel,
+}) {
+  const wrapRef = useRef(null);
+  const open = openPickerId === pickerId;
+  const sy = seedParts?.year ?? '';
+  const sm = seedParts?.month ?? '';
+  const sd = seedParts?.day ?? '';
+
+  const selected = useMemo(
+    () => dateFromOptionalParts(sy, sm, sd) || parseFlexibleDateSeed(seedText),
+    [sy, sm, sd, seedText],
+  );
+
+  const [cursorY, setCursorY] = useState(() => new Date().getFullYear());
+  const [cursorM, setCursorM] = useState(() => new Date().getMonth());
+
+  useEffect(() => {
+    if (!open) return;
+    const base = dateFromOptionalParts(sy, sm, sd) || parseFlexibleDateSeed(seedText) || new Date();
+    setCursorY(base.getFullYear());
+    setCursorM(base.getMonth());
+  }, [open, sy, sm, sd, seedText]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) {
+        setOpenPickerId(null);
+      }
+    };
+    const onKey = (e) => {
+      if (e.key === 'Escape') setOpenPickerId(null);
+    };
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open, setOpenPickerId]);
+
+  const cells = useMemo(() => buildMonthCells(cursorY, cursorM), [cursorY, cursorM]);
+
+  const goPrevMonth = () => {
+    if (cursorM === 0) {
+      setCursorM(11);
+      setCursorY((y) => y - 1);
+    } else {
+      setCursorM((m) => m - 1);
+    }
+  };
+
+  const goNextMonth = () => {
+    if (cursorM === 11) {
+      setCursorM(0);
+      setCursorY((y) => y + 1);
+    } else {
+      setCursorM((m) => m + 1);
+    }
+  };
+
+  const handlePickDay = (day) => {
+    onPick(new Date(cursorY, cursorM, day));
+    setOpenPickerId(null);
+  };
+
+  return (
+    <div className="relative inline-flex flex-shrink-0" ref={wrapRef}>
+      <button
+        type="button"
+        className="inline-flex items-center justify-center rounded p-0.5 bg-transparent hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-1"
+        aria-label={ariaLabel}
+        aria-expanded={open}
+        aria-haspopup="dialog"
+        onClick={() => setOpenPickerId(open ? null : pickerId)}
+      >
+        <CalendarIcon />
+      </button>
+      {open && (
+        <div
+          className="absolute left-0 top-full z-[100] mt-1 w-[min(100vw-1rem,280px)] rounded-md border border-slate-200 bg-white p-2 shadow-lg"
+          role="dialog"
+          aria-label={ariaLabel}
+        >
+          <div className="mb-2 flex items-center justify-between gap-1">
+            <button
+              type="button"
+              className="rounded px-2 py-1 text-sm text-slate-700 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+              aria-label="Previous month"
+              onClick={goPrevMonth}
+            >
+              ‹
+            </button>
+            <span className="text-center text-sm font-semibold text-slate-800">
+              {CALENDAR_MONTH_LABELS[cursorM]} {cursorY}
+            </span>
+            <button
+              type="button"
+              className="rounded px-2 py-1 text-sm text-slate-700 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+              aria-label="Next month"
+              onClick={goNextMonth}
+            >
+              ›
+            </button>
+          </div>
+          <div className="grid grid-cols-7 gap-0.5 text-center text-xs text-slate-500">
+            {CALENDAR_WEEKDAY_LABELS.map((w) => (
+              <div key={w} className="py-1 font-medium">
+                {w}
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-7 gap-0.5">
+            {cells.map((day, idx) => {
+              if (day == null) {
+                return <div key={`e-${cursorY}-${cursorM}-${idx}`} className="aspect-square" />;
+              }
+              const cellDate = new Date(cursorY, cursorM, day);
+              const isSelected = sameCalendarDate(selected, cellDate);
+              return (
+                <button
+                  key={day}
+                  type="button"
+                  className={`aspect-square rounded text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
+                    isSelected ? 'bg-emerald-600 font-semibold text-white' : 'text-slate-800 hover:bg-slate-100'
+                  }`}
+                  onClick={() => handlePickDay(day)}
+                >
+                  {day}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function FormCountrySelect({ value = '', onChange, className = '', width }) {
   const t = typeof value === 'string' ? value.trim() : '';
   const isCode = t.length === 2 && COUNTRY_CODE_SET.has(t.toUpperCase());
@@ -374,6 +586,7 @@ export function CertificateOfLiveBirth() {
   const lastSavedRef = useRef(null);
   const certContentRef = useRef(null);
   const [activeTabIndex, setActiveTabIndex] = useState(0);
+  const [openPickerId, setOpenPickerId] = useState(null);
 
   useEffect(() => {
     childrenApi
@@ -468,7 +681,7 @@ export function CertificateOfLiveBirth() {
       .certificate-step-nav span { font-size: 0.8125rem; color: #64748b; }
       .certificate-tab-panel { display: none; }
       .certificate-tab-panel.active { display: block; }
-      .certificate-card { border-radius: 10px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow: hidden; background: #fff; padding: 1.25rem; margin-bottom: 0; }
+      .certificate-card { border-radius: 10px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow: visible; background: #fff; padding: 1.25rem; margin-bottom: 0; }
       @media (min-width: 768px) {
         .certificate-card { padding: 1.5rem; }
       }
@@ -602,15 +815,15 @@ export function CertificateOfLiveBirth() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="flex flex-col min-w-0">
                 <span className="mb-1">Province</span>
-                <FormLine value={form.province} onChange={(v) => update('province', v)} />
+                <FormLine value={form.province} onChange={(v) => update('province', v)} placeholder="(Province)" />
               </div>
               <div className="flex flex-col min-w-0">
                 <span className="mb-1">City/Municipality</span>
-                <FormLine value={form.cityMunicipality} onChange={(v) => update('cityMunicipality', v)} />
+                <FormLine value={form.cityMunicipality} onChange={(v) => update('cityMunicipality', v)} placeholder="(City/Municipality)" />
               </div>
               <div className="flex flex-col min-w-0">
                 <span className="mb-1">Registry No.</span>
-                <FormLine value={form.registryNo} onChange={(v) => update('registryNo', v)} className="w-full" width="w-full" />
+                <FormLine value={form.registryNo} onChange={(v) => update('registryNo', v)} placeholder="(Registry No.)" className="w-full" width="w-full" />
               </div>
             </div>
           </div>
@@ -657,7 +870,21 @@ export function CertificateOfLiveBirth() {
                 <FormLine value={form.birthDay} onChange={(v) => update('birthDay', v)} placeholder="(Day)" className="w-14" width="w-14" />
                 <FormLine value={form.birthMonth} onChange={(v) => update('birthMonth', v)} placeholder="(Month)" className="w-20" width="w-20" />
                 <FormLine value={form.birthYear} onChange={(v) => update('birthYear', v)} placeholder="(Year)" className="w-20" width="w-20" />
-                <CalendarIcon />
+                <CertificateDatePicker
+                  pickerId="birth"
+                  openPickerId={openPickerId}
+                  setOpenPickerId={setOpenPickerId}
+                  seedParts={{ year: form.birthYear, month: form.birthMonth, day: form.birthDay }}
+                  onPick={(d) => {
+                    setForm((p) => ({
+                      ...p,
+                      birthDay: String(d.getDate()),
+                      birthMonth: String(d.getMonth() + 1),
+                      birthYear: String(d.getFullYear()),
+                    }));
+                  }}
+                  ariaLabel="Choose date of birth"
+                />
               </div>
             </div>
             <div className="md:col-span-2">
@@ -686,7 +913,7 @@ export function CertificateOfLiveBirth() {
             <div>
               <label className="block mb-1 font-normal">6. WEIGHT AT BIRTH</label>
               <div className="flex items-baseline gap-2">
-                <FormLine value={form.weightGrams} onChange={(v) => update('weightGrams', v)} className="w-24" width="w-24" />
+                <FormLine value={form.weightGrams} onChange={(v) => update('weightGrams', v)} placeholder="(e.g. 3200)" className="w-24" width="w-24" />
                 <span>grams</span>
               </div>
             </div>
@@ -707,34 +934,34 @@ export function CertificateOfLiveBirth() {
             </div>
             <div>
               <label className="block mb-1 font-normal">8. CITIZENSHIP</label>
-              <FormLine value={form.motherCitizenship} onChange={(v) => update('motherCitizenship', v)} className="w-full" width="w-full" />
+              <FormLine value={form.motherCitizenship} onChange={(v) => update('motherCitizenship', v)} placeholder="(Citizenship)" className="w-full" width="w-full" />
             </div>
             <div>
               <label className="block mb-1 font-normal">9. RELIGION/RELIGIOUS SECT</label>
-              <FormLine value={form.motherReligion} onChange={(v) => update('motherReligion', v)} className="w-full" width="w-full" />
+              <FormLine value={form.motherReligion} onChange={(v) => update('motherReligion', v)} placeholder="(Religion/Religious sect)" className="w-full" width="w-full" />
             </div>
             <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block mb-1 font-normal">10a. Total number of children born alive</label>
-                <FormLine value={form.motherChildrenBornAlive} onChange={(v) => update('motherChildrenBornAlive', v)} className="w-full" width="w-full" />
+                <FormLine value={form.motherChildrenBornAlive} onChange={(v) => update('motherChildrenBornAlive', v)} placeholder="(Number)" className="w-full" width="w-full" />
               </div>
               <div>
                 <label className="block mb-1 font-normal">10b. No. of children still living including this birth</label>
-                <FormLine value={form.motherChildrenLiving} onChange={(v) => update('motherChildrenLiving', v)} className="w-full" width="w-full" />
+                <FormLine value={form.motherChildrenLiving} onChange={(v) => update('motherChildrenLiving', v)} placeholder="(Number)" className="w-full" width="w-full" />
               </div>
               <div>
                 <label className="block mb-1 font-normal">10c. No. of children born alive but are now dead</label>
-                <FormLine value={form.motherChildrenDead} onChange={(v) => update('motherChildrenDead', v)} className="w-full" width="w-full" />
+                <FormLine value={form.motherChildrenDead} onChange={(v) => update('motherChildrenDead', v)} placeholder="(Number)" className="w-full" width="w-full" />
               </div>
             </div>
             <div>
               <label className="block mb-1 font-normal">11. OCCUPATION</label>
-              <FormLine value={form.motherOccupation} onChange={(v) => update('motherOccupation', v)} className="w-full" width="w-full" />
+              <FormLine value={form.motherOccupation} onChange={(v) => update('motherOccupation', v)} placeholder="(Occupation)" className="w-full" width="w-full" />
             </div>
             <div>
               <label className="block mb-1 font-normal">12. AGE at the time of this birth (completed years)</label>
               <div className="flex items-baseline gap-2">
-                <FormLine value={form.motherAge} onChange={(v) => update('motherAge', v)} className="w-20" width="w-20" />
+                <FormLine value={form.motherAge} onChange={(v) => update('motherAge', v)} placeholder="(Age)" className="w-20" width="w-20" />
                 <span style={{ fontSize: '14px' }}>#</span>
               </div>
             </div>
@@ -778,20 +1005,20 @@ export function CertificateOfLiveBirth() {
             </div>
             <div>
               <label className="block mb-1 font-normal">15. CITIZENSHIP</label>
-              <FormLine value={form.fatherCitizenship} onChange={(v) => update('fatherCitizenship', v)} className="w-full" width="w-full" />
+              <FormLine value={form.fatherCitizenship} onChange={(v) => update('fatherCitizenship', v)} placeholder="(Citizenship)" className="w-full" width="w-full" />
             </div>
             <div>
               <label className="block mb-1 font-normal">16. RELIGION/RELIGIOUS SECT</label>
-              <FormLine value={form.fatherReligion} onChange={(v) => update('fatherReligion', v)} className="w-full" width="w-full" />
+              <FormLine value={form.fatherReligion} onChange={(v) => update('fatherReligion', v)} placeholder="(Religion/Religious sect)" className="w-full" width="w-full" />
             </div>
             <div>
               <label className="block mb-1 font-normal">17. OCCUPATION</label>
-              <FormLine value={form.fatherOccupation} onChange={(v) => update('fatherOccupation', v)} className="w-full" width="w-full" />
+              <FormLine value={form.fatherOccupation} onChange={(v) => update('fatherOccupation', v)} placeholder="(Occupation)" className="w-full" width="w-full" />
             </div>
             <div>
               <label className="block mb-1 font-normal">18. AGE at the time of this birth (completed years)</label>
               <div className="flex items-baseline gap-2">
-                <FormLine value={form.fatherAge} onChange={(v) => update('fatherAge', v)} className="w-20" width="w-20" />
+                <FormLine value={form.fatherAge} onChange={(v) => update('fatherAge', v)} placeholder="(Age)" className="w-20" width="w-20" />
                 <span style={{ fontSize: '14px' }}>#</span>
               </div>
             </div>
@@ -852,7 +1079,21 @@ export function CertificateOfLiveBirth() {
                   className="w-20"
                   width="w-20"
                 />
-                <CalendarIcon />
+                <CertificateDatePicker
+                  pickerId="marriage"
+                  openPickerId={openPickerId}
+                  setOpenPickerId={setOpenPickerId}
+                  seedParts={{ year: form.marriageYear, month: form.marriageMonth, day: form.marriageDay }}
+                  onPick={(d) => {
+                    setForm((p) => ({
+                      ...p,
+                      marriageMonth: String(d.getMonth() + 1),
+                      marriageDay: String(d.getDate()),
+                      marriageYear: String(d.getFullYear()),
+                    }));
+                  }}
+                  ariaLabel="Choose parents marriage date"
+                />
               </div>
             </div>
             <div>
@@ -913,7 +1154,7 @@ export function CertificateOfLiveBirth() {
                   />
                   <span>{label}</span>
                   {opt === 'Others' && (
-                    <FormLine value={form.attendantOthersSpecify} onChange={(v) => update('attendantOthersSpecify', v)} className="w-24 inline-block ml-0" width="w-24" />
+                    <FormLine value={form.attendantOthersSpecify} onChange={(v) => update('attendantOthersSpecify', v)} placeholder="(Specify)" className="w-24 inline-block ml-0" width="w-24" />
                   )}
                 </label>
               );
@@ -993,22 +1234,31 @@ export function CertificateOfLiveBirth() {
            
             <div>
               <p className="mb-1" style={{ fontWeight: 400 }}>Address</p>
-              <FormLine value={form.attendantAddress} onChange={(v) => update('attendantAddress', v)} className="w-full" />
+              <FormLine value={form.attendantAddress} onChange={(v) => update('attendantAddress', v)} placeholder="(Address)" className="w-full" />
             </div>
             <div>
               <p className="mb-1" style={{ fontWeight: 400 }}>Name in Print</p>
-              <FormLine value={form.attendantName} onChange={(v) => update('attendantName', v)} />
+              <FormLine value={form.attendantName} onChange={(v) => update('attendantName', v)} placeholder="(Name in print)" />
             </div>
             <div>
               <p className="mb-1" style={{ fontWeight: 400 }}>Date</p>
               <div className="flex items-center gap-1">
-                <FormLine value={form.attendantDate} onChange={(v) => update('attendantDate', v)} className="flex-1 min-w-0" />
-                <CalendarIcon />
+                <FormLine value={form.attendantDate} onChange={(v) => update('attendantDate', v)} placeholder="(YYYY-MM-DD)" className="flex-1 min-w-0" />
+                <CertificateDatePicker
+                  pickerId="attendantDate"
+                  openPickerId={openPickerId}
+                  setOpenPickerId={setOpenPickerId}
+                  seedText={form.attendantDate}
+                  onPick={(d) => {
+                    setForm((p) => ({ ...p, attendantDate: formatIsoDateLocal(d) }));
+                  }}
+                  ariaLabel="Choose attendant signature date"
+                />
               </div>
             </div>
             <div className="sm:col-span-2">
               <p className="mb-1" style={{ fontWeight: 400 }}>Title or Position</p>
-              <FormLine value={form.attendantTitle} onChange={(v) => update('attendantTitle', v)} />
+              <FormLine value={form.attendantTitle} onChange={(v) => update('attendantTitle', v)} placeholder="(Title or position)" />
             </div>
           </div>
           </div>
@@ -1033,14 +1283,23 @@ export function CertificateOfLiveBirth() {
             <p style={{ fontSize: '14px', marginBottom: '8px' }}>I hereby certify that all information supplied are true and correct to my own knowledge and belief.</p>
             <div className="space-y-2" style={{ fontSize: '14px' }}>
               
-              <div><p className="mb-1" style={{ fontWeight: 400 }}>Name in Print</p><FormLine value={form.informantName} onChange={(v) => update('informantName', v)} /></div>
+              <div><p className="mb-1" style={{ fontWeight: 400 }}>Name in Print</p><FormLine value={form.informantName} onChange={(v) => update('informantName', v)} placeholder="(Name in print)" /></div>
               <div><p className="mb-1" style={{ fontWeight: 400 }}>Relationship to the Child</p><FormLine value={form.informantRelationship} onChange={(v) => update('informantRelationship', v)} placeholder="(e.g. Mother, Father)" /></div>
-              <div><p className="mb-1" style={{ fontWeight: 400 }}>Address</p><textarea value={form.informantAddress} onChange={(e) => update('informantAddress', e.target.value)} rows={2} className="w-full focus:outline-none" style={{ fontFamily: FONT_FAMILY, fontSize: '14px', backgroundColor: COLORS.white, border: `1px solid ${COLORS.borderGray}`, borderRadius: 0, padding: '4px' }} /></div>
+              <div><p className="mb-1" style={{ fontWeight: 400 }}>Address</p><textarea value={form.informantAddress} onChange={(e) => update('informantAddress', e.target.value)} placeholder="(Complete address)" rows={2} className="w-full focus:outline-none" style={{ fontFamily: FONT_FAMILY, fontSize: '14px', backgroundColor: COLORS.white, border: `1px solid ${COLORS.borderGray}`, borderRadius: 0, padding: '4px' }} /></div>
               <div>
                 <p className="mb-1" style={{ fontWeight: 400 }}>Date</p>
                 <div className="flex items-center gap-1">
-                  <FormLine value={form.informantDate} onChange={(v) => update('informantDate', v)} />
-                  <CalendarIcon />
+                  <FormLine value={form.informantDate} onChange={(v) => update('informantDate', v)} placeholder="(YYYY-MM-DD)" />
+                  <CertificateDatePicker
+                    pickerId="informantDate"
+                    openPickerId={openPickerId}
+                    setOpenPickerId={setOpenPickerId}
+                    seedText={form.informantDate}
+                    onPick={(d) => {
+                      setForm((p) => ({ ...p, informantDate: formatIsoDateLocal(d) }));
+                    }}
+                    ariaLabel="Choose informant date"
+                  />
                 </div>
               </div>
             </div>
@@ -1049,13 +1308,22 @@ export function CertificateOfLiveBirth() {
             <h3 className="mb-2 text-base font-bold">23. PREPARED BY</h3>
             <div className="space-y-2" style={{ fontSize: '14px' }}>
               
-              <div><p className="mb-1" style={{ fontWeight: 400 }}>Name in Print</p><FormLine value={form.preparedByName} onChange={(v) => update('preparedByName', v)} /></div>
-              <div><p className="mb-1" style={{ fontWeight: 400 }}>Title or Position</p><FormLine value={form.preparedByTitle} onChange={(v) => update('preparedByTitle', v)} /></div>
+              <div><p className="mb-1" style={{ fontWeight: 400 }}>Name in Print</p><FormLine value={form.preparedByName} onChange={(v) => update('preparedByName', v)} placeholder="(Name in print)" /></div>
+              <div><p className="mb-1" style={{ fontWeight: 400 }}>Title or Position</p><FormLine value={form.preparedByTitle} onChange={(v) => update('preparedByTitle', v)} placeholder="(Title or position)" /></div>
               <div>
                 <p className="mb-1" style={{ fontWeight: 400 }}>Date</p>
                 <div className="flex items-center gap-1">
-                  <FormLine value={form.preparedByDate} onChange={(v) => update('preparedByDate', v)} />
-                  <CalendarIcon />
+                  <FormLine value={form.preparedByDate} onChange={(v) => update('preparedByDate', v)} placeholder="(YYYY-MM-DD)" />
+                  <CertificateDatePicker
+                    pickerId="preparedByDate"
+                    openPickerId={openPickerId}
+                    setOpenPickerId={setOpenPickerId}
+                    seedText={form.preparedByDate}
+                    onPick={(d) => {
+                      setForm((p) => ({ ...p, preparedByDate: formatIsoDateLocal(d) }));
+                    }}
+                    ariaLabel="Choose prepared by date"
+                  />
                 </div>
               </div>
             </div>
@@ -1093,12 +1361,21 @@ export function CertificateOfLiveBirth() {
                   ))}
                 </select>
               </div>
-              <div><p className="mb-1" style={{ fontWeight: 400 }}>Title or Position</p><FormLine value={form.receivedByTitle} onChange={(v) => update('receivedByTitle', v)} /></div>
+              <div><p className="mb-1" style={{ fontWeight: 400 }}>Title or Position</p><FormLine value={form.receivedByTitle} onChange={(v) => update('receivedByTitle', v)} placeholder="(Title or position)" /></div>
               <div>
                 <p className="mb-1" style={{ fontWeight: 400 }}>Date</p>
                 <div className="flex items-center gap-1">
-                  <FormLine value={form.receivedByDate} onChange={(v) => update('receivedByDate', v)} />
-                  <CalendarIcon />
+                  <FormLine value={form.receivedByDate} onChange={(v) => update('receivedByDate', v)} placeholder="(YYYY-MM-DD)" />
+                  <CertificateDatePicker
+                    pickerId="receivedByDate"
+                    openPickerId={openPickerId}
+                    setOpenPickerId={setOpenPickerId}
+                    seedText={form.receivedByDate}
+                    onPick={(d) => {
+                      setForm((p) => ({ ...p, receivedByDate: formatIsoDateLocal(d) }));
+                    }}
+                    ariaLabel="Choose received by date"
+                  />
                 </div>
               </div>
             </div>
@@ -1133,12 +1410,21 @@ export function CertificateOfLiveBirth() {
                   ))}
                 </select>
               </div>
-              <div><p className="mb-1" style={{ fontWeight: 400 }}>Title or Position</p><FormLine value={form.registeredByTitle} onChange={(v) => update('registeredByTitle', v)} /></div>
+              <div><p className="mb-1" style={{ fontWeight: 400 }}>Title or Position</p><FormLine value={form.registeredByTitle} onChange={(v) => update('registeredByTitle', v)} placeholder="(Title or position)" /></div>
               <div>
                 <p className="mb-1" style={{ fontWeight: 400 }}>Date</p>
                 <div className="flex items-center gap-1">
-                  <FormLine value={form.registeredByDate} onChange={(v) => update('registeredByDate', v)} />
-                  <CalendarIcon />
+                  <FormLine value={form.registeredByDate} onChange={(v) => update('registeredByDate', v)} placeholder="(YYYY-MM-DD)" />
+                  <CertificateDatePicker
+                    pickerId="registeredByDate"
+                    openPickerId={openPickerId}
+                    setOpenPickerId={setOpenPickerId}
+                    seedText={form.registeredByDate}
+                    onPick={(d) => {
+                      setForm((p) => ({ ...p, registeredByDate: formatIsoDateLocal(d) }));
+                    }}
+                    ariaLabel="Choose registered by date"
+                  />
                 </div>
               </div>
             </div>

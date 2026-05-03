@@ -119,13 +119,13 @@ export function DelayedRegistrationAffidavit() {
         <div className="space-y-4 text-sm leading-relaxed text-slate-900">
           <div className="flex flex-wrap items-baseline gap-2">
             <span>I,</span>
-            <FormLine value={form.affiantName} onChange={v => update('affiantName', v)} placeholder="Affiant's Name" width="w-80" />
+            <FormLine value={form.affiantName} onChange={v => update('affiantName', v)} placeholder="(Affiant's name)" width="w-80" />
             <span>, of legal age, single/married/divorced/widow/widower, with</span>
           </div>
 
           <div className="flex flex-wrap items-baseline gap-2">
             <span>residence and postal address at</span>
-            <FormLine value={form.residence} onChange={v => update('residence', v)} width="flex-1" />
+            <FormLine value={form.residence} onChange={v => update('residence', v)} placeholder="(Residence and postal address)" width="flex-1" />
           </div>
 
           <p>after having been duly sworn in accordance with law, do hereby depose and say:</p>
@@ -141,24 +141,24 @@ export function DelayedRegistrationAffidavit() {
                   <Checkbox checked={form.isSelfBirth} onChange={v => update('isSelfBirth', v)} />
                   <div className="flex-1 flex flex-wrap items-baseline gap-2">
                     <span>my birth in</span>
-                    <FormLine value={form.selfBirthPlace} onChange={v => update('selfBirthPlace', v)} width="w-64" />
+                    <FormLine value={form.selfBirthPlace} onChange={v => update('selfBirthPlace', v)} placeholder="(Place of birth)" width="w-64" />
                     <span>on</span>
-                    <FormLine value={form.selfBirthDate} onChange={v => update('selfBirthDate', v)} width="w-40" />
+                    <FormLine value={form.selfBirthDate} onChange={v => update('selfBirthDate', v)} placeholder="(Date of birth)" width="w-40" />
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
                   <Checkbox checked={form.isOtherBirth} onChange={v => update('isOtherBirth', v)} />
                   <div className="flex-1 flex flex-wrap items-baseline gap-2">
                     <span>the birth of</span>
-                    <FormLine value={form.otherBirthName} onChange={v => update('otherBirthName', v)} width="w-64" />
+                    <FormLine value={form.otherBirthName} onChange={v => update('otherBirthName', v)} placeholder="(Child's name)" width="w-64" />
                     <span>who was born in</span>
-                    <FormLine value={form.otherBirthPlace} onChange={v => update('otherBirthPlace', v)} width="w-64" />
+                    <FormLine value={form.otherBirthPlace} onChange={v => update('otherBirthPlace', v)} placeholder="(Place of birth)" width="w-64" />
                   </div>
                 </div>
                 <div className="flex items-start gap-4 pl-8">
                   <div className="flex-1 flex flex-wrap items-baseline gap-2">
                     <span>on</span>
-                    <FormLine value={form.otherBirthDate} onChange={v => update('otherBirthDate', v)} width="w-40" />
+                    <FormLine value={form.otherBirthDate} onChange={v => update('otherBirthDate', v)} placeholder="(Date of birth)" width="w-40" />
                   </div>
                 </div>
               </div>
@@ -167,15 +167,15 @@ export function DelayedRegistrationAffidavit() {
             <div className="flex flex-wrap items-baseline gap-2">
               <span className="font-bold">2.</span>
               <span>That I/he/she was attended at birth by</span>
-              <FormLine value={form.attendedBy} onChange={v => update('attendedBy', v)} width="w-80" />
+              <FormLine value={form.attendedBy} onChange={v => update('attendedBy', v)} placeholder="(Name of attendant)" width="w-80" />
               <span>who resides at</span>
-              <FormLine value={form.attendantAddress} onChange={v => update('attendantAddress', v)} width="flex-1" />
+              <FormLine value={form.attendantAddress} onChange={v => update('attendantAddress', v)} placeholder="(Address)" width="flex-1" />
             </div>
 
             <div className="flex flex-wrap items-baseline gap-2">
               <span className="font-bold">3.</span>
               <span>That I am/he/she is a citizen of</span>
-              <FormLine value={form.citizenship} onChange={v => update('citizenship', v)} width="w-64" />
+              <FormLine value={form.citizenship} onChange={v => update('citizenship', v)} placeholder="(Citizenship)" width="w-64" />
               <span>.</span>
             </div>
 
@@ -184,9 +184,9 @@ export function DelayedRegistrationAffidavit() {
                 <span className="font-bold">4.</span>
                 <span>That my/his/her parents were</span>
                 <Checkbox checked={form.isMarried} onChange={v => update('isMarried', v)} label="married on" />
-                <FormLine value={form.marriageDate} onChange={v => update('marriageDate', v)} width="w-40" />
+                <FormLine value={form.marriageDate} onChange={v => update('marriageDate', v)} placeholder="(Marriage date)" width="w-40" />
                 <span>at</span>
-                <FormLine value={form.marriagePlace} onChange={v => update('marriagePlace', v)} width="w-48" />
+                <FormLine value={form.marriagePlace} onChange={v => update('marriagePlace', v)} placeholder="(Place of marriage)" width="w-48" />
               </div>
               <div className="flex flex-wrap items-start gap-4 pl-8">
                 <Checkbox checked={form.isNotMarried} onChange={v => update('isNotMarried', v)} />
@@ -196,26 +196,26 @@ export function DelayedRegistrationAffidavit() {
               </div>
               <div className="pl-14 flex flex-wrap items-baseline gap-2">
                 <span>father whose name is</span>
-                <FormLine value={form.fatherName} onChange={v => update('fatherName', v)} width="w-80" />
+                <FormLine value={form.fatherName} onChange={v => update('fatherName', v)} placeholder="(Father's name)" width="w-80" />
               </div>
             </div>
 
             <div className="flex flex-wrap items-baseline gap-2">
               <span className="font-bold">5.</span>
               <span>That the reason for the delay in registering my/his/her birth was</span>
-              <FormLine value={form.delayReason} onChange={v => update('delayReason', v)} width="flex-1" />
+              <FormLine value={form.delayReason} onChange={v => update('delayReason', v)} placeholder="(Reason for delay)" width="flex-1" />
             </div>
 
             <div className="flex flex-wrap items-baseline gap-2">
               <span className="font-bold">6.</span>
               <span>(For the applicant only) That I am married to</span>
-              <FormLine value={form.spouseName} onChange={v => update('spouseName', v)} width="w-80" />
+              <FormLine value={form.spouseName} onChange={v => update('spouseName', v)} placeholder="(Spouse's name)" width="w-80" />
               <span>.</span>
             </div>
 
             <div className="flex flex-wrap items-baseline gap-2 pl-6">
               <span>(If the applicant is other than the document owner) That I am the</span>
-              <FormLine value={form.relationship} onChange={v => update('relationship', v)} width="w-64" />
+              <FormLine value={form.relationship} onChange={v => update('relationship', v)} placeholder="(e.g. Mother, Guardian)" width="w-64" />
               <span>of the said person.</span>
             </div>
 
@@ -228,13 +228,13 @@ export function DelayedRegistrationAffidavit() {
           <div className="mt-8 space-y-4">
             <div className="flex flex-wrap items-baseline gap-2">
               <span>In truth whereof, I have affixed my signature below this</span>
-              <FormLine value={form.affixedDay} onChange={v => update('affixedDay', v)} width="w-16" />
+              <FormLine value={form.affixedDay} onChange={v => update('affixedDay', v)} placeholder="(Day)" width="w-16" />
               <span>day of</span>
-              <FormLine value={form.affixedMonth} onChange={v => update('affixedMonth', v)} width="w-32" />
+              <FormLine value={form.affixedMonth} onChange={v => update('affixedMonth', v)} placeholder="(Month)" width="w-32" />
             </div>
             <div className="flex flex-wrap items-baseline gap-2">
               <span>at</span>
-              <FormLine value={form.affixedAt} onChange={v => update('affixedAt', v)} width="w-80" />
+              <FormLine value={form.affixedAt} onChange={v => update('affixedAt', v)} placeholder="(City / place)" width="w-80" />
               <span>, Philippines.</span>
             </div>
           </div>
@@ -250,23 +250,23 @@ export function DelayedRegistrationAffidavit() {
             <div className="flex flex-wrap items-baseline gap-2">
               <span className="font-bold uppercase">Subscribed and Sworn</span>
               <span>to before me this</span>
-              <FormLine value={form.swornDay} onChange={v => update('swornDay', v)} width="w-16" />
+              <FormLine value={form.swornDay} onChange={v => update('swornDay', v)} placeholder="(Day)" width="w-16" />
               <span>day of</span>
-              <FormLine value={form.swornMonth} onChange={v => update('swornMonth', v)} width="w-32" />
+              <FormLine value={form.swornMonth} onChange={v => update('swornMonth', v)} placeholder="(Month)" width="w-32" />
               <span>,</span>
-              <FormLine value={form.swornYear} onChange={v => update('swornYear', v)} width="w-20" />
+              <FormLine value={form.swornYear} onChange={v => update('swornYear', v)} placeholder="(Year)" width="w-20" />
               <span>at</span>
             </div>
             <div className="flex flex-wrap items-baseline gap-2">
-              <FormLine value={form.swornAt} onChange={v => update('swornAt', v)} width="w-80" />
+              <FormLine value={form.swornAt} onChange={v => update('swornAt', v)} placeholder="(City / place)" width="w-80" />
               <span>, Philippines, affiant who exhibited to me his Community Tax Cert.</span>
             </div>
             <div className="flex flex-wrap items-baseline gap-2">
-              <FormLine value={form.ctcNo} onChange={v => update('ctcNo', v)} width="w-48" />
+              <FormLine value={form.ctcNo} onChange={v => update('ctcNo', v)} placeholder="(Community Tax Cert. no.)" width="w-48" />
               <span>issued on</span>
-              <FormLine value={form.issuedOn} onChange={v => update('issuedOn', v)} width="w-48" />
+              <FormLine value={form.issuedOn} onChange={v => update('issuedOn', v)} placeholder="(Date issued)" width="w-48" />
               <span>at</span>
-              <FormLine value={form.issuedAt} onChange={v => update('issuedAt', v)} width="w-64" />
+              <FormLine value={form.issuedAt} onChange={v => update('issuedAt', v)} placeholder="(Place issued)" width="w-64" />
               <span>.</span>
             </div>
           </div>
@@ -278,17 +278,17 @@ export function DelayedRegistrationAffidavit() {
                 <p className="text-xs">Signature of the Administering Officer</p>
               </div>
               <div className="text-center">
-                <FormLine value={form.nameInPrint} onChange={v => update('nameInPrint', v)} width="w-full" className="text-center uppercase font-bold" />
+                <FormLine value={form.nameInPrint} onChange={v => update('nameInPrint', v)} placeholder="(Name in print)" width="w-full" className="text-center uppercase font-bold" />
                 <p className="text-xs border-t border-green-600 pt-1">Name in Print</p>
               </div>
             </div>
             <div className="space-y-4">
               <div className="text-center">
-                <FormLine value={form.position} onChange={v => update('position', v)} width="w-full" className="text-center" />
+                <FormLine value={form.position} onChange={v => update('position', v)} placeholder="(Position / Title / Designation)" width="w-full" className="text-center" />
                 <p className="text-xs border-t border-green-600 pt-1">Position / Title / Designation</p>
               </div>
               <div className="text-center">
-                <FormLine value={form.address} onChange={v => update('address', v)} width="w-full" className="text-center" />
+                <FormLine value={form.address} onChange={v => update('address', v)} placeholder="(Address)" width="w-full" className="text-center" />
                 <p className="text-xs border-t border-green-600 pt-1">Address</p>
               </div>
             </div>

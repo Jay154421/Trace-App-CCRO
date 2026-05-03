@@ -1,15 +1,7 @@
 import { useParams, Link } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { childrenApi } from '../../services/api';
-
-const COLORS = {
-  white: '#FFFFFF',
-  black: '#000000',
-  accentGreen: '#00A859', // Official looking green
-  borderGreen: '#00A859',
-  inputBg: '#F0FFF4',
-};
 
 const FONT_FAMILY = 'Arial, Helvetica, sans-serif';
 
@@ -99,23 +91,23 @@ export function PaternityAffidavit() {
         <div className="space-y-6 text-base leading-relaxed">
           <div className="flex flex-wrap items-baseline gap-2">
             <span>I/We,</span>
-            <FormLine value={form.motherName} onChange={v => update('motherName', v)} placeholder="Mother's Name" width="w-64" />
+            <FormLine value={form.motherName} onChange={v => update('motherName', v)} placeholder="(Mother's name)" width="w-64" />
             <span>and</span>
-            <FormLine value={form.fatherName} onChange={v => update('fatherName', v)} placeholder="Father's Name" width="w-64" />
+            <FormLine value={form.fatherName} onChange={v => update('fatherName', v)} placeholder="(Father's name)" width="w-64" />
             <span>,</span>
           </div>
 
           <div className="flex flex-wrap items-baseline gap-2">
             <span>of legal age, am/are the natural mother and/or father of</span>
-            <FormLine value={form.childName} onChange={v => update('childName', v)} placeholder="Child's Name" width="w-80" />
+            <FormLine value={form.childName} onChange={v => update('childName', v)} placeholder="(Child's name)" width="w-80" />
             <span>, who was</span>
           </div>
 
           <div className="flex flex-wrap items-baseline gap-2">
             <span>born on</span>
-            <FormLine value={form.dob} onChange={v => update('dob', v)} placeholder="Date of Birth" width="w-48" />
+            <FormLine value={form.dob} onChange={v => update('dob', v)} placeholder="(Date of birth)" width="w-48" />
             <span>at</span>
-            <FormLine value={form.pob} onChange={v => update('pob', v)} placeholder="Place of Birth" width="flex-1" />
+            <FormLine value={form.pob} onChange={v => update('pob', v)} placeholder="(Place of birth)" width="flex-1" />
             <span>.</span>
           </div>
 
@@ -138,31 +130,31 @@ export function PaternityAffidavit() {
             <div className="flex items-baseline gap-2">
               <span className="font-bold">SUBSCRIBED AND SWORN</span>
               <span>to before me this</span>
-              <FormLine value={form.swornDay} onChange={v => update('swornDay', v)} width="w-16" />
+              <FormLine value={form.swornDay} onChange={v => update('swornDay', v)} placeholder="(Day)" width="w-16" />
               <span>day of</span>
-              <FormLine value={form.swornMonth} onChange={v => update('swornMonth', v)} width="w-32" />
+              <FormLine value={form.swornMonth} onChange={v => update('swornMonth', v)} placeholder="(Month)" width="w-32" />
               <span>,</span>
-              <FormLine value={form.swornYear} onChange={v => update('swornYear', v)} width="w-20" />
+              <FormLine value={form.swornYear} onChange={v => update('swornYear', v)} placeholder="(Year)" width="w-20" />
               <span>by</span>
             </div>
 
             <div className="flex items-baseline gap-2">
-              <FormLine value={form.swornBy1} onChange={v => update('swornBy1', v)} width="w-64" />
+              <FormLine value={form.swornBy1} onChange={v => update('swornBy1', v)} placeholder="(Name)" width="w-64" />
               <span>and</span>
-              <FormLine value={form.swornBy2} onChange={v => update('swornBy2', v)} width="w-64" />
+              <FormLine value={form.swornBy2} onChange={v => update('swornBy2', v)} placeholder="(Name)" width="w-64" />
               <span>, who exhibited to me (his/her)</span>
             </div>
 
             <div className="flex items-baseline gap-2">
               <span>CTC/Valid ID -</span>
-              <FormLine value={form.ctcNo} onChange={v => update('ctcNo', v)} width="w-48" />
+              <FormLine value={form.ctcNo} onChange={v => update('ctcNo', v)} placeholder="(CTC / Valid ID no.)" width="w-48" />
               <span>issued on</span>
-              <FormLine value={form.issuedOn} onChange={v => update('issuedOn', v)} width="w-48" />
+              <FormLine value={form.issuedOn} onChange={v => update('issuedOn', v)} placeholder="(Date issued)" width="w-48" />
               <span>at</span>
             </div>
 
             <div className="flex items-baseline gap-2">
-              <FormLine value={form.issuedAt} onChange={v => update('issuedAt', v)} width="w-80" />
+              <FormLine value={form.issuedAt} onChange={v => update('issuedAt', v)} placeholder="(Place issued)" width="w-80" />
               <span>.</span>
             </div>
           </div>
@@ -174,17 +166,17 @@ export function PaternityAffidavit() {
                 <p className="text-xs">Signature of the Administering Officer</p>
               </div>
               <div className="text-center">
-                <FormLine value={form.nameInPrint} onChange={v => update('nameInPrint', v)} width="w-full" className="text-center uppercase font-bold" />
+                <FormLine value={form.nameInPrint} onChange={v => update('nameInPrint', v)} placeholder="(Name in print)" width="w-full" className="text-center uppercase font-bold" />
                 <p className="text-xs border-t border-green-600 pt-1">Name in Print</p>
               </div>
             </div>
             <div className="space-y-4">
               <div className="text-center">
-                <FormLine value={form.position} onChange={v => update('position', v)} width="w-full" className="text-center" />
+                <FormLine value={form.position} onChange={v => update('position', v)} placeholder="(Position / Title / Designation)" width="w-full" className="text-center" />
                 <p className="text-xs border-t border-green-600 pt-1">Position / Title / Designation</p>
               </div>
               <div className="text-center">
-                <FormLine value={form.address} onChange={v => update('address', v)} width="w-full" className="text-center" />
+                <FormLine value={form.address} onChange={v => update('address', v)} placeholder="(Address)" width="w-full" className="text-center" />
                 <p className="text-xs border-t border-green-600 pt-1">Address</p>
               </div>
             </div>
