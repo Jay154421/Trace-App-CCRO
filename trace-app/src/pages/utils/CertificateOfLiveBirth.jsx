@@ -185,6 +185,13 @@ function parsePlaceOfBirth(raw) {
   return { name: text, city: '', province: '' };
 }
 
+function formatPlaceOfBirthForApplicant(form) {
+  const parts = [form.placeOfBirthName, form.placeOfBirthCity, form.placeOfBirthProvince]
+    .map((part) => (typeof part === 'string' ? part.trim() : ''))
+    .filter(Boolean);
+  return parts.join(', ');
+}
+
 // Pixel-perfect colors from Certificate of Live Birth (Municipal Form No. 102)
 const COLORS = {
   white: '#FFFFFF',
@@ -434,6 +441,12 @@ export function CertificateOfLiveBirth() {
     setSaving(true);
     try {
       await childrenApi.updateCertificateOfLiveBirth(id, payload);
+      const nextPlaceOfBirth = formatPlaceOfBirthForApplicant(payload);
+      const currentPlaceOfBirth = typeof child?.place_of_birth === 'string' ? child.place_of_birth.trim() : '';
+      if (nextPlaceOfBirth !== currentPlaceOfBirth) {
+        await childrenApi.update(id, { place_of_birth: nextPlaceOfBirth || null });
+        setChild((prev) => (prev ? { ...prev, place_of_birth: nextPlaceOfBirth } : prev));
+      }
       toast.success('Saved');
     } catch (err) {
       toast.error(err?.message || 'Failed to save');
@@ -441,7 +454,7 @@ export function CertificateOfLiveBirth() {
     } finally {
       setSaving(false);
     }
-  }, [id, form]);
+  }, [id, form, child]);
 
   useEffect(() => {
     if (!id || loading) return;
