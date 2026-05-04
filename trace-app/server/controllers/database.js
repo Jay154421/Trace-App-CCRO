@@ -139,8 +139,8 @@ async function importDatabase(req, res) {
             first_name, middle_name, last_name, date_of_birth, place_of_birth, contact_no, age_group,
             registrant_deceased, hilot_deceased, parent_foreigner, out_of_town, certificate_of_live_birth,
             paternity_affidavit, delayed_registration_affidavit,
-            staff_process_status, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            staff_process_status, created_at, updated_at, application_type
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
         ).run(
           normalizedChild.first_name,
           normalizedChild.middle_name,
@@ -158,7 +158,8 @@ async function importDatabase(req, res) {
           normalizedChild.delayed_registration_affidavit,
           normalizedChild.staff_process_status,
           normalizedChild.created_at,
-          normalizedChild.updated_at
+          normalizedChild.updated_at,
+          normalizedChild.application_type
         );
         const newId = Number(inserted.lastInsertRowid);
         importedToCurrentChildId.set(Number(child.id), newId);
@@ -302,6 +303,10 @@ function normalizeImportChildRow(child) {
   const rawStaff = child.staff_process_status;
   const staff_process_status =
     rawStaff === 'under_process' || rawStaff === 'verified' ? rawStaff : null;
+  const rawAppType = String(child.application_type || '').trim().toLowerCase();
+  const application_type = rawAppType === 'colb_brap' ? 'colb_brap' : 'applicant';
+  const age_group =
+    application_type === 'colb_brap' ? null : normalizeOptionalText(child.age_group);
 
   return {
     first_name: firstName,
@@ -310,7 +315,7 @@ function normalizeImportChildRow(child) {
     date_of_birth: dateOfBirth,
     place_of_birth: normalizeOptionalText(child.place_of_birth),
     contact_no: normalizeOptionalText(child.contact_no),
-    age_group: normalizeOptionalText(child.age_group),
+    age_group,
     registrant_deceased: toIntBool(child.registrant_deceased),
     hilot_deceased: toIntBool(child.hilot_deceased),
     parent_foreigner: toIntBool(child.parent_foreigner),
@@ -321,6 +326,7 @@ function normalizeImportChildRow(child) {
     staff_process_status,
     created_at: normalizeOptionalText(child.created_at),
     updated_at: normalizeOptionalText(child.updated_at),
+    application_type,
   };
 }
 

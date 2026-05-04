@@ -1,4 +1,10 @@
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
+import {
+  applicantDocumentsPath,
+  applicantPathAfterId,
+  getApplicantBasePath,
+  getApplicantBasePathForRecord,
+} from '../../utils/applicantRoutes';
 import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { childrenApi } from '../../services/api';
@@ -16,6 +22,8 @@ import { emptyApplicantForm, mapApplicantToForm, buildApplicantPayload, isTruthy
 export function ChildDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const basePath = getApplicantBasePath(location.pathname);
   const [child, setChild] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -33,6 +41,14 @@ export function ChildDetail() {
       .catch(setError)
       .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    if (!child || !id) return;
+    const recordBase = getApplicantBasePathForRecord(child.application_type);
+    if (recordBase !== basePath) {
+      navigate(`${recordBase}/${id}${applicantPathAfterId(location.pathname)}`, { replace: true });
+    }
+  }, [child, id, basePath, location.pathname, navigate]);
 
   const openEditModal = () => {
     if (child) {
@@ -53,7 +69,8 @@ export function ChildDetail() {
         return childrenApi.get(id).then(setChild);
       })
       .then(() => {
-        toast.success('Applicant updated.');
+        const colb = String(child?.application_type || '').toLowerCase() === 'colb_brap';
+        toast.success(colb ? 'COLB Brap record updated.' : 'Applicant updated.');
         setEditModalOpen(false);
       })
       .catch((err) => toast.error(err.message || 'Failed to save.'))
@@ -84,9 +101,10 @@ export function ChildDetail() {
     childrenApi
       .remove(childId)
       .then(() => {
-        toast.success('Applicant removed.');
+        const colb = String(child?.application_type || '').toLowerCase() === 'colb_brap';
+        toast.success(colb ? 'COLB Brap record removed.' : 'Applicant removed.');
         setDeleteModalOpen(false);
-        navigate('/children');
+        navigate(basePath);
       })
       .catch((err) => toast.error(err?.message || 'Could not delete applicant.'))
       .finally(() => setDeleteDeleting(false));
@@ -159,6 +177,7 @@ export function ChildDetail() {
   const hasHilotDeceased = isTruthyFlag(child.hilot_deceased);
   const hasParentForeigner = isTruthyFlag(child.parent_foreigner);
   const hasOutOfTown = isTruthyFlag(child.out_of_town);
+  const isColbBrap = String(child.application_type || '').toLowerCase() === 'colb_brap';
 
   return (
     <div>
@@ -168,31 +187,31 @@ export function ChildDetail() {
         </h1>
         <div className="flex gap-2">
           <Link
-            to={`/children/${id}/certificate-of-live-birth`}
+            to={`${basePath}/${id}/certificate-of-live-birth`}
             className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
           >
             Certificate of Live Birth
           </Link>
           <Link
-            to={`/children/${id}/documents`}
+            to={applicantDocumentsPath(basePath, id)}
             className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
             Document checklist
           </Link>
           <Link
-            to={`/children/${id}/paternity-affidavit`}
+            to={`${basePath}/${id}/paternity-affidavit`}
             className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
             Paternity Affidavit
           </Link>
           <Link
-            to={`/children/${id}/delayed-registration-affidavit`}
+            to={`${basePath}/${id}/delayed-registration-affidavit`}
             className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
             Delayed Birth Affidavit
           </Link>
           <Link
-            to={`/children/${id}/print-certificate`}
+            to={`${basePath}/${id}/print-certificate`}
             className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
             Print certification
@@ -267,12 +286,14 @@ export function ChildDetail() {
             <dt className="text-sm text-slate-500">Contact no.</dt>
             <dd className="font-medium text-slate-800">{child.contact_no || '—'}</dd>
           </div>
+          {!isColbBrap ? (
+            <div>
+              <dt className="text-sm text-slate-500">Age group (requirements)</dt>
+              <dd className="font-medium text-slate-800">{child.age_group?.replace(/_/g, ' ') || '—'}</dd>
+            </div>
+          ) : null}
           <div>
-            <dt className="text-sm text-slate-500">Age group (requirements)</dt>
-            <dd className="font-medium text-slate-800">{child.age_group?.replace(/_/g, ' ') || '—'}</dd>
-          </div>
-          <div>
-            {(hasRegistrantDeceased || hasHilotDeceased || hasParentForeigner || hasOutOfTown) ? (
+            {!isColbBrap && (hasRegistrantDeceased || hasHilotDeceased || hasParentForeigner || hasOutOfTown) ? (
               <div className="sm:col-span-2">
                 <dt className="text-sm text-slate-500 mb-1">Conditional requirements</dt>
                 <dd className="text-sm text-slate-700">
@@ -317,7 +338,7 @@ export function ChildDetail() {
                     />
                   </div>
                   <Link
-                    to={`/children/${id}/documents`}
+                    to={applicantDocumentsPath(basePath, id)}
                     className="inline-block mt-1.5 text-sm text-emerald-600 hover:text-emerald-700 font-medium"
                   >
                     View checklist →
@@ -325,7 +346,7 @@ export function ChildDetail() {
                 </div>
               ) : (
                 <p className="text-slate-600">
-                  — <Link to={`/children/${id}/documents`} className="text-emerald-600 hover:underline">Open document checklist</Link> to get started.
+                  — <Link to={applicantDocumentsPath(basePath, id)} className="text-emerald-600 hover:underline">Open document checklist</Link> to get started.
                 </p>
               )}
             </dd>
@@ -347,13 +368,22 @@ export function ChildDetail() {
           >
             <div className="border-b border-slate-200 px-6 py-4">
               <h2 id="edit-modal-title" className="text-lg font-semibold text-slate-800">
-                Edit applicant
+                {isColbBrap ? 'Edit COLB Brap' : 'Edit applicant'}
               </h2>
-              <p className="mt-1 text-sm text-slate-500">Update applicant details and adjust conditional requirements as needed.</p>
+              <p className="mt-1 text-sm text-slate-500">
+                {isColbBrap
+                  ? 'Update profile details for this COLB Brap record.'
+                  : 'Update applicant details and adjust conditional requirements as needed.'}
+              </p>
             </div>
             <form onSubmit={submitEdit} className="flex flex-col flex-1 min-h-0">
               <div className="space-y-6 overflow-y-auto p-6">
-                <ApplicantFormFields form={editForm} onFieldChange={updateEditForm} hideCoreIdentityFields />
+                <ApplicantFormFields
+                  form={editForm}
+                  onFieldChange={updateEditForm}
+                  hideCoreIdentityFields
+                  hideConditionalRequirements={isColbBrap}
+                />
               </div>
               <div className="flex flex-col-reverse gap-3 border-t border-slate-200 bg-white px-6 py-4 sm:flex-row sm:justify-end">
                 <button
@@ -368,7 +398,7 @@ export function ChildDetail() {
                   disabled={editSaving}
                   className="w-full rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 disabled:opacity-50 sm:w-auto"
                 >
-                  {editSaving ? 'Saving…' : 'Update applicant'}
+                  {editSaving ? 'Saving…' : isColbBrap ? 'Update COLB Brap' : 'Update applicant'}
                 </button>
               </div>
             </form>
@@ -389,10 +419,10 @@ export function ChildDetail() {
             onClick={(e) => e.stopPropagation()}
           >
             <h2 id="delete-modal-title" className="text-lg font-semibold text-slate-800">
-              Delete applicant
+              {isColbBrap ? 'Delete COLB Brap record' : 'Delete applicant'}
             </h2>
             <p className="mt-2 text-sm text-slate-600">
-              Delete this applicant? This cannot be undone.
+              {isColbBrap ? 'Delete this COLB Brap record? This cannot be undone.' : 'Delete this applicant? This cannot be undone.'}
             </p>
             <div className="flex gap-3 mt-5">
               <button

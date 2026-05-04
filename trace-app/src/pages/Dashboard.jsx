@@ -19,9 +19,11 @@ import { childrenApi } from '../services/api';
 import { exportDatabaseFile, fetchDatabaseInfo, importDatabaseFile } from '../services/databaseApi';
 import { AddApplicantModal } from '../components/AddApplicantModal';
 import { getApplicantStatusDisplay } from '../utils/applicantStatus';
+import { applicantDetailPath, getApplicantBasePathForRecord } from '../utils/applicantRoutes';
 
 function formatAgeGroupLabel(value) {
   if (!value || value === 'unknown') return 'Unknown';
+  if (value === 'colb_brap') return 'COLB Brap';
   return String(value).replace(/_/g, ' ');
 }
 
@@ -58,7 +60,8 @@ export function Dashboard() {
   const applicantsByAgeGroup = useMemo(() => {
     const counts = new Map();
     for (const child of list) {
-      const key = child.age_group || 'unknown';
+      const key =
+        String(child.application_type || '').toLowerCase() === 'colb_brap' ? 'colb_brap' : child.age_group || 'unknown';
       counts.set(key, (counts.get(key) || 0) + 1);
     }
     return [...counts.entries()]
@@ -362,12 +365,18 @@ export function Dashboard() {
             <ul className="divide-y divide-slate-200">
               {recentApplicants.map((c) => (
                 <li key={c.id}>
-                  <Link to={`/children/${c.id}`} className="block px-5 py-3 transition hover:bg-slate-50 focus:bg-slate-50">
+                  <Link
+                    to={applicantDetailPath(getApplicantBasePathForRecord(c.application_type), c.id)}
+                    className="block px-5 py-3 transition hover:bg-slate-50 focus:bg-slate-50"
+                  >
                     <span className="font-medium text-slate-800">
                       {c.last_name}, {c.first_name}
                     </span>
                     <span className="ml-2 text-sm text-slate-500">
-                      Age {c.age} · {c.age_group?.replace(/_/g, ' ') || '—'}
+                      Age {c.age} ·{' '}
+                      {String(c.application_type || '').toLowerCase() === 'colb_brap'
+                        ? 'COLB Brap'
+                        : c.age_group?.replace(/_/g, ' ') || '—'}
                     </span>
                   </Link>
                 </li>

@@ -1,4 +1,5 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
+import { applicantDetailPath, getApplicantBasePath } from '../../utils/applicantRoutes';
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { childrenApi } from '../../services/api';
@@ -34,6 +35,8 @@ function Checkbox({ checked, onChange, label }) {
 
 export function DelayedRegistrationAffidavit() {
   const { id } = useParams();
+  const location = useLocation();
+  const basePath = getApplicantBasePath(location.pathname);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({
     affiantName: '',
@@ -100,7 +103,7 @@ export function DelayedRegistrationAffidavit() {
   return (
     <div className="mx-auto max-w-4xl p-4 sm:p-8 bg-slate-50 min-h-screen">
       <div className="mb-6 flex items-center justify-between print:hidden">
-        <Link to={`/children/${id}`} className="text-sm font-medium text-emerald-600">
+        <Link to={applicantDetailPath(basePath, id)} className="text-sm font-medium text-emerald-600">
           ← Back to Applicant
         </Link>
       </div>

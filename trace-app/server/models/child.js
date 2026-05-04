@@ -1,5 +1,17 @@
 const { getDb } = require('../db');
 
+const APPLICATION_APPLICANT = 'applicant';
+const APPLICATION_COLB_BRAP = 'colb_brap';
+
+function normalizeApplicationType(value) {
+  const v = String(value || '').trim().toLowerCase();
+  return v === APPLICATION_COLB_BRAP ? APPLICATION_COLB_BRAP : APPLICATION_APPLICANT;
+}
+
+function isColbBrapRow(row) {
+  return normalizeApplicationType(row?.application_type) === APPLICATION_COLB_BRAP;
+}
+
 function getAgeGroup(ageYears) {
   if (ageYears <= 6) return '1m1d_to_6';
   if (ageYears <= 17) return '7_to_17';
@@ -28,10 +40,14 @@ function all() {
   );
   return rows.map((r) => {
     const progress = progressByChild[r.id] || { checklist_total: 0, checklist_checked: 0 };
+    const application_type = normalizeApplicationType(r.application_type);
+    const age = calculateAge(r.date_of_birth);
+    const age_group = isColbBrapRow({ application_type }) ? null : (r.age_group || getAgeGroup(age));
     return {
       ...r,
-      age: calculateAge(r.date_of_birth),
-      age_group: r.age_group || getAgeGroup(calculateAge(r.date_of_birth)),
+      application_type,
+      age,
+      age_group,
       checklist_total: progress.checklist_total,
       checklist_checked: progress.checklist_checked,
     };
@@ -67,13 +83,17 @@ function findById(id) {
       delayed_registration_affidavit = {};
     }
   }
+  const application_type = normalizeApplicationType(row.application_type);
+  const age = calculateAge(row.date_of_birth);
+  const age_group = isColbBrapRow({ application_type }) ? null : (row.age_group || getAgeGroup(age));
   return {
     ...row,
+    application_type,
     certificate_of_live_birth,
     paternity_affidavit,
     delayed_registration_affidavit,
-    age: calculateAge(row.date_of_birth),
-    age_group: row.age_group || getAgeGroup(calculateAge(row.date_of_birth)),
+    age,
+    age_group,
   };
 }
 
@@ -140,12 +160,14 @@ function updateStaffProcessStatus(id, status) {
 }
 
 function create(data) {
+  const rawType = data?.application_type ?? data?.applicationType;
+  const application_type = normalizeApplicationType(rawType);
   const age = calculateAge(data.date_of_birth);
-  const age_group = getAgeGroup(age);
+  const age_group = application_type === APPLICATION_COLB_BRAP ? null : getAgeGroup(age);
   const db = getDb();
   const stmt = db.prepare(`
-    INSERT INTO children (first_name, middle_name, last_name, date_of_birth, place_of_birth, contact_no, age_group, registrant_deceased, hilot_deceased, parent_foreigner, out_of_town)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO children (first_name, middle_name, last_name, date_of_birth, place_of_birth, contact_no, age_group, registrant_deceased, hilot_deceased, parent_foreigner, out_of_town, application_type)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const result = stmt.run(
     data.first_name,
@@ -158,18 +180,28 @@ function create(data) {
     data.registrant_deceased ? 1 : 0,
     data.hilot_deceased ? 1 : 0,
     data.parent_foreigner ? 1 : 0,
-    data.out_of_town ? 1 : 0
+    data.out_of_town ? 1 : 0,
+    application_type
   );
   db.close();
   return result.lastInsertRowid;
 }
 
 function update(id, data) {
-  const age = data.date_of_birth ? calculateAge(data.date_of_birth) : null;
-  const age_group = age != null ? getAgeGroup(age) : null;
   const db = getDb();
   const existing = db.prepare('SELECT * FROM children WHERE id = ?').get(id);
   if (!existing) { db.close(); return false; }
+  const existingType = normalizeApplicationType(existing.application_type);
+  const age = data.date_of_birth ? calculateAge(data.date_of_birth) : null;
+  let age_group;
+  if (existingType === APPLICATION_COLB_BRAP) {
+    age_group = null;
+  } else if (age != null) {
+    age_group = getAgeGroup(age);
+  } else {
+    age_group =
+      existing.age_group || getAgeGroup(calculateAge(data.date_of_birth ?? existing.date_of_birth));
+  }
   const registrantDeceased = data.registrant_deceased !== undefined ? (data.registrant_deceased ? 1 : 0) : (existing.registrant_deceased ? 1 : 0);
   const hilotDeceased = data.hilot_deceased !== undefined ? (data.hilot_deceased ? 1 : 0) : (existing.hilot_deceased ? 1 : 0);
   const parentForeigner = data.parent_foreigner !== undefined ? (data.parent_foreigner ? 1 : 0) : (existing.parent_foreigner ? 1 : 0);
@@ -178,7 +210,7 @@ function update(id, data) {
     UPDATE children SET
       first_name = ?, middle_name = ?, last_name = ?,
       date_of_birth = ?, place_of_birth = ?, contact_no = ?,
-      age_group = COALESCE(?, age_group),
+      age_group = ?,
       registrant_deceased = ?, hilot_deceased = ?, parent_foreigner = ?, out_of_town = ?,
       updated_at = datetime('now')
     WHERE id = ?
@@ -235,6 +267,9 @@ module.exports = {
   bulkRemove,
   getAgeGroup,
   calculateAge,
+  normalizeApplicationType,
+  APPLICATION_APPLICANT,
+  APPLICATION_COLB_BRAP,
   updateCertificateOfLiveBirth,
   updatePaternityAffidavit,
   updateDelayedRegistrationAffidavit,

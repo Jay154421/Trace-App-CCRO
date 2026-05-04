@@ -2,7 +2,12 @@ const inputClassName = 'mt-1 block w-full rounded-xl border border-slate-300 bg-
 const checkboxClassName = 'mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500';
 const checkboxWrapperClassName = 'flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 transition hover:border-emerald-200 hover:bg-emerald-50/50';
 
-export function ApplicantFormFields({ form, onFieldChange, hideCoreIdentityFields = false }) {
+export function ApplicantFormFields({
+  form,
+  onFieldChange,
+  hideCoreIdentityFields = false,
+  hideConditionalRequirements = false,
+}) {
   return (
     <>
       <div className="space-y-4">
@@ -90,39 +95,41 @@ export function ApplicantFormFields({ form, onFieldChange, hideCoreIdentityField
         </label>
       ) : null}
 
-      <fieldset className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
-        <legend className="px-1 text-sm font-semibold text-slate-700">Conditional document requirements</legend>
-        <p className="mb-4 mt-2 text-sm text-slate-500">Choose all that apply and required supporting documents will be added to the checklist.</p>
-        <div className="space-y-2">
-          <label className={checkboxWrapperClassName}>
-            <input
-              type="checkbox"
-              checked={form.out_of_town}
-              onChange={(e) => onFieldChange('out_of_town', e.target.checked)}
-              className={checkboxClassName}
-            />
-            <span className="text-sm text-slate-700">Out of Town</span>
-          </label>
-          <label className={checkboxWrapperClassName}>
-            <input
-              type="checkbox"
-              checked={form.registrant_deceased}
-              onChange={(e) => onFieldChange('registrant_deceased', e.target.checked)}
-              className={checkboxClassName}
-            />
-            <span className="text-sm text-slate-700">Registrant is deceased (attach death certificate)</span>
-          </label>
-          <label className={checkboxWrapperClassName}>
-            <input
-              type="checkbox"
-              checked={form.parent_foreigner}
-              onChange={(e) => onFieldChange('parent_foreigner', e.target.checked)}
-              className={checkboxClassName}
-            />
-            <span className="text-sm text-slate-700">One parent is foreigner (attach passport or Bureau of Immigration cert.)</span>
-          </label>
-        </div>
-      </fieldset>
+      {!hideConditionalRequirements ? (
+        <fieldset className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
+          <legend className="px-1 text-sm font-semibold text-slate-700">Conditional document requirements</legend>
+          <p className="mb-4 mt-2 text-sm text-slate-500">Choose all that apply and required supporting documents will be added to the checklist.</p>
+          <div className="space-y-2">
+            <label className={checkboxWrapperClassName}>
+              <input
+                type="checkbox"
+                checked={form.out_of_town}
+                onChange={(e) => onFieldChange('out_of_town', e.target.checked)}
+                className={checkboxClassName}
+              />
+              <span className="text-sm text-slate-700">Out of Town</span>
+            </label>
+            <label className={checkboxWrapperClassName}>
+              <input
+                type="checkbox"
+                checked={form.registrant_deceased}
+                onChange={(e) => onFieldChange('registrant_deceased', e.target.checked)}
+                className={checkboxClassName}
+              />
+              <span className="text-sm text-slate-700">Registrant is deceased (attach death certificate)</span>
+            </label>
+            <label className={checkboxWrapperClassName}>
+              <input
+                type="checkbox"
+                checked={form.parent_foreigner}
+                onChange={(e) => onFieldChange('parent_foreigner', e.target.checked)}
+                className={checkboxClassName}
+              />
+              <span className="text-sm text-slate-700">One parent is foreigner (attach passport or Bureau of Immigration cert.)</span>
+            </label>
+          </div>
+        </fieldset>
+      ) : null}
     </>
   );
 }

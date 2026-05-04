@@ -16,8 +16,15 @@ const emptyForm = {
   out_of_town: false,
 };
 
-export function AddApplicantModal({ open, onClose, onAdded }) {
+export function AddApplicantModal({
+  open,
+  onClose,
+  onAdded,
+  applicationType = 'applicant',
+  basePath = '/children',
+}) {
   const navigate = useNavigate();
+  const isColbBrap = applicationType === 'colb_brap';
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(false);
 
@@ -37,18 +44,19 @@ export function AddApplicantModal({ open, onClose, onAdded }) {
       date_of_birth: form.date_of_birth,
       place_of_birth: form.place_of_birth.trim() || undefined,
       contact_no: form.contact_no.trim() || undefined,
-      registrant_deceased: form.registrant_deceased,
-      hilot_deceased: form.hilot_deceased,
-      parent_foreigner: form.parent_foreigner,
-      out_of_town: form.out_of_town,
+      registrant_deceased: isColbBrap ? false : form.registrant_deceased,
+      hilot_deceased: isColbBrap ? false : form.hilot_deceased,
+      parent_foreigner: isColbBrap ? false : form.parent_foreigner,
+      out_of_town: isColbBrap ? false : form.out_of_town,
+      application_type: isColbBrap ? 'colb_brap' : 'applicant',
     };
     childrenApi
       .create(payload)
       .then((res) => {
-        toast.success('Applicant added.');
+        toast.success(isColbBrap ? 'COLB Brap record added.' : 'Applicant added.');
         onAdded?.();
         onClose();
-        navigate(`/children/${res.id}`);
+        navigate(`${basePath}/${res.id}`);
       })
       .catch((err) => {
         toast.error(err.message || 'Failed to save.');
@@ -76,9 +84,13 @@ export function AddApplicantModal({ open, onClose, onAdded }) {
       >
         <div className="border-b border-slate-200 px-6 py-4">
           <h2 id="add-applicant-modal-title" className="text-xl font-semibold text-slate-800">
-            Add applicant
+            {isColbBrap ? 'Add COLB Brap' : 'Add applicant'}
           </h2>
-          <p className="mt-1 text-sm text-slate-500">Fill out the applicant profile and apply any conditional requirements.</p>
+          <p className="mt-1 text-sm text-slate-500">
+            {isColbBrap
+              ? 'Fill out the profile for this COLB Brap record.'
+              : 'Fill out the applicant profile and apply any conditional requirements.'}
+          </p>
         </div>
 
           <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
@@ -157,39 +169,41 @@ export function AddApplicantModal({ open, onClose, onAdded }) {
               />
             </label>
 
-            <fieldset className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
-              <legend className="px-1 text-sm font-semibold text-slate-700">Conditional document requirements</legend>
-              <p className="mb-4 mt-2 text-sm text-slate-500">Choose all that apply and required supporting documents will be added to the checklist.</p>
-              <div className="space-y-2">
-              <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 transition hover:border-emerald-200 hover:bg-emerald-50/50">
-                  <input
-                    type="checkbox"
-                    checked={form.out_of_town}
-                    onChange={(e) => update('out_of_town', e.target.checked)}
-                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                  />
-                  <span className="text-sm text-slate-700">Out of Town</span>
-                </label>
-                <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 transition hover:border-emerald-200 hover:bg-emerald-50/50">
-                  <input
-                    type="checkbox"
-                    checked={form.registrant_deceased}
-                    onChange={(e) => update('registrant_deceased', e.target.checked)}
-                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                  />
-                  <span className="text-sm text-slate-700">Registrant is deceased (attach death certificate)</span>
-                </label>
-                <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 transition hover:border-emerald-200 hover:bg-emerald-50/50">
-                  <input
-                    type="checkbox"
-                    checked={form.parent_foreigner}
-                    onChange={(e) => update('parent_foreigner', e.target.checked)}
-                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                  />
-                  <span className="text-sm text-slate-700">One parent is foreigner (attach passport or Bureau of Immigration cert.)</span>
-                </label>
-              </div>
-            </fieldset>
+            {!isColbBrap ? (
+              <fieldset className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
+                <legend className="px-1 text-sm font-semibold text-slate-700">Conditional document requirements</legend>
+                <p className="mb-4 mt-2 text-sm text-slate-500">Choose all that apply and required supporting documents will be added to the checklist.</p>
+                <div className="space-y-2">
+                  <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 transition hover:border-emerald-200 hover:bg-emerald-50/50">
+                    <input
+                      type="checkbox"
+                      checked={form.out_of_town}
+                      onChange={(e) => update('out_of_town', e.target.checked)}
+                      className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <span className="text-sm text-slate-700">Out of Town</span>
+                  </label>
+                  <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 transition hover:border-emerald-200 hover:bg-emerald-50/50">
+                    <input
+                      type="checkbox"
+                      checked={form.registrant_deceased}
+                      onChange={(e) => update('registrant_deceased', e.target.checked)}
+                      className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <span className="text-sm text-slate-700">Registrant is deceased (attach death certificate)</span>
+                  </label>
+                  <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 transition hover:border-emerald-200 hover:bg-emerald-50/50">
+                    <input
+                      type="checkbox"
+                      checked={form.parent_foreigner}
+                      onChange={(e) => update('parent_foreigner', e.target.checked)}
+                      className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <span className="text-sm text-slate-700">One parent is foreigner (attach passport or Bureau of Immigration cert.)</span>
+                  </label>
+                </div>
+              </fieldset>
+            ) : null}
             </div>
 
             <div className="flex flex-col-reverse gap-3 border-t border-slate-200 bg-white px-6 py-4 sm:flex-row sm:justify-end">
@@ -205,7 +219,7 @@ export function AddApplicantModal({ open, onClose, onAdded }) {
                 disabled={loading}
                 className="w-full rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 disabled:opacity-50 sm:w-auto"
               >
-                {loading ? 'Saving…' : 'Add applicant'}
+                {loading ? 'Saving…' : isColbBrap ? 'Add COLB Brap' : 'Add applicant'}
               </button>
             </div>
           </form>

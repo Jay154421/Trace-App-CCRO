@@ -1,4 +1,5 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
+import { applicantDetailPath, getApplicantBasePath } from '../../utils/applicantRoutes';
 import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { jsPDF } from 'jspdf';
@@ -995,6 +996,8 @@ function PositionedValue({ fieldKey, value, fontLenSource }) {
 
 export function FieldPositionBack() {
     const { id } = useParams();
+    const location = useLocation();
+    const basePath = getApplicantBasePath(location.pathname);
     const [child, setChild] = useState(null);
     const [cert, setCert] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -1107,7 +1110,7 @@ export function FieldPositionBack() {
             )}
 
             <div className="mb-4 flex items-center justify-between print-hide">
-                <Link to={`/children/${id}`} className="text-sm text-slate-500 hover:text-slate-700">
+                <Link to={applicantDetailPath(basePath, id)} className="text-sm text-slate-500 hover:text-slate-700">
                     ← Back to applicant
                 </Link>
                 <div className="flex items-center gap-2">

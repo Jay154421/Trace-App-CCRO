@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { getApplicantBasePath } from '../../utils/applicantRoutes';
 import toast from 'react-hot-toast';
 import { childrenApi } from '../../services/api';
 import { ApplicantFormFields } from '../../components/applicant/ApplicantFormFields';
@@ -8,7 +9,10 @@ import { emptyApplicantForm, mapApplicantToForm, buildApplicantPayload } from '.
 export function ChildForm() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const isEdit = Boolean(id);
+  const location = useLocation();
+  const basePath = getApplicantBasePath(location.pathname);
+  const isColbBrapSection = basePath === '/colb-brap';
+  const isEdit = Boolean(id) && /^\d+$/.test(String(id));
   const [form, setForm] = useState(emptyApplicantForm);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(null);
@@ -27,14 +31,24 @@ export function ChildForm() {
     e.preventDefault();
     setLoading(true);
     const payload = buildApplicantPayload(form);
+    if (!isEdit) {
+      payload.application_type = isColbBrapSection ? 'colb_brap' : 'applicant';
+    }
     (isEdit ? childrenApi.update(id, payload) : childrenApi.create(payload))
       .then((res) => {
-        toast.success(isEdit ? 'Applicant updated.' : 'Applicant added.');
-        // Ensure accurate routing and redirection (replace) to ChildDetail
+        toast.success(
+          isEdit
+            ? isColbBrapSection
+              ? 'COLB Brap record updated.'
+              : 'Applicant updated.'
+            : isColbBrapSection
+              ? 'COLB Brap record added.'
+              : 'Applicant added.'
+        );
         if (isEdit) {
-          navigate(`/children/${id}`, { replace: true });
+          navigate(`${basePath}/${id}`, { replace: true });
         } else {
-          navigate(`/children/${res.id}`, { replace: true });
+          navigate(`${basePath}/${res.id}`, { replace: true });
         }
       })
       .catch((err) => {
@@ -54,11 +68,22 @@ export function ChildForm() {
   return (
     <div>
       <h1 className="text-2xl font-semibold text-slate-800 mb-6">
-        {isEdit ? 'Edit applicant' : 'Add applicant'}
+        {isEdit
+          ? isColbBrapSection
+            ? 'Edit COLB Brap'
+            : 'Edit applicant'
+          : isColbBrapSection
+            ? 'Add COLB Brap'
+            : 'Add applicant'}
       </h1>
 
       <form onSubmit={submit} className="max-w-3xl space-y-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <ApplicantFormFields form={form} onFieldChange={update} hideCoreIdentityFields={isEdit} />
+        <ApplicantFormFields
+          form={form}
+          onFieldChange={update}
+          hideCoreIdentityFields={isEdit}
+          hideConditionalRequirements={isColbBrapSection}
+        />
 
         <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
           <button
@@ -73,7 +98,15 @@ export function ChildForm() {
             disabled={loading}
             className="w-full rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 disabled:opacity-50 sm:w-auto"
           >
-            {loading ? 'Saving…' : isEdit ? 'Update applicant' : 'Add applicant'}
+            {loading
+              ? 'Saving…'
+              : isEdit
+                ? isColbBrapSection
+                  ? 'Update COLB Brap'
+                  : 'Update applicant'
+                : isColbBrapSection
+                  ? 'Add COLB Brap'
+                  : 'Add applicant'}
           </button>
         </div>
       </form>

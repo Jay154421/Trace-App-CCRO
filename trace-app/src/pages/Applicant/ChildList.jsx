@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import { applicantDetailPath, getApplicantBasePath } from '../../utils/applicantRoutes';
 import { useQuery } from '../../hooks/useQuery';
 import { childrenApi } from '../../services/api';
 import { AddApplicantModal } from '../../components/AddApplicantModal';
@@ -66,6 +67,10 @@ const STATUS_FILTERS = [
 ];
 
 export function ChildList() {
+  const location = useLocation();
+  const basePath = getApplicantBasePath(location.pathname);
+  const listApplicationType = basePath === '/colb-brap' ? 'colb_brap' : 'applicant';
+  const isColbBrapList = listApplicationType === 'colb_brap';
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [listKey, setListKey] = useState(0);
@@ -83,7 +88,9 @@ export function ChildList() {
   const { data, loading, error } = useQuery(childrenApi.list, [listKey]);
   const list = data ?? [];
 
-  const filteredList = list.filter((c) => {
+  const listForSection = list.filter((c) => (c.application_type || 'applicant') === listApplicationType);
+
+  const filteredList = listForSection.filter((c) => {
     if (!matchApplicant(c, searchQuery)) return false;
     if (statusFilter === 'all') return true;
     const { key } = getApplicantStatusDisplay({
@@ -166,7 +173,7 @@ export function ChildList() {
     try {
       await childrenApi.bulkRemove([...selectedIds]);
       toast.success(
-        `${selectedIds.size} applicant${selectedIds.size > 1 ? 's' : ''} deleted.`
+        `${selectedIds.size} ${isColbBrapList ? 'COLB Brap record' : 'applicant'}${selectedIds.size > 1 ? 's' : ''} deleted.`
       );
       setDeleteConfirmOpen(false);
       setListKey((k) => k + 1);
@@ -182,7 +189,7 @@ export function ChildList() {
     <div>
       {/* ── Header ── */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <h1 className="text-2xl font-semibold text-slate-800">Applicants</h1>
+        <h1 className="text-2xl font-semibold text-slate-800">{isColbBrapList ? 'COLB Brap' : 'Applicants'}</h1>
         <div className="flex items-center gap-2">
           {/* Bulk-delete toolbar */}
           {selectMode ? (
@@ -208,7 +215,7 @@ export function ChildList() {
             </>
           ) : (
             <>
-              {list.length > 0 && (
+              {listForSection.length > 0 && (
                 <button
                   type="button"
                   onClick={() => setSelectMode(true)}
@@ -222,7 +229,7 @@ export function ChildList() {
                 onClick={() => setModalOpen(true)}
                 className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
               >
-                Add applicant
+                {isColbBrapList ? 'Add COLB Brap' : 'Add applicant'}
               </button>
             </>
           )}
@@ -230,7 +237,7 @@ export function ChildList() {
       </div>
 
       {/* ── Search + Status filter bar ── */}
-      {(list.length > 0 || searchQuery) && (
+      {(listForSection.length > 0 || searchQuery) && (
         <div className="mb-4 flex flex-wrap items-center gap-3 animate-in fade-in duration-500">
           <div className="relative w-full max-w-xs">
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
@@ -244,7 +251,7 @@ export function ChildList() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full rounded-lg border border-slate-300 bg-white py-2 pl-10 pr-3 text-sm text-slate-800 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-shadow hover:shadow-sm"
-              aria-label="Search applicants"
+              aria-label={isColbBrapList ? 'Search COLB Brap records' : 'Search applicants'}
               autoComplete="off"
             />
           </div>
@@ -275,9 +282,12 @@ export function ChildList() {
       )}
 
       <AddApplicantModal
+        key={basePath}
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onAdded={() => setListKey((k) => k + 1)}
+        applicationType={listApplicationType}
+        basePath={basePath}
       />
 
       {deleteConfirmOpen && (
@@ -295,7 +305,8 @@ export function ChildList() {
             onClick={(e) => e.stopPropagation()}
           >
             <h2 id="delete-applicants-modal-title" className="text-lg font-semibold text-slate-800">
-              Delete {selectedIds.size} applicant{selectedIds.size > 1 ? 's' : ''}?
+              Delete {selectedIds.size}{' '}
+              {isColbBrapList ? `COLB Brap record${selectedIds.size > 1 ? 's' : ''}` : `applicant${selectedIds.size > 1 ? 's' : ''}`}?
             </h2>
             <p className="mt-2 text-sm text-slate-600">
               This action cannot be undone.
@@ -330,20 +341,20 @@ export function ChildList() {
 
       {loading ? (
         <p className="text-slate-500">Loading…</p>
-      ) : list.length === 0 ? (
+      ) : listForSection.length === 0 ? (
         <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-slate-600">
-          <p>No applicants yet.</p>
+          <p>{isColbBrapList ? 'No COLB Brap records yet.' : 'No applicants yet.'}</p>
           <button
             type="button"
             onClick={() => setModalOpen(true)}
             className="mt-2 inline-block text-emerald-600 hover:text-emerald-700 font-medium"
           >
-            Add your first applicant
+            {isColbBrapList ? 'Add your first COLB Brap record' : 'Add your first applicant'}
           </button>
         </div>
       ) : filteredList.length === 0 ? (
         <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-slate-600">
-          <p>No applicants match your filters.</p>
+          <p>{isColbBrapList ? 'No COLB Brap records match your filters.' : 'No applicants match your filters.'}</p>
           <button
             type="button"
             onClick={() => { setSearchQuery(''); setStatusFilter('all'); }}
@@ -399,7 +410,7 @@ export function ChildList() {
 
                   {/* Card */}
                   <Link
-                    to={`/children/${c.id}`}
+                    to={applicantDetailPath(basePath, c.id)}
                     onClick={(e) => {
                       // In select mode, clicking the card toggles selection instead
                       if (selectMode) {

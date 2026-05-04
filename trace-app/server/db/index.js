@@ -102,6 +102,16 @@ async function init() {
   } catch (e) {
     if (!/duplicate column name/i.test(e.message)) throw e;
   }
+  try {
+    db.exec(`ALTER TABLE children ADD COLUMN application_type TEXT DEFAULT 'applicant'`);
+  } catch (e) {
+    if (!/duplicate column name/i.test(e.message)) throw e;
+  }
+  try {
+    db.exec(`UPDATE children SET application_type = 'applicant' WHERE application_type IS NULL OR application_type = ''`);
+  } catch (e) {
+    /* ignore if column missing in very old state */
+  }
   ensureDataDir();
   const attachmentsDir = path.join(path.dirname(dbPath), 'attachments');
   if (!fs.existsSync(attachmentsDir)) fs.mkdirSync(attachmentsDir, { recursive: true });

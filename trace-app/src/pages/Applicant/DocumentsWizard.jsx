@@ -1,4 +1,10 @@
-import { useParams, Link, useNavigate, useBlocker } from 'react-router-dom';
+import { useParams, Link, useNavigate, useBlocker, useLocation } from 'react-router-dom';
+import {
+  applicantDetailPath,
+  applicantPathAfterId,
+  getApplicantBasePath,
+  getApplicantBasePathForRecord,
+} from '../../utils/applicantRoutes';
 import { useState, useEffect, useRef, useLayoutEffect, useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import { childrenApi } from '../../services/api';
@@ -144,7 +150,8 @@ function buildChecklist(requirements, existing = [], child = null) {
       requirement?.label === item.label && requirement?.category === item.category
     ));
   });
-  const shouldRequireOutOfTownAffidavit = normalizedOutOfTown && !hasOutOfTownAffidavit;
+  const isColbBrap = String(child?.application_type || '').toLowerCase() === 'colb_brap';
+  const shouldRequireOutOfTownAffidavit = !isColbBrap && normalizedOutOfTown && !hasOutOfTownAffidavit;
   const requirementsList = shouldRequireOutOfTownAffidavit
     ? [...filteredRequirements, OUT_OF_TOWN_AFFIDAVIT_REQUIREMENT]
     : filteredRequirements;
@@ -355,6 +362,8 @@ function cropRectFromResize(mode, mx, my, rect, iw, ih) {
 export function DocumentsWizard() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const basePath = getApplicantBasePath(location.pathname);
   const [child, setChild] = useState(null);
   const [checklist, setChecklist] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -410,6 +419,14 @@ export function DocumentsWizard() {
   }, [id]);
 
   useEffect(() => {
+    if (!child || !id) return;
+    const recordBase = getApplicantBasePathForRecord(child.application_type);
+    if (recordBase !== basePath) {
+      navigate(`${recordBase}/${id}${applicantPathAfterId(location.pathname)}`, { replace: true });
+    }
+  }, [child, id, basePath, location.pathname, navigate]);
+
+  useEffect(() => {
     const updateOrientation = () => setDeviceOrientation(getCurrentDeviceOrientation());
     updateOrientation();
     window.addEventListener('orientationchange', updateOrientation);
@@ -441,7 +458,7 @@ export function DocumentsWizard() {
   );
 
   const handleBackClick = () => {
-    navigate(`/children/${id}`);
+    navigate(applicantDetailPath(basePath, id));
   };
 
   const handleStaffProcessStatus = async (status) => {
@@ -1049,6 +1066,7 @@ export function DocumentsWizard() {
   const activeCaptureSize = getNormalizedCaptureSize(cameraTargetItem);
   const activeCaptureAspect = String(cameraTargetAspect || 1);
   const isPhotoCameraTarget = cameraTargetItem?.id === PHOTO_ID_REQUIREMENT_ID;
+  const isColbBrapChild = String(child.application_type || '').toLowerCase() === 'colb_brap';
 
   return (
     <div>
@@ -1059,15 +1077,21 @@ export function DocumentsWizard() {
             onClick={handleBackClick}
             className="text-sm text-slate-500 hover:text-slate-700"
           >
-            ← Back to applicant
+            {isColbBrapChild ? '← Back to COLB Brap' : '← Back to applicant'}
           </button>
-          <Link to={`/children/${id}/certificate-of-live-birth`} className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">Certificate of Live Birth</Link>
+          <Link to={`${basePath}/${id}/certificate-of-live-birth`} className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">Certificate of Live Birth</Link>
         </div>
         <h1 className="text-2xl font-semibold text-slate-800 mt-2">
           Document checklist: {child.first_name} {child.last_name}
         </h1>
         <p className="text-slate-600 mt-1">
-          Age group: {child.age_group?.replace(/_/g, ' ')} · {Math.round(progress * 100)}% complete
+          {isColbBrapChild ? (
+            <>{Math.round(progress * 100)}% complete</>
+          ) : (
+            <>
+              Age group: {child.age_group?.replace(/_/g, ' ')} · {Math.round(progress * 100)}% complete
+            </>
+          )}
         </p>
       </div>
 

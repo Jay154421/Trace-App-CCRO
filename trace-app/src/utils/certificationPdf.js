@@ -248,14 +248,37 @@ function splitTokenToFitWidth(doc, text, bold, maxWidth) {
 }
 
 const CM_TO_INCH = 1 / 2.54;
+const MM_TO_INCH = 1 / 25.4;
+
+/** @typedef {'a4' | 'long'} CertificationPdfPageFormat */
+
+export const CERTIFICATION_PDF_PAGE_FORMAT = {
+  LONG: 'long',
+  A4: 'a4',
+};
 
 /**
- * Portrait long-sized PDF (8.5 x 13 in) matching the scanned certification format.
+ * @param {CertificationPdfPageFormat | string | undefined} format
+ * @returns {[number, number]} width and height in inches
  */
-export async function buildCertificationLetterPdfBase64(child, cert) {
+export function getCertificationPdfPageSizeInches(format) {
+  if (format === CERTIFICATION_PDF_PAGE_FORMAT.A4) {
+    return [210 * MM_TO_INCH, 297 * MM_TO_INCH];
+  }
+  return [8.5, 13];
+}
+
+/**
+ * Portrait certification letter PDF (Long 8.5×13 in or A4).
+ * @param {unknown} child
+ * @param {unknown} cert
+ * @param {{ format?: CertificationPdfPageFormat | string }} [options]
+ */
+export async function buildCertificationLetterPdfBase64(child, cert, options = {}) {
   const payload = buildDelayedCertificationPayload(child, cert);
   const { leftSeal, rightSeal } = await loadCertificateHeaderImages();
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'in', format: [8.5, 13] });
+  const pageSizeIn = getCertificationPdfPageSizeInches(options.format);
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'in', format: pageSizeIn });
   doc.setTextColor(0, 0, 0);
 
   // Match the same visual proportions used by the on-screen preview layout.

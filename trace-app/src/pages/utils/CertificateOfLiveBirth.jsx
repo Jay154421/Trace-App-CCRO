@@ -1,4 +1,5 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
+import { applicantDetailPath, getApplicantBasePath } from '../../utils/applicantRoutes';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import html2canvas from 'html2canvas';
@@ -577,6 +578,8 @@ function SectionPanel({ title, children }) {
 
 export function CertificateOfLiveBirth() {
   const { id } = useParams();
+  const location = useLocation();
+  const basePath = getApplicantBasePath(location.pathname);
   const [child, setChild] = useState(null);
   const [form, setForm] = useState({ ...DEFAULT_CERT });
   const [loading, setLoading] = useState(true);
@@ -770,7 +773,7 @@ export function CertificateOfLiveBirth() {
   return (
     <div className="mx-auto w-full max-w-5xl px-2 pb-8 sm:px-4 print:max-w-none print:px-0 print:pb-0">
       <div className="certificate-sticky-bar sticky top-0 z-10 mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-3 shadow-sm sm:gap-4 sm:px-4 print:hidden">
-        <Link to={`/children/${id}`} className="text-sm font-medium text-slate-600 hover:text-slate-900">← Back to applicant</Link>
+        <Link to={applicantDetailPath(basePath, id)} className="text-sm font-medium text-slate-600 hover:text-slate-900">← Back to applicant</Link>
         <span className="order-3 w-full truncate text-sm font-medium text-slate-700 sm:order-none sm:w-auto">
           {child.first_name} {child.last_name}
         </span>

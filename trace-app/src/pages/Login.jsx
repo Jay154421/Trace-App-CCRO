@@ -22,7 +22,7 @@ export function Login() {
     try {
       const loggedInUser = login(username.trim(), password);
       if (!loggedInUser) {
-        setError('Invalid credentials. Use admin / ccro123 for demo access.');
+        setError('Invalid credentials.');
         return;
       }
       navigate('/', { replace: true });

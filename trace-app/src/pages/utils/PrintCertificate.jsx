@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useLocation } from "react-router-dom";
+import { applicantDetailPath, getApplicantBasePath } from "../../utils/applicantRoutes";
 import toast from "react-hot-toast";
 import Header from "../../layouts/pdf/header.jsx";
 import Certification from "../../layouts/pdf/body.jsx";
@@ -9,6 +10,7 @@ import { usePdfPreviewUrl } from "../../hooks/usePdfPreviewUrl";
 import {
   buildCertificationLetterPdfBase64,
   buildDelayedCertificationPayload,
+  CERTIFICATION_PDF_PAGE_FORMAT,
 } from "../../utils/certificationPdf";
 
 const SIGNATORY_OPTIONS = [
@@ -20,6 +22,8 @@ const SIGNATORY_OPTIONS = [
 
 export function PrintCertificate() {
   const { id } = useParams();
+  const location = useLocation();
+  const basePath = getApplicantBasePath(location.pathname);
   const [child, setChild] = useState(null);
   const [cert, setCert] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -31,6 +35,7 @@ export function PrintCertificate() {
     openPreview,
     closePreview,
   } = usePdfPreviewUrl();
+  const [paperSize, setPaperSize] = useState(CERTIFICATION_PDF_PAGE_FORMAT.LONG);
 
   const certificateReferenceImageSrc =
     cert?.certificateReferenceImage || cert?.certificate_reference_image || null;
@@ -161,7 +166,9 @@ export function PrintCertificate() {
       return;
     }
     try {
-      const base64 = await buildCertificationLetterPdfBase64(child, cert);
+      const base64 = await buildCertificationLetterPdfBase64(child, cert, {
+        format: paperSize,
+      });
       if (!base64) {
         toast.error("Could not generate PDF.");
         return;
@@ -170,7 +177,7 @@ export function PrintCertificate() {
     } catch (err) {
       toast.error(err?.message || "Failed to generate PDF.");
     }
-  }, [child, cert, openPreview]);
+  }, [child, cert, paperSize, openPreview]);
 
   if (loading) return <p className="text-slate-500 p-4">Loading…</p>;
   if (error)
@@ -187,6 +194,7 @@ export function PrintCertificate() {
         @media print {
           @page {
             margin: 0.5in;
+            size: ${paperSize === CERTIFICATION_PDF_PAGE_FORMAT.A4 ? "A4" : '8.5in 13in'};
           }
         }
       `}</style>
@@ -229,20 +237,48 @@ export function PrintCertificate() {
       )}
 
       <div className="mx-auto min-h-screen max-w-4xl bg-slate-50 p-4 sm:p-8 print:p-0">
-        <div className="mb-6 flex items-center justify-between print:hidden">
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between print:hidden">
           <Link
-            to={`/children/${id}`}
+            to={applicantDetailPath(basePath, id)}
             className="text-sm font-medium text-emerald-600"
           >
             ← Back to Applicant
           </Link>
-          <button
-            type="button"
-            onClick={handlePreviewPdf}
-            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-          >
-            Preview PDF
-          </button>
+          <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+            <fieldset className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
+              <legend className="sr-only">Paper size</legend>
+              <span className="text-xs font-medium uppercase tracking-wide text-slate-600">
+                Paper
+              </span>
+              <label className="flex cursor-pointer items-center gap-1.5 text-sm text-slate-800">
+                <input
+                  type="radio"
+                  name="print-cert-paper"
+                  className="h-4 w-4 border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                  checked={paperSize === CERTIFICATION_PDF_PAGE_FORMAT.A4}
+                  onChange={() => setPaperSize(CERTIFICATION_PDF_PAGE_FORMAT.A4)}
+                />
+                A4
+              </label>
+              <label className="flex cursor-pointer items-center gap-1.5 text-sm text-slate-800">
+                <input
+                  type="radio"
+                  name="print-cert-paper"
+                  className="h-4 w-4 border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                  checked={paperSize === CERTIFICATION_PDF_PAGE_FORMAT.LONG}
+                  onChange={() => setPaperSize(CERTIFICATION_PDF_PAGE_FORMAT.LONG)}
+                />
+                Long (8.5 in × 13 in)
+              </label>
+            </fieldset>
+            <button
+              type="button"
+              onClick={handlePreviewPdf}
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Preview PDF
+            </button>
+          </div>
         </div>
         {savingPurpose && (
           <p className="mb-3 text-xs font-medium text-emerald-600 print:hidden">

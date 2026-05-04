@@ -50,6 +50,17 @@ export const router = createBrowserRouter(
         <Route path="/children/:id/paternity-affidavit" element={<PaternityAffidavit />} />
         <Route path="/children/:id/delayed-registration-affidavit" element={<DelayedRegistrationAffidavit />} />
         <Route path="/children/:id/print-certificate" element={<PrintCertificate />} />
+        <Route path="/colb-brap" element={<ChildList />} />
+        <Route path="/colb-brap/new" element={<ChildForm />} />
+        <Route path="/colb-brap/:id" element={<ChildDetail />} />
+        <Route path="/colb-brap/:id/edit" element={<ChildForm />} />
+        <Route path="/colb-brap/:id/documents" element={<DocumentsWizard />} />
+        <Route path="/colb-brap/:id/certificate-of-live-birth" element={<CertificateOfLiveBirth />} />
+        <Route path="/colb-brap/:id/field-position" element={<FieldPosition />} />
+        <Route path="/colb-brap/:id/field-position-back" element={<FieldPositionBack />} />
+        <Route path="/colb-brap/:id/paternity-affidavit" element={<PaternityAffidavit />} />
+        <Route path="/colb-brap/:id/delayed-registration-affidavit" element={<DelayedRegistrationAffidavit />} />
+        <Route path="/colb-brap/:id/print-certificate" element={<PrintCertificate />} />
       </Route>
     </>
   )

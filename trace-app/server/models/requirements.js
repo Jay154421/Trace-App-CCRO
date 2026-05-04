@@ -1,3 +1,11 @@
+const COLB_BRAP_DOCS = [
+  { id: 'national_id', label: 'National I.D' },
+  { id: 'brgy_indigency', label: 'Brgy. indigency' },
+  { id: 'affidavit_two_witnesses', label: 'Affidavit of Two Witnesses (Legal Office)' },
+  { id: 'brgy_facts_birth', label: 'Brgy. Certification (Facts of Birth)' },
+  { id: 'photo_2x2', label: '2x2 Photo I.D. with white background' },
+];
+
 const GENERAL_DOCS = [
   { id: 'national_id', label: 'National I.D' },
   { id: 'psa_negative', label: 'PSA Negative' },
@@ -91,6 +99,17 @@ function getRequirementsForAgeGroup(ageGroup) {
 }
 
 function getRequirementsForChild(child) {
+  const applicationType = String(child?.application_type || 'applicant').trim().toLowerCase();
+  if (applicationType === 'colb_brap') {
+    const general = COLB_BRAP_DOCS.map((d) => ({ ...withScannerCaptureSize(d), category: 'general' }));
+    return {
+      general,
+      ageSpecific: [],
+      conditional: [],
+      all: [...general],
+    };
+  }
+
   const base = getRequirementsForAgeGroup(child.age_group || '1m1d_to_6');
   const conditional = [];
   if (child.registrant_deceased) {
@@ -114,4 +133,13 @@ function getRequirementsForChild(child) {
   };
 }
 
-module.exports = { getRequirementsForAgeGroup, getRequirementsForChild, GENERAL_DOCS, AGE_1M_TO_6, AGE_7_TO_17, AGE_18_TO_59, AGE_60_PLUS };
+module.exports = {
+  getRequirementsForAgeGroup,
+  getRequirementsForChild,
+  COLB_BRAP_DOCS,
+  GENERAL_DOCS,
+  AGE_1M_TO_6,
+  AGE_7_TO_17,
+  AGE_18_TO_59,
+  AGE_60_PLUS,
+};
