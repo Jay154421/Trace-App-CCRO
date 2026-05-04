@@ -1,7 +1,7 @@
 {
   "name": "trace-app",
   "version": "1.0.0",
-  "description": "TRACE System - Document requirements tracking for birth certificate applications",
+  "description": "B-TRACE System - Document requirements tracking for birth certificate applications",
   "main": "electron/main.js",
   "scripts": {
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:vite\"",
@@ -46,7 +46,7 @@
   },
   "build": {
     "appId": "com.trace.app",
-    "productName": "TRACE System",
+    "productName": "B-TRACE System",
     "directories": {
       "output": "release"
     },

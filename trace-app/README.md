@@ -1,10 +1,10 @@
-# TRACE System
+# B-TRACE System
 
 ## Introduction
-The TRACER System is a comprehensive digital solution developed for the City Civil Registry Office (CCRO) to manage, track, and secure birth certificate (Certificate of Live Birth - COLB) records. It is designed to modernize public service by moving away from traditional, paper-based tracking to an efficient, digital-first workflow. The system ensures that every applicant's document requirements are organized, verifiable, and easily accessible.
+The B-TRACE System is a comprehensive digital solution developed for the City Civil Registry Office (CCRO) to manage, track, and secure birth certificate (Certificate of Live Birth - COLB) records. It is designed to modernize public service by moving away from traditional, paper-based tracking to an efficient, digital-first workflow. The system ensures that every applicant's document requirements are organized, verifiable, and easily accessible.
 
 ## Purpose
-The primary purpose of the TRACE System is to streamline the evaluation of birth certificate applications by focusing on document completeness. It helps manage applicant records, dynamically adapt checklists based on age-group requirements, and handle document attachments and workflows. By doing so, it enhances the operational efficiency of the local civil registry office and ensures accuracy in civil registrations.
+The primary purpose of the B-TRACE System is to streamline the evaluation of birth certificate applications by focusing on document completeness. It helps manage applicant records, dynamically adapt checklists based on age-group requirements, and handle document attachments and workflows. By doing so, it enhances the operational efficiency of the local civil registry office and ensures accuracy in civil registrations.
 
 ## Features
 

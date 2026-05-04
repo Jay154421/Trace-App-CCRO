@@ -47,42 +47,6 @@ export function PrintCertificate() {
     cert?.signatoryTitle ?? cert?.signatory_title ?? "REGISTRATION OFFICER II",
   );
 
-  const purposeOptions = useMemo(() => {
-    const seen = new Set();
-    const merged = [];
-    const add = (value) => {
-      const normalized = String(value || "");
-      if (!normalized) return;
-      const key = normalized.toUpperCase();
-      if (seen.has(key)) return;
-      seen.add(key);
-      merged.push(normalized);
-    };
-    (Array.isArray(cert?.certificationPurposeOptions)
-      ? cert.certificationPurposeOptions
-      : []
-    ).forEach(add);
-    add(certificationPurpose);
-    add("ANY LEGAL");
-    return merged;
-  }, [cert, certificationPurpose]);
-
-  const requestPersonOptions = useMemo(() => {
-    const seen = new Set();
-    const merged = [];
-    const add = (value) => {
-      const normalized = String(value || "");
-      if (!normalized) return;
-      const key = normalized.toUpperCase();
-      if (seen.has(key)) return;
-      seen.add(key);
-      merged.push(normalized);
-    };
-    (Array.isArray(cert?.requestPersonOptions) ? cert.requestPersonOptions : []).forEach(add);
-    add(requestPerson);
-    return merged;
-  }, [cert, requestPerson]);
-
   useEffect(() => {
     setLoading(true);
     childrenApi
@@ -303,10 +267,8 @@ export function PrintCertificate() {
           <Certification
             copy={certificationCopy}
             editablePurpose={certificationPurpose}
-            purposeOptions={purposeOptions}
             onPurposeChange={updateCertificationPurpose}
             editableRequestPerson={requestPerson}
-            requestPersonOptions={requestPersonOptions}
             onRequestPersonChange={updateRequestPerson}
             editableSignatoryName={selectedSignatoryName}
             editableSignatoryTitle={selectedSignatoryTitle}

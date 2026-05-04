@@ -50,7 +50,7 @@ initDb()
   .then(() => tryListen(requestedPort))
   .then((server) => {
     const port = server.address().port;
-    console.log(`TRACE server running on http://localhost:${port}`);
+    console.log(`B-TRACE server running on http://localhost:${port}`);
     if (port !== requestedPort) console.log(`If using Vite, set VITE_API_URL=http://localhost:${port}/api`);
   })
   .catch((err) => {

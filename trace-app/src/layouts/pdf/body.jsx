@@ -1,4 +1,4 @@
-import React, { useId, useState } from 'react';
+import React, { useState } from 'react';
 
 function show(v) {
   const s = (v ?? '').trim();
@@ -8,10 +8,8 @@ function show(v) {
 export default function Certification({
   copy,
   editablePurpose = '',
-  purposeOptions = [],
   onPurposeChange,
   editableRequestPerson = '',
-  requestPersonOptions = [],
   onRequestPersonChange,
   editableSignatoryName = '',
   editableSignatoryTitle = '',
@@ -21,8 +19,6 @@ export default function Certification({
   if (!copy) return null;
   const [isEditingPurpose, setIsEditingPurpose] = useState(false);
   const [isEditingRequestPerson, setIsEditingRequestPerson] = useState(false);
-  const purposeDatalistId = useId();
-  const requestPersonDatalistId = useId();
   const displayedPurpose = show(editablePurpose || copy.purpose);
   const displayedRequestPerson = show(editableRequestPerson || copy.requestPerson);
   const displayedSignatoryName = show(editableSignatoryName || copy.signatoryName);
@@ -55,7 +51,7 @@ export default function Certification({
                 }
               }}
               placeholder="Type request person"
-              list={requestPersonDatalistId}
+              autoComplete="off"
               autoFocus
               style={styles.purposeInput}
             />
@@ -69,11 +65,6 @@ export default function Certification({
               {displayedRequestPerson}
             </button>
           )}{' '}
-          <datalist id={requestPersonDatalistId}>
-            {requestPersonOptions.map((option) => (
-              <option key={option} value={option} />
-            ))}
-          </datalist>{' '}
           for{' '}
           {isEditingPurpose ? (
             <input
@@ -87,7 +78,7 @@ export default function Certification({
                 }
               }}
               placeholder="Type certification purpose"
-              list={purposeDatalistId}
+              autoComplete="off"
               autoFocus
               style={styles.purposeInput}
             />
@@ -101,11 +92,6 @@ export default function Certification({
               {displayedPurpose}
             </button>
           )}{' '}
-          <datalist id={purposeDatalistId}>
-            {purposeOptions.map((option) => (
-              <option key={option} value={option} />
-            ))}
-          </datalist>
           requirement purposes.
         </p>
         <p style={styles.text}>

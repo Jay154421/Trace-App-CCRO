@@ -43,9 +43,9 @@ export function Sidebar() {
         <div className="flex items-center gap-3">
           <img src="/icon.jpg" alt="" className="w-11 h-11 ring-slate-200 shrink-0" />
           <div className="min-w-0 text-left">
-            <h1 className="font-semibold text-lg tracking-tight text-slate-900">TRACE</h1>
+            <h1 className="font-semibold text-lg tracking-tight text-slate-900">B-TRACE</h1>
             <p className="text-[10px] text-slate-500 leading-tight">
-              Tracking on Application for Certificates
+             Birth Tracking for Registration and Certificate Entries
             </p>
           </div>
         </div>

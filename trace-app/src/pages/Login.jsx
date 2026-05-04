@@ -46,12 +46,12 @@ export function Login() {
             <div className="space-y-1">
              
              
-              <p className="text-[24px] font-semibold tracking-[0.22em] text-white">TRACE SYSTEM</p>
-              <p className="text-[18px] font-semibold  tracking-[0.10em] text-white/90">Tracking on Application for Certificates</p>
+              <p className="text-[24px] font-semibold tracking-[0.22em] text-white">B-TRACE SYSTEM</p>
+              <p className="text-[16px] font-semibold  tracking-[0.10em] text-white/90">Birth Tracking for Registration and Certificate Entries</p>
             </div>
           </div>
           <p className="text-xs text-center text-white/80">
-            {`© ${new Date().getFullYear()} City Civil Registrar Office • Trace System`}
+            {`© ${new Date().getFullYear()} City Civil Registrar Office • B-TRACE System`}
           </p>
           <p className="text-xs text-center text-white/60">
             Developed by CS students, St. Peter&apos;s College

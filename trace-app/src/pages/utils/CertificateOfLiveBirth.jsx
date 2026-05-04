@@ -653,7 +653,7 @@ export function CertificateOfLiveBirth() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  const defaultTitle = 'TRACE System';
+  const defaultTitle = 'B-TRACE System';
 
   useEffect(() => {
     document.title = 'Certificate of Live Birth';

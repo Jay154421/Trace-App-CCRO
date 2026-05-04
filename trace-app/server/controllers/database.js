@@ -138,8 +138,9 @@ async function importDatabase(req, res) {
           `INSERT INTO children (
             first_name, middle_name, last_name, date_of_birth, place_of_birth, contact_no, age_group,
             registrant_deceased, hilot_deceased, parent_foreigner, out_of_town, certificate_of_live_birth,
+            paternity_affidavit, delayed_registration_affidavit,
             staff_process_status, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
         ).run(
           normalizedChild.first_name,
           normalizedChild.middle_name,
@@ -153,6 +154,8 @@ async function importDatabase(req, res) {
           normalizedChild.parent_foreigner,
           normalizedChild.out_of_town,
           normalizedChild.certificate_of_live_birth,
+          normalizedChild.paternity_affidavit,
+          normalizedChild.delayed_registration_affidavit,
           normalizedChild.staff_process_status,
           normalizedChild.created_at,
           normalizedChild.updated_at
@@ -313,6 +316,8 @@ function normalizeImportChildRow(child) {
     parent_foreigner: toIntBool(child.parent_foreigner),
     out_of_town: toIntBool(child.out_of_town),
     certificate_of_live_birth: normalizeOptionalText(child.certificate_of_live_birth),
+    paternity_affidavit: normalizeOptionalText(child.paternity_affidavit),
+    delayed_registration_affidavit: normalizeOptionalText(child.delayed_registration_affidavit),
     staff_process_status,
     created_at: normalizeOptionalText(child.created_at),
     updated_at: normalizeOptionalText(child.updated_at),

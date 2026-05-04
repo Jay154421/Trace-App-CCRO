@@ -1,4 +1,4 @@
-TRACE System Requirements (All-in-One):
+B-TRACE System Requirements (All-in-One):
 
 A. TECHNOLOGY STACK & STRUCTURE:
 - Frontend: React.js with JSX for interfaces, styled using Tailwind CSS (utility-first, responsive, accessible).
@@ -106,4 +106,4 @@ d. 60 Yrs. Old & Above (showing applicant's place of birth & parents’ details)
    - Applicant’s appearance
    - Parent’s birth/ID/death certificate (if deceased)
 
-*This system combines technical structure, UI/UX (including use of toast notifications), security, and detailed documentation requirements for TRACE.* 
+*This system combines technical structure, UI/UX (including use of toast notifications), security, and detailed documentation requirements for B-TRACE.* 

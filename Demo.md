@@ -1,6 +1,6 @@
-# TRACE System: Step-by-Step Demo & Walkthrough
+# B-TRACE System: Step-by-Step Demo & Walkthrough
 
-Welcome to the **TRACE System** (Document Requirements Tracking for Delayed Registration of Birth). This system is designed to streamline the complex process of managing late/delayed birth certificate applications, tracking rigorous document requirements, and securely capturing required photos and scanned documents offline.
+Welcome to the **B-TRACE System** (Document Requirements Tracking for Delayed Registration of Birth). This system is designed to streamline the complex process of managing late/delayed birth certificate applications, tracking rigorous document requirements, and securely capturing required photos and scanned documents offline.
 
 This guide provides a comprehensive step-by-step walkthrough of the system's key features, user flow, and practical use cases.
 
@@ -20,7 +20,7 @@ This guide provides a comprehensive step-by-step walkthrough of the system's key
 ## 🔄 User Flow: Step-by-Step Demo
 
 ### Step 1: Dashboard Overview
-When you launch the TRACE System, you are greeted by the **Dashboard**.
+When you launch the B-TRACE System, you are greeted by the **Dashboard**.
 - **Metrics at a Glance**: View the total number of applicants, and a quick breakdown of **Completed** vs. **Pending** registrations.
 - **Visual Charts**: 
   - *Applicants by Age Group* (Bar Chart) allows you to see the demographic distribution.
@@ -38,7 +38,7 @@ To start a new delayed birth certificate registration:
 4. Click **Save**. The system instantly calculates the applicant's exact age and age group, moving you to their dedicated profile.
 
 ### Step 3: Managing the Document Checklist
-Document tracking is the core of the TRACE System. On the Applicant Profile, click **Document Checklist**.
+Document tracking is the core of the B-TRACE System. On the Applicant Profile, click **Document Checklist**.
 1. **Dynamic Requirements**: You will see a list of required documents tailored specifically to the applicant (e.g., standard requirements plus conditional ones like an Out-of-Town Affidavit if applicable).
 2. **Attaching Documents**:
    - **Upload**: Click to attach existing files from your local computer.
@@ -64,10 +64,10 @@ With the checklist fully completed and the certificate details filled:
 ## 💼 Practical Use Cases
 
 ### 1. Local Government Units (Civil Registry Offices)
-A civil registry clerk uses TRACE to process delayed registrations of birth. The clerk quickly types the applicant's details. The system flags that the applicant is 8 years old, automatically adjusting the checklist to require specific school records or baptismal certificates instead of standard infant requirements.
+A civil registry clerk uses B-TRACE to process delayed registrations of birth. The clerk quickly types the applicant's details. The system flags that the applicant is 8 years old, automatically adjusting the checklist to require specific school records or baptismal certificates instead of standard infant requirements.
 
 ### 2. Field Registrations & Mobile Clinics
-Staff deployed to remote areas can run TRACE on a laptop without any internet connection. They use a standard external webcam to scan required documents and take ID photos on the spot. At the end of the day, the staff clicks **Export Backup**, puts the secure `.zip` on a flash drive, and imports it to the main desktop computer at the central office.
+Staff deployed to remote areas can run B-TRACE on a laptop without any internet connection. They use a standard external webcam to scan required documents and take ID photos on the spot. At the end of the day, the staff clicks **Export Backup**, puts the secure `.zip` on a flash drive, and imports it to the main desktop computer at the central office.
 
 ### 3. Application Auditing & Reporting
 A supervisor logs into the Dashboard to review the weekly performance. By looking at the charts, they quickly identify that 40% of applications are currently "Pending" due to missing documents. They can drill down into the Recent Applicants list to contact individuals with missing conditional requirements.
