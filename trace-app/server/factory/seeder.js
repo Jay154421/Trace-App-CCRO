@@ -1,5 +1,5 @@
 /**
- * Seeds the local SQLite DB with 50 fake applicants (children records).
+ * Seeds the local SQLite DB with fake children records.
  * Also writes `certificate_of_live_birth`, `delayed_registration_affidavit`, and `paternity_affidavit`
  * JSON aligned with the Certificate / Delayed Registration / Paternity affidavit pages.
  * Run from trace-app: npm run seed:applicants
@@ -9,6 +9,7 @@ const { initDb } = require('../db');
 const childModel = require('../models/child');
 
 const SEED_COUNT = 50;
+const SEED_COLB_BRAP_COUNT = 50;
 
 const PH_CITIES = [
   'Manila', 'Quezon City', 'Davao City', 'Cebu City', 'Caloocan',
@@ -282,7 +283,7 @@ function buildFakePaternityAffidavit(applicant, cert) {
 }
 
 /** Builds one random applicant payload matching POST /api/children body. */
-function buildFakeApplicant() {
+function buildFakeApplicant(applicationType = childModel.APPLICATION_APPLICANT) {
   const birth = faker.date.birthdate({ min: 0, max: 85, mode: 'age' });
   const city = faker.helpers.arrayElement(PH_CITIES);
   const placeName = `${faker.company.name()} ${faker.helpers.arrayElement(['Hospital', 'Medical Center', 'Clinic'])}`;
@@ -302,40 +303,52 @@ function buildFakeApplicant() {
     hilot_deceased: faker.datatype.boolean({ probability: 0.06 }),
     parent_foreigner: faker.datatype.boolean({ probability: 0.1 }),
     out_of_town: faker.datatype.boolean({ probability: 0.1 }),
+    application_type: applicationType,
   };
 }
 
-async function seedApplicants(count = SEED_COUNT) {
+function seedOneApplicant(applicationType) {
+  const row = buildFakeApplicant(applicationType);
+  const id = childModel.create({
+    first_name: row.first_name,
+    middle_name: row.middle_name || undefined,
+    last_name: row.last_name,
+    date_of_birth: row.date_of_birth,
+    place_of_birth: row.place_of_birth,
+    contact_no: row.contact_no,
+    registrant_deceased: row.registrant_deceased,
+    hilot_deceased: row.hilot_deceased,
+    parent_foreigner: row.parent_foreigner,
+    out_of_town: row.out_of_town,
+    application_type: row.application_type,
+  });
+  const cert = buildFakeCertificateOfLiveBirth(row);
+  const childId = Number(id);
+  childModel.updateCertificateOfLiveBirth(childId, cert);
+  childModel.updateDelayedRegistrationAffidavit(childId, buildFakeDelayedRegistrationAffidavit(row, cert));
+  childModel.updatePaternityAffidavit(childId, buildFakePaternityAffidavit(row, cert));
+  return childId;
+}
+
+async function seedApplicants(count = SEED_COUNT, colbBrapCount = SEED_COLB_BRAP_COUNT) {
   await initDb();
   const ids = [];
+
   for (let i = 0; i < count; i += 1) {
-    const row = buildFakeApplicant();
-    const id = childModel.create({
-      first_name: row.first_name,
-      middle_name: row.middle_name || undefined,
-      last_name: row.last_name,
-      date_of_birth: row.date_of_birth,
-      place_of_birth: row.place_of_birth,
-      contact_no: row.contact_no,
-      registrant_deceased: row.registrant_deceased,
-      hilot_deceased: row.hilot_deceased,
-      parent_foreigner: row.parent_foreigner,
-      out_of_town: row.out_of_town,
-    });
-    const cert = buildFakeCertificateOfLiveBirth(row);
-    const childId = Number(id);
-    childModel.updateCertificateOfLiveBirth(childId, cert);
-    childModel.updateDelayedRegistrationAffidavit(childId, buildFakeDelayedRegistrationAffidavit(row, cert));
-    childModel.updatePaternityAffidavit(childId, buildFakePaternityAffidavit(row, cert));
-    ids.push(childId);
+    ids.push(seedOneApplicant(childModel.APPLICATION_APPLICANT));
   }
+
+  for (let i = 0; i < colbBrapCount; i += 1) {
+    ids.push(seedOneApplicant(childModel.APPLICATION_COLB_BRAP));
+  }
+
   return ids;
 }
 
 if (require.main === module) {
   seedApplicants()
     .then((ids) => {
-      console.log(`Seeded ${ids.length} fake applicants. Last id: ${ids[ids.length - 1]}`);
+      console.log(`Seeded ${ids.length} records (${SEED_COUNT} applicants + ${SEED_COLB_BRAP_COUNT} COLB BRAP). Last id: ${ids[ids.length - 1]}`);
       process.exit(0);
     })
     .catch((err) => {
@@ -351,4 +364,5 @@ module.exports = {
   buildFakePaternityAffidavit,
   seedApplicants,
   SEED_COUNT,
+  SEED_COLB_BRAP_COUNT,
 };
