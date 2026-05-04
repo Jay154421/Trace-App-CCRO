@@ -70,11 +70,11 @@ export function Sidebar() {
                 className={({ isActive }) =>
                   `group relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 ${
                     isActive
-                      ? 'bg-gradient-to-r from-emerald-50 to-emerald-100/60 text-emerald-800 shadow-sm'
+                      ? 'bg-gradient-to-r from-emerald-50 to-emerald-100/60 text-emerald-800 shadow-sm hover:from-emerald-100/90 hover:to-emerald-100/80 hover:text-emerald-900'
                       : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
                   }`
                 }
-                end={to === '/' || to === '/children' || to === '/colb-brap'}
+                end={to === '/'}
               >
                 {({ isActive }) => (
                   <>

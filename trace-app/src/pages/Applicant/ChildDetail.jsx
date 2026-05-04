@@ -263,37 +263,110 @@ export function ChildDetail() {
         <h2 id="info-heading" className="text-sm font-medium text-slate-500 uppercase tracking-wide mb-4">
           Child identification
         </h2>
-        <dl className="grid gap-3 sm:grid-cols-2">
-          <div className="sm:col-span-2">
-            <dt className="text-sm text-slate-500">Name</dt>
-            <dd className="font-medium text-slate-800">
-              {[child.first_name, child.middle_name, child.last_name].filter(Boolean).join(' ') || '—'}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-sm text-slate-500">Date of birth</dt>
-            <dd className="font-medium text-slate-800">{formatDateDDMMYYYY(child.date_of_birth)}</dd>
-          </div>
-          <div>
-            <dt className="text-sm text-slate-500">Age</dt>
-            <dd className="font-medium text-slate-800">{child.age} years</dd>
-          </div>
-          <div>
-            <dt className="text-sm text-slate-500">Place of birth</dt>
-            <dd className="font-medium text-slate-800">{child.place_of_birth || '—'}</dd>
-          </div>
-          <div>
-            <dt className="text-sm text-slate-500">Contact no.</dt>
-            <dd className="font-medium text-slate-800">{child.contact_no || '—'}</dd>
-          </div>
-          {!isColbBrap ? (
+        {isColbBrap ? (
+          <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <dt className="text-sm text-slate-500">Name</dt>
+              <dd className="mt-0.5 font-medium text-slate-800">
+                {[child.first_name, child.middle_name, child.last_name].filter(Boolean).join(' ') || '—'}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-sm text-slate-500">Date of birth</dt>
+              <dd className="mt-0.5 font-medium text-slate-800">{formatDateDDMMYYYY(child.date_of_birth)}</dd>
+            </div>
+            <div>
+              <dt className="text-sm text-slate-500">Age</dt>
+              <dd className="mt-0.5 font-medium text-slate-800">{child.age} years</dd>
+            </div>
+            <div>
+              <dt className="text-sm text-slate-500">Place of birth</dt>
+              <dd className="mt-0.5 font-medium text-slate-800">{child.place_of_birth || '—'}</dd>
+            </div>
+            <div>
+              <dt className="text-sm text-slate-500">Contact no.</dt>
+              <dd className="mt-0.5 font-medium text-slate-800">{child.contact_no || '—'}</dd>
+            </div>
+            {child.created_at ? (
+              <div>
+                <dt className="text-sm text-slate-500">Created date</dt>
+                <dd className="mt-0.5 font-medium text-slate-800">
+                  {new Date(child.created_at.split(' ')[0]).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                </dd>
+              </div>
+            ) : null}
+            {child.updated_at ? (
+              <div>
+                <dt className="text-sm text-slate-500">Updated date</dt>
+                <dd className="mt-0.5 font-medium text-slate-800">
+                  {new Date(child.updated_at.split(' ')[0]).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                </dd>
+              </div>
+            ) : null}
+            <div className="sm:col-span-2 border-t border-slate-100 pt-4">
+              <dt className="text-sm text-slate-500">Documents checklist</dt>
+              <dd className="mt-1">
+                {checklistTotal > 0 ? (
+                  <div>
+                    <p className="font-medium text-slate-800">
+                      {checklistChecked}/{checklistTotal} complete
+                    </p>
+                    <div className="mt-2 h-2 w-full max-w-md rounded-full bg-slate-200 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-emerald-500 transition-[width]"
+                        style={{
+                          width: `${checklistTotal ? Math.round((checklistChecked / checklistTotal) * 100) : 0}%`,
+                        }}
+                      />
+                    </div>
+                    <Link
+                      to={applicantDocumentsPath(basePath, id)}
+                      className="inline-block mt-2 text-sm font-medium text-emerald-600 hover:text-emerald-700"
+                    >
+                      View checklist →
+                    </Link>
+                  </div>
+                ) : (
+                  <p className="text-slate-600">
+                    —{' '}
+                    <Link to={applicantDocumentsPath(basePath, id)} className="text-emerald-600 hover:underline">
+                      Open document checklist
+                    </Link>{' '}
+                    to get started.
+                  </p>
+                )}
+              </dd>
+            </div>
+          </dl>
+        ) : (
+          <dl className="grid gap-3 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <dt className="text-sm text-slate-500">Name</dt>
+              <dd className="font-medium text-slate-800">
+                {[child.first_name, child.middle_name, child.last_name].filter(Boolean).join(' ') || '—'}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-sm text-slate-500">Date of birth</dt>
+              <dd className="font-medium text-slate-800">{formatDateDDMMYYYY(child.date_of_birth)}</dd>
+            </div>
+            <div>
+              <dt className="text-sm text-slate-500">Age</dt>
+              <dd className="font-medium text-slate-800">{child.age} years</dd>
+            </div>
+            <div>
+              <dt className="text-sm text-slate-500">Place of birth</dt>
+              <dd className="font-medium text-slate-800">{child.place_of_birth || '—'}</dd>
+            </div>
+            <div>
+              <dt className="text-sm text-slate-500">Contact no.</dt>
+              <dd className="font-medium text-slate-800">{child.contact_no || '—'}</dd>
+            </div>
             <div>
               <dt className="text-sm text-slate-500">Age group (requirements)</dt>
               <dd className="font-medium text-slate-800">{child.age_group?.replace(/_/g, ' ') || '—'}</dd>
             </div>
-          ) : null}
-          <div>
-            {!isColbBrap && (hasRegistrantDeceased || hasHilotDeceased || hasParentForeigner || hasOutOfTown) ? (
+            {hasRegistrantDeceased || hasHilotDeceased || hasParentForeigner || hasOutOfTown ? (
               <div className="sm:col-span-2">
                 <dt className="text-sm text-slate-500 mb-1">Conditional requirements</dt>
                 <dd className="text-sm text-slate-700">
@@ -304,54 +377,54 @@ export function ChildDetail() {
                 </dd>
               </div>
             ) : null}
-          </div>
-          {child.created_at && (
-            <div>
-              <dt className="text-sm text-slate-500">Created date</dt>
-              <dd className="font-medium text-slate-800">
-                {new Date(child.created_at.split(' ')[0]).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-              </dd>
-            </div>
-          )}
-          {child.updated_at && (
-            <div>
-              <dt className="text-sm text-slate-500">Updated date</dt>
-              <dd className="font-medium text-slate-800">
-                {new Date(child.updated_at.split(' ')[0]).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-              </dd>
-            </div>
-          )}
-          <div className="sm:col-span-2">
-            <dt className="text-sm text-slate-500 mb-1">Documents checklist</dt>
-            <dd className="mt-0.5">
-              {checklistTotal > 0 ? (
-                <div>
-                  <p className="font-medium text-slate-800">
-                    {checklistChecked}/{checklistTotal} complete
-                  </p>
-                  <div className="mt-1.5 h-2 w-full max-w-[200px] rounded-full bg-slate-200 overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-emerald-500 transition-[width]"
-                      style={{
-                        width: `${checklistTotal ? Math.round((checklistChecked / checklistTotal) * 100) : 0}%`,
-                      }}
-                    />
+            {child.created_at && (
+              <div>
+                <dt className="text-sm text-slate-500">Created date</dt>
+                <dd className="font-medium text-slate-800">
+                  {new Date(child.created_at.split(' ')[0]).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                </dd>
+              </div>
+            )}
+            {child.updated_at && (
+              <div>
+                <dt className="text-sm text-slate-500">Updated date</dt>
+                <dd className="font-medium text-slate-800">
+                  {new Date(child.updated_at.split(' ')[0]).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                </dd>
+              </div>
+            )}
+            <div className="sm:col-span-2">
+              <dt className="text-sm text-slate-500 mb-1">Documents checklist</dt>
+              <dd className="mt-0.5">
+                {checklistTotal > 0 ? (
+                  <div>
+                    <p className="font-medium text-slate-800">
+                      {checklistChecked}/{checklistTotal} complete
+                    </p>
+                    <div className="mt-1.5 h-2 w-full max-w-[200px] rounded-full bg-slate-200 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-emerald-500 transition-[width]"
+                        style={{
+                          width: `${checklistTotal ? Math.round((checklistChecked / checklistTotal) * 100) : 0}%`,
+                        }}
+                      />
+                    </div>
+                    <Link
+                      to={applicantDocumentsPath(basePath, id)}
+                      className="inline-block mt-1.5 text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+                    >
+                      View checklist →
+                    </Link>
                   </div>
-                  <Link
-                    to={applicantDocumentsPath(basePath, id)}
-                    className="inline-block mt-1.5 text-sm text-emerald-600 hover:text-emerald-700 font-medium"
-                  >
-                    View checklist →
-                  </Link>
-                </div>
-              ) : (
-                <p className="text-slate-600">
-                  — <Link to={applicantDocumentsPath(basePath, id)} className="text-emerald-600 hover:underline">Open document checklist</Link> to get started.
-                </p>
-              )}
-            </dd>
-          </div>
-        </dl>
+                ) : (
+                  <p className="text-slate-600">
+                    — <Link to={applicantDocumentsPath(basePath, id)} className="text-emerald-600 hover:underline">Open document checklist</Link> to get started.
+                  </p>
+                )}
+              </dd>
+            </div>
+          </dl>
+        )}
       </section>
 
       {editModalOpen && (
