@@ -1077,7 +1077,7 @@ export function DocumentsWizard() {
             onClick={handleBackClick}
             className="text-sm text-slate-500 hover:text-slate-700"
           >
-            {isColbBrapChild ? '← Back to COLB Brap' : '← Back to applicant'}
+            {isColbBrapChild ? '← Back to COLB BRAP' : '← Back to applicant'}
           </button>
           <Link to={`${basePath}/${id}/certificate-of-live-birth`} className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">Certificate of Live Birth</Link>
         </div>

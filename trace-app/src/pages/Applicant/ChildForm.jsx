@@ -39,10 +39,10 @@ export function ChildForm() {
         toast.success(
           isEdit
             ? isColbBrapSection
-              ? 'COLB Brap record updated.'
+              ? 'COLB BRAP record updated.'
               : 'Applicant updated.'
             : isColbBrapSection
-              ? 'COLB Brap record added.'
+              ? 'COLB BRAP record added.'
               : 'Applicant added.'
         );
         if (isEdit) {
@@ -70,10 +70,10 @@ export function ChildForm() {
       <h1 className="text-2xl font-semibold text-slate-800 mb-6">
         {isEdit
           ? isColbBrapSection
-            ? 'Edit COLB Brap'
+            ? 'Edit COLB BRAP'
             : 'Edit applicant'
           : isColbBrapSection
-            ? 'Add COLB Brap'
+            ? 'Add COLB BRAP'
             : 'Add applicant'}
       </h1>
 
@@ -102,10 +102,10 @@ export function ChildForm() {
               ? 'Saving…'
               : isEdit
                 ? isColbBrapSection
-                  ? 'Update COLB Brap'
+                  ? 'Update COLB BRAP'
                   : 'Update applicant'
                 : isColbBrapSection
-                  ? 'Add COLB Brap'
+                  ? 'Add COLB BRAP'
                   : 'Add applicant'}
           </button>
         </div>

@@ -53,7 +53,7 @@ export function AddApplicantModal({
     childrenApi
       .create(payload)
       .then((res) => {
-        toast.success(isColbBrap ? 'COLB Brap record added.' : 'Applicant added.');
+        toast.success(isColbBrap ? 'COLB BRAP record added.' : 'Applicant added.');
         onAdded?.();
         onClose();
         navigate(`${basePath}/${res.id}`);
@@ -84,11 +84,11 @@ export function AddApplicantModal({
       >
         <div className="border-b border-slate-200 px-6 py-4">
           <h2 id="add-applicant-modal-title" className="text-xl font-semibold text-slate-800">
-            {isColbBrap ? 'Add COLB Brap' : 'Add applicant'}
+            {isColbBrap ? 'Add COLB BRAP' : 'Add applicant'}
           </h2>
           <p className="mt-1 text-sm text-slate-500">
             {isColbBrap
-              ? 'Fill out the profile for this COLB Brap record.'
+              ? 'Fill out the profile for this COLB BRAP record.'
               : 'Fill out the applicant profile and apply any conditional requirements.'}
           </p>
         </div>
@@ -219,7 +219,7 @@ export function AddApplicantModal({
                 disabled={loading}
                 className="w-full rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 disabled:opacity-50 sm:w-auto"
               >
-                {loading ? 'Saving…' : isColbBrap ? 'Add COLB Brap' : 'Add applicant'}
+                {loading ? 'Saving…' : isColbBrap ? 'Add COLB BRAP' : 'Add applicant'}
               </button>
             </div>
           </form>

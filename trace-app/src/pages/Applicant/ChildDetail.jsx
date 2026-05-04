@@ -70,7 +70,7 @@ export function ChildDetail() {
       })
       .then(() => {
         const colb = String(child?.application_type || '').toLowerCase() === 'colb_brap';
-        toast.success(colb ? 'COLB Brap record updated.' : 'Applicant updated.');
+        toast.success(colb ? 'COLB BRAP record updated.' : 'Applicant updated.');
         setEditModalOpen(false);
       })
       .catch((err) => toast.error(err.message || 'Failed to save.'))
@@ -102,7 +102,7 @@ export function ChildDetail() {
       .remove(childId)
       .then(() => {
         const colb = String(child?.application_type || '').toLowerCase() === 'colb_brap';
-        toast.success(colb ? 'COLB Brap record removed.' : 'Applicant removed.');
+        toast.success(colb ? 'COLB BRAP record removed.' : 'Applicant removed.');
         setDeleteModalOpen(false);
         navigate(basePath);
       })
@@ -441,11 +441,11 @@ export function ChildDetail() {
           >
             <div className="border-b border-slate-200 px-6 py-4">
               <h2 id="edit-modal-title" className="text-lg font-semibold text-slate-800">
-                {isColbBrap ? 'Edit COLB Brap' : 'Edit applicant'}
+                {isColbBrap ? 'Edit COLB BRAP' : 'Edit applicant'}
               </h2>
               <p className="mt-1 text-sm text-slate-500">
                 {isColbBrap
-                  ? 'Update profile details for this COLB Brap record.'
+                  ? 'Update profile details for this COLB BRAP record.'
                   : 'Update applicant details and adjust conditional requirements as needed.'}
               </p>
             </div>
@@ -471,7 +471,7 @@ export function ChildDetail() {
                   disabled={editSaving}
                   className="w-full rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 disabled:opacity-50 sm:w-auto"
                 >
-                  {editSaving ? 'Saving…' : isColbBrap ? 'Update COLB Brap' : 'Update applicant'}
+                  {editSaving ? 'Saving…' : isColbBrap ? 'Update COLB BRAP' : 'Update applicant'}
                 </button>
               </div>
             </form>
@@ -492,10 +492,10 @@ export function ChildDetail() {
             onClick={(e) => e.stopPropagation()}
           >
             <h2 id="delete-modal-title" className="text-lg font-semibold text-slate-800">
-              {isColbBrap ? 'Delete COLB Brap record' : 'Delete applicant'}
+              {isColbBrap ? 'Delete COLB BRAP record' : 'Delete applicant'}
             </h2>
             <p className="mt-2 text-sm text-slate-600">
-              {isColbBrap ? 'Delete this COLB Brap record? This cannot be undone.' : 'Delete this applicant? This cannot be undone.'}
+              {isColbBrap ? 'Delete this COLB BRAP record? This cannot be undone.' : 'Delete this applicant? This cannot be undone.'}
             </p>
             <div className="flex gap-3 mt-5">
               <button

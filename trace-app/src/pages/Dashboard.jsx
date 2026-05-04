@@ -23,7 +23,7 @@ import { applicantDetailPath, getApplicantBasePathForRecord } from '../utils/app
 
 function formatAgeGroupLabel(value) {
   if (!value || value === 'unknown') return 'Unknown';
-  if (value === 'colb_brap') return 'COLB Brap';
+  if (value === 'colb_brap') return 'COLB BRAP';
   return String(value).replace(/_/g, ' ');
 }
 
@@ -375,7 +375,7 @@ export function Dashboard() {
                     <span className="ml-2 text-sm text-slate-500">
                       Age {c.age} ·{' '}
                       {String(c.application_type || '').toLowerCase() === 'colb_brap'
-                        ? 'COLB Brap'
+                        ? 'COLB BRAP'
                         : c.age_group?.replace(/_/g, ' ') || '—'}
                     </span>
                   </Link>

@@ -173,7 +173,7 @@ export function ChildList() {
     try {
       await childrenApi.bulkRemove([...selectedIds]);
       toast.success(
-        `${selectedIds.size} ${isColbBrapList ? 'COLB Brap record' : 'applicant'}${selectedIds.size > 1 ? 's' : ''} deleted.`
+        `${selectedIds.size} ${isColbBrapList ? 'COLB BRAP record' : 'applicant'}${selectedIds.size > 1 ? 's' : ''} deleted.`
       );
       setDeleteConfirmOpen(false);
       setListKey((k) => k + 1);
@@ -189,7 +189,7 @@ export function ChildList() {
     <div>
       {/* ── Header ── */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <h1 className="text-2xl font-semibold text-slate-800">{isColbBrapList ? 'COLB Brap' : 'Applicants'}</h1>
+        <h1 className="text-2xl font-semibold text-slate-800">{isColbBrapList ? 'COLB BRAP' : 'Applicants'}</h1>
         <div className="flex items-center gap-2">
           {/* Bulk-delete toolbar */}
           {selectMode ? (
@@ -229,7 +229,7 @@ export function ChildList() {
                 onClick={() => setModalOpen(true)}
                 className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
               >
-                {isColbBrapList ? 'Add COLB Brap' : 'Add applicant'}
+                {isColbBrapList ? 'Add COLB BRAP' : 'Add applicant'}
               </button>
             </>
           )}
@@ -251,7 +251,7 @@ export function ChildList() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full rounded-lg border border-slate-300 bg-white py-2 pl-10 pr-3 text-sm text-slate-800 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-shadow hover:shadow-sm"
-              aria-label={isColbBrapList ? 'Search COLB Brap records' : 'Search applicants'}
+              aria-label={isColbBrapList ? 'Search COLB BRAP records' : 'Search applicants'}
               autoComplete="off"
             />
           </div>
@@ -306,7 +306,7 @@ export function ChildList() {
           >
             <h2 id="delete-applicants-modal-title" className="text-lg font-semibold text-slate-800">
               Delete {selectedIds.size}{' '}
-              {isColbBrapList ? `COLB Brap record${selectedIds.size > 1 ? 's' : ''}` : `applicant${selectedIds.size > 1 ? 's' : ''}`}?
+              {isColbBrapList ? `COLB BRAP record${selectedIds.size > 1 ? 's' : ''}` : `applicant${selectedIds.size > 1 ? 's' : ''}`}?
             </h2>
             <p className="mt-2 text-sm text-slate-600">
               This action cannot be undone.
@@ -343,18 +343,18 @@ export function ChildList() {
         <p className="text-slate-500">Loading…</p>
       ) : listForSection.length === 0 ? (
         <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-slate-600">
-          <p>{isColbBrapList ? 'No COLB Brap records yet.' : 'No applicants yet.'}</p>
+          <p>{isColbBrapList ? 'No COLB BRAP records yet.' : 'No applicants yet.'}</p>
           <button
             type="button"
             onClick={() => setModalOpen(true)}
             className="mt-2 inline-block text-emerald-600 hover:text-emerald-700 font-medium"
           >
-            {isColbBrapList ? 'Add your first COLB Brap record' : 'Add your first applicant'}
+            {isColbBrapList ? 'Add your first COLB BRAP record' : 'Add your first applicant'}
           </button>
         </div>
       ) : filteredList.length === 0 ? (
         <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-slate-600">
-          <p>{isColbBrapList ? 'No COLB Brap records match your filters.' : 'No applicants match your filters.'}</p>
+          <p>{isColbBrapList ? 'No COLB BRAP records match your filters.' : 'No applicants match your filters.'}</p>
           <button
             type="button"
             onClick={() => { setSearchQuery(''); setStatusFilter('all'); }}
