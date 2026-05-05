@@ -66,6 +66,39 @@ const STATUS_FILTERS = [
   { value: 'verified', label: 'Verified' },
 ];
 
+function ChildListSkeleton({ count, loadingLabel }) {
+  return (
+    <div aria-busy="true" aria-live="polite">
+      <span className="sr-only">{loadingLabel}</span>
+      <ul className="space-y-3">
+        {Array.from({ length: count }, (_, i) => (
+          <li key={i} className="flex items-center gap-3">
+            <div className="flex flex-1 items-center gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+              <div
+                className="h-11 w-11 shrink-0 rounded-lg bg-slate-200 animate-pulse"
+                aria-hidden
+              />
+              <div className="min-w-0 flex-1 space-y-2">
+                <div className="h-4 w-[min(100%,14rem)] rounded bg-slate-200 animate-pulse" />
+                <div className="h-3 w-36 rounded bg-slate-200 animate-pulse" />
+                <div className="pt-1 space-y-1.5">
+                  <div className="h-3 w-28 rounded bg-slate-200 animate-pulse" />
+                  <div className="h-1.5 w-full max-w-[160px] rounded-full bg-slate-200 animate-pulse" />
+                </div>
+              </div>
+              <div
+                className="h-6 w-[4.5rem] shrink-0 rounded-full bg-slate-200 animate-pulse"
+                aria-hidden
+              />
+              <div className="h-5 w-5 shrink-0 rounded bg-slate-200 animate-pulse" aria-hidden />
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function ChildList() {
   const location = useLocation();
   const basePath = getApplicantBasePath(location.pathname);
@@ -340,7 +373,10 @@ export function ChildList() {
       )}
 
       {loading ? (
-        <p className="text-slate-500">Loading…</p>
+        <ChildListSkeleton
+          count={itemsPerPage}
+          loadingLabel={isColbBrapList ? 'Loading COLB BRAP records.' : 'Loading applicants.'}
+        />
       ) : listForSection.length === 0 ? (
         <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-slate-600">
           <p>{isColbBrapList ? 'No COLB BRAP records yet.' : 'No applicants yet.'}</p>

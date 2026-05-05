@@ -216,6 +216,10 @@ export function ChildDetail() {
           >
             Print certification
           </Link>
+          <Link to={`${basePath}/${id}/field-position`} className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">here
+          </Link>
+          <Link to={`${basePath}/${id}/field-position-back`} className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">here back
+          </Link>
           <button
             type="button"
             onClick={handleSavePdf}

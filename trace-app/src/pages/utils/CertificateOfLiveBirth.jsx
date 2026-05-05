@@ -1270,16 +1270,6 @@ export function CertificateOfLiveBirth() {
 
           <div className={`certificate-tab-panel certificate-card ${activeTabIndex === 6 ? 'active' : ''}`} id="signatures">
         <SectionPanel title="Signatures">
-        <div className="mb-4 rounded-md border border-slate-200 bg-slate-50 p-3">
-          <p className="mb-2 text-sm font-semibold text-slate-700">Certification Purpose (Print PDF)</p>
-          <input
-            type="text"
-            value={form.certificationPurpose}
-            onChange={(e) => update('certificationPurpose', sanitizePurpose(e.target.value))}
-            placeholder="Type purpose manually"
-            className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm"
-          />
-        </div>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2" style={{ fontFamily: FONT_FAMILY, color: COLORS.black }}>
           <div>
             <h3 className="mb-2 text-base font-bold">22. CERTIFICATION OF INFORMANT</h3>
