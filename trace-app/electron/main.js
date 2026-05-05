@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, nativeImage } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, nativeImage, Menu } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -93,6 +93,8 @@ function startServerInProcess() {
 }
 
 app.whenReady().then(() => {
+  Menu.setApplicationMenu(null);
+
   if (isDev) {
     createWindow('http://localhost:5174');
     return;
