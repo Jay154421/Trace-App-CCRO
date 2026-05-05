@@ -14,4 +14,7 @@ export default defineConfig({
     port: 5174,
     strictPort: process.env.ELECTRON_STRICT_PORTS === '1',
   },
+  build: {
+    chunkSizeWarningLimit: 1600,
+  },
 });

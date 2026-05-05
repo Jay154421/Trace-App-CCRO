@@ -48,11 +48,7 @@ const Header = () => (
         Ground Flr., Pedro Generalao Bldg., Buhanginan Hill, Pala-o, Iligan City
       </p>
     </div>
-    <img
-      src="/icon.jpg"
-      alt="City seal"
-      style={styles.logo}
-    />
+    <img src="/ccro-logo.png" alt="B-TRACE brand" style={styles.logo} />
   </div>
 );
 

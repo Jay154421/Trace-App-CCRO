@@ -1,15 +1,32 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, nativeImage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
 const isDev = process.env.ELECTRON_DEV === '1' || !app.isPackaged;
 
 const PRELOAD_PATH = path.join(__dirname, 'preload.js');
+const CCRO_ICON = 'ccro-logo.png';
+
+function getAppIconPath() {
+  if (isDev) {
+    return path.join(__dirname, '..', 'public', CCRO_ICON);
+  }
+  return path.join(app.getAppPath(), 'public', CCRO_ICON);
+}
+
+function getWindowIcon() {
+  const iconPath = getAppIconPath();
+  if (!fs.existsSync(iconPath)) return undefined;
+  const img = nativeImage.createFromPath(iconPath);
+  return img.isEmpty() ? undefined : img;
+}
 
 function createWindow(url) {
+  const icon = getWindowIcon();
   const win = new BrowserWindow({
     width: 1280,
     height: 800,
+    ...(icon ? { icon } : {}),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -55,7 +72,9 @@ function waitForServer(url, maxAttempts = 30) {
 
 function startServerInProcess() {
   const resourcesPath = process.resourcesPath;
-  const serverPath = path.join(resourcesPath, 'server', 'server.js');
+  // Server must live next to app.asar/node_modules so `require('express')` etc. resolve when installed
+  // outside the dev tree (extraResources alone breaks module lookup under Program Files).
+  const serverPath = path.join(app.getAppPath(), 'server', 'server.js');
   const staticDir = path.join(resourcesPath, 'dist');
   const dataDir = app.getPath('userData');
 
@@ -69,6 +88,7 @@ function startServerInProcess() {
   process.env.STATIC_DIR = staticDir;
   process.env.DATA_DIR = dataDir;
   process.env.PORT = '3001';
+  process.env.ELECTRON_STRICT_PORTS = '1';
   require(serverPath);
 }
 
@@ -83,6 +103,11 @@ app.whenReady().then(() => {
     .then(() => createWindow('http://127.0.0.1:3001'))
     .catch((err) => {
       console.error(err);
+      dialog.showErrorBox(
+        'B-TRACE System',
+        'The application could not start its local server. If port 3001 is already in use, close the other program or restart your computer and try again.\n\n' +
+          String(err && err.message ? err.message : err)
+      );
       app.quit();
     });
 });

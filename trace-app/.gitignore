@@ -1,6 +1,8 @@
 node_modules/
 dist/
 dist-electron/
+electron-release/
+release/
 data/*.db
 .env
 *.log

@@ -181,7 +181,7 @@ async function loadCertificateHeaderImages() {
   try {
     const [leftSeal, rightSeal] = await Promise.all([
       fetchImageDataUrl('image-removebg-preview.png'),
-      fetchImageDataUrl('icon.jpg'),
+      fetchImageDataUrl('ccro-logo.png'),
     ]);
     return { leftSeal, rightSeal };
   } catch {
