@@ -166,8 +166,8 @@ function create(data) {
   const age_group = application_type === APPLICATION_COLB_BRAP ? null : getAgeGroup(age);
   const db = getDb();
   const stmt = db.prepare(`
-    INSERT INTO children (first_name, middle_name, last_name, date_of_birth, place_of_birth, contact_no, age_group, registrant_deceased, hilot_deceased, parent_foreigner, out_of_town, application_type)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO children (first_name, middle_name, last_name, date_of_birth, place_of_birth, contact_no, age_group, registrant_deceased, hilot_deceased, parent_foreigner, out_of_town, has_marriage_certificate, application_type)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const result = stmt.run(
     data.first_name,
@@ -181,6 +181,7 @@ function create(data) {
     data.hilot_deceased ? 1 : 0,
     data.parent_foreigner ? 1 : 0,
     data.out_of_town ? 1 : 0,
+    data.has_marriage_certificate ? 1 : 0,
     application_type
   );
   db.close();
@@ -206,12 +207,16 @@ function update(id, data) {
   const hilotDeceased = data.hilot_deceased !== undefined ? (data.hilot_deceased ? 1 : 0) : (existing.hilot_deceased ? 1 : 0);
   const parentForeigner = data.parent_foreigner !== undefined ? (data.parent_foreigner ? 1 : 0) : (existing.parent_foreigner ? 1 : 0);
   const outOfTown = data.out_of_town !== undefined ? (data.out_of_town ? 1 : 0) : (existing.out_of_town ? 1 : 0);
+  const hasMarriageCertificate =
+    data.has_marriage_certificate !== undefined
+      ? (data.has_marriage_certificate ? 1 : 0)
+      : (existing.has_marriage_certificate ? 1 : 0);
   const stmt = db.prepare(`
     UPDATE children SET
       first_name = ?, middle_name = ?, last_name = ?,
       date_of_birth = ?, place_of_birth = ?, contact_no = ?,
       age_group = ?,
-      registrant_deceased = ?, hilot_deceased = ?, parent_foreigner = ?, out_of_town = ?,
+      registrant_deceased = ?, hilot_deceased = ?, parent_foreigner = ?, out_of_town = ?, has_marriage_certificate = ?,
       updated_at = datetime('now')
     WHERE id = ?
   `);
@@ -227,6 +232,7 @@ function update(id, data) {
     hilotDeceased,
     parentForeigner,
     outOfTown,
+    hasMarriageCertificate,
     id
   );
   db.close();

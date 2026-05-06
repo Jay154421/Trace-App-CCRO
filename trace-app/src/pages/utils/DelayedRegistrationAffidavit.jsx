@@ -11,7 +11,7 @@ function FormLine({ value = '', onChange, placeholder, width = 'flex-1', classNa
     <input
       type="text"
       value={value}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(e) => onChange(e.target.value.toUpperCase())}
       placeholder={placeholder}
       className={`focus:outline-none border-b border-green-600 bg-transparent px-1 py-0.5 text-black ${width} ${className}`}
       style={{ fontFamily: FONT_FAMILY, fontSize: '14px' }}

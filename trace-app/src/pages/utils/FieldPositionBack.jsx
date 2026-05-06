@@ -90,7 +90,7 @@ const FIELD_POSITIONS = {
     dra_sworn_day: { x: 1179, y: 3588 },
     dra_sworn_month: { x: 1488, y: 3588, width: 483 },
     dra_sworn_year: { x: 2043, y: 3588, width: 189 },
-    dra_sworn_at: { x: 164, y: 3642, width: 1026 },
+    dra_sworn_at: { x: 164, y: 3652, width: 1026 },
     dra_ctc_no: { x: 162, y: 3716, width: 330 },
     dra_issued_on: { x: 732, y: 3716, width: 567 },
     dra_issued_at: { x: 1410, y: 3716, width: 849 },
@@ -170,6 +170,9 @@ const INFORMANT_ADDRESS_COMPACT_OVERLAY_PX =
 const ATTENDANT_ADDRESS_SHRINK_MIN_CHARS = 35;
 const ATTENDANT_ADDRESS_SHRINK_MAX_CHARS = 60;
 const ATTENDANT_ADDRESS_MIN_FONT_PX = 12;
+const OVERLAY_MIN_SHRINK_FONT_PX = 12;
+const OVERLAY_SHRINK_STEP_PX = 0.5;
+const OVERLAY_HORIZONTAL_PADDING_PX = 8;
 
 /** Attendant address shrinking threshold for PDF (characters) */
 const ATTENDANT_ADDRESS_SHRINK_MIN_CHARS_PDF = 35;
@@ -646,6 +649,89 @@ function getAttendantAddressFontPx(charCount) {
     return PDF_LAYOUT.fieldFontSize - (position / range) * fontRange;
 }
 
+let overlayMeasureContext = null;
+
+function getOverlayMeasureContext() {
+    if (typeof document === 'undefined') return null;
+    if (overlayMeasureContext) return overlayMeasureContext;
+    const canvas = document.createElement('canvas');
+    overlayMeasureContext = canvas.getContext('2d');
+    return overlayMeasureContext;
+}
+
+function countWrappedLinesForOverlay(text, widthPx, fontPx) {
+    if (!text || !text.trim()) return 1;
+    const ctx = getOverlayMeasureContext();
+    if (!ctx) return 1;
+    ctx.font = `${fontPx}px ${FONT_FAMILY}`;
+
+    const lines = String(text).split(/\r?\n/);
+    let totalLines = 0;
+
+    for (const sourceLine of lines) {
+        if (!sourceLine) {
+            totalLines += 1;
+            continue;
+        }
+        const words = sourceLine.split(/\s+/).filter(Boolean);
+        if (words.length === 0) {
+            totalLines += 1;
+            continue;
+        }
+
+        let currentLine = '';
+        let lineCount = 1;
+        for (const word of words) {
+            const candidate = currentLine ? `${currentLine} ${word}` : word;
+            if (ctx.measureText(candidate).width <= widthPx) {
+                currentLine = candidate;
+                continue;
+            }
+
+            if (!currentLine) {
+                let segment = '';
+                for (const char of word) {
+                    const nextSegment = segment + char;
+                    if (ctx.measureText(nextSegment).width <= widthPx) {
+                        segment = nextSegment;
+                    } else {
+                        lineCount += 1;
+                        segment = char;
+                    }
+                }
+                currentLine = segment;
+            } else {
+                lineCount += 1;
+                currentLine = word;
+            }
+        }
+
+        totalLines += lineCount;
+    }
+
+    return totalLines;
+}
+
+function pickOverlayFontPxForColumn(text, maxWidthPx, preferredPx) {
+    if (!maxWidthPx || maxWidthPx <= 0) return preferredPx;
+    const value = text == null ? '' : String(text);
+    if (!value.trim()) return preferredPx;
+
+    const minFontPx = Math.min(preferredPx, OVERLAY_MIN_SHRINK_FONT_PX);
+    let bestPx = preferredPx;
+    let minLines = Infinity;
+    for (let px = preferredPx; px >= minFontPx; px -= OVERLAY_SHRINK_STEP_PX) {
+        const count = countWrappedLinesForOverlay(value, maxWidthPx, px);
+        if (count < minLines) {
+            minLines = count;
+            bestPx = px;
+        } else if (count === minLines) {
+            bestPx = Math.max(bestPx, px);
+        }
+    }
+    return bestPx;
+}
+
 /**
  * Build a combined PDF with field positioning AND requirements checklist with checkmarks
  */
@@ -922,7 +1008,7 @@ function generateTableWithCheckmarks(doc, data, columns, options = {}, checkmark
             } else {
                 // Regular text column
                 doc.setTextColor(0, 0, 0);
-                const text = String(value || '');
+                const text = toCobDisplay(String(value || ''));
                 doc.text(text, x + 2, currentY + 4);
             }
 
@@ -960,6 +1046,10 @@ function PositionedValue({ fieldKey, value, fontLenSource }) {
     const colW = getEffectiveColumnWidthPx(fieldKey);
     const boxWidth = field.width ?? colW ?? undefined;
     const useWrap = boxWidth != null;
+    const usableWidth = boxWidth != null ? Math.max(1, boxWidth - OVERLAY_HORIZONTAL_PADDING_PX) : null;
+    if (usableWidth != null) {
+        fontPx = pickOverlayFontPxForColumn(display, usableWidth, fontPx);
+    }
 
     return (
         <span

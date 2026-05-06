@@ -72,7 +72,7 @@ export function PrintCertificate() {
 
   const updateCertificationPurpose = useCallback(
     (value) => {
-      const normalized = String(value ?? "");
+      const normalized = String(value ?? "").toUpperCase();
       setCert((prev) => {
         const current = prev && typeof prev === "object" ? prev : {};
         const existingOptions = Array.isArray(current.certificationPurposeOptions)
@@ -98,7 +98,7 @@ export function PrintCertificate() {
 
   const updateRequestPerson = useCallback(
     (value) => {
-      const normalized = String(value ?? "");
+      const normalized = String(value ?? "").toUpperCase();
       setCert((prev) => {
         const current = prev && typeof prev === "object" ? prev : {};
         const existingOptions = Array.isArray(current.requestPersonOptions)

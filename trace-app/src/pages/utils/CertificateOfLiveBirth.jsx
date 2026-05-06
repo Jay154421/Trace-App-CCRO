@@ -64,7 +64,7 @@ const DEFAULT_CERT = {
   attendantType: '',
   attendantOthersSpecify: '',
   attendantTime: '',
-  attendantAmpm: 'am',
+  attendantAmpm: 'AM',
   attendantName: '',
   attendantAddress: '',
   attendantTitle: '',
@@ -190,6 +190,20 @@ function parseDateOfBirth(dateStr) {
 function trimStr(value) {
   if (value == null || typeof value !== 'string') return '';
   return value.trim();
+}
+
+function normalizeSexSelectValue(value) {
+  if (value == null || value === '') return '';
+  const s = String(value).trim().toLowerCase();
+  if (s === 'male' || s === 'm') return 'MALE';
+  if (s === 'female' || s === 'f') return 'FEMALE';
+  return String(value).trim().toUpperCase();
+}
+
+function normalizeAttendantAmpmValue(value) {
+  const s = String(value ?? '').trim().toLowerCase();
+  if (s === 'pm' || s === 'p.m.' || s === 'p.m') return 'PM';
+  return 'AM';
 }
 
 /** YYYY-MM-DD for the applicant row when certificate day/month/year are all set. */
@@ -522,7 +536,7 @@ function FormLine({ value = '', onChange, placeholder, className = '', width, re
     <input
       type="text"
       value={value}
-      onChange={readOnly ? undefined : (e) => onChange(e.target.value)}
+      onChange={readOnly ? undefined : (e) => onChange(e.target.value.toUpperCase())}
       readOnly={readOnly}
       placeholder={placeholder}
       className={`focus:outline-none focus:ring-0 min-h-[1.25rem] ${width || 'flex-1 min-w-0'} ${className}`}
@@ -627,13 +641,15 @@ export function CertificateOfLiveBirth() {
           base.certificationPurpose ?? base.certification_purpose ?? base.purpose,
         );
         base.certificationPurpose = loadedPurpose || DEFAULT_CERTIFICATION_PURPOSE;
+        base.sex = normalizeSexSelectValue(base.sex);
+        base.attendantAmpm = normalizeAttendantAmpmValue(base.attendantAmpm);
         const fromChild = {
           province: base.province || DEFAULT_PROVINCE,
           cityMunicipality: base.cityMunicipality || DEFAULT_CITY_MUNICIPALITY,
           // Keep these synced with applicant edits.
-          childFirst: data.first_name ?? '',
-          childMiddle: data.middle_name ?? '',
-          childLast: data.last_name ?? '',
+          childFirst: String(data.first_name ?? '').toUpperCase(),
+          childMiddle: String(data.middle_name ?? '').toUpperCase(),
+          childLast: String(data.last_name ?? '').toUpperCase(),
         };
         const { day, month, year } = parseDateOfBirth(data.date_of_birth);
         fromChild.birthDay = day;
@@ -849,7 +865,7 @@ export function CertificateOfLiveBirth() {
               <select
                 aria-label="Sex"
                 value={form.sex}
-                onChange={(e) => update('sex', e.target.value)}
+                onChange={(e) => update('sex', e.target.value.toUpperCase())}
                 className="focus:outline-none focus:ring-0 min-h-[1.25rem] cursor-pointer appearance-none bg-no-repeat bg-[length:12px] bg-[right_4px_center] w-28"
                 style={{
                   fontFamily: FONT_FAMILY,
@@ -863,8 +879,8 @@ export function CertificateOfLiveBirth() {
                   backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%23666' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
                 }}
               >
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
+                <option value="MALE">MALE</option>
+                <option value="FEMALE">FEMALE</option>
               </select>
             </div>
             <div>
@@ -1223,9 +1239,9 @@ export function CertificateOfLiveBirth() {
                   </>
                 );
               })()}
-              <select value={form.attendantAmpm} onChange={(e) => update('attendantAmpm', e.target.value)} style={{ fontFamily: FONT_FAMILY, fontSize: '14px', backgroundColor: COLORS.white, border: `1px solid ${COLORS.accentGreen}`, borderRadius: 0, padding: '2px 4px', color: COLORS.black }}>
-                <option value="am">am</option>
-                <option value="pm">pm</option>
+              <select value={form.attendantAmpm} onChange={(e) => update('attendantAmpm', e.target.value.toUpperCase())} style={{ fontFamily: FONT_FAMILY, fontSize: '14px', backgroundColor: COLORS.white, border: `1px solid ${COLORS.accentGreen}`, borderRadius: 0, padding: '2px 4px', color: COLORS.black }}>
+                <option value="AM">AM</option>
+                <option value="PM">PM</option>
               </select>
             </span>
             on the date of birth specified above.
@@ -1278,7 +1294,7 @@ export function CertificateOfLiveBirth() {
               
               <div><p className="mb-1" style={{ fontWeight: 400 }}>Name in Print</p><FormLine value={form.informantName} onChange={(v) => update('informantName', v)} placeholder="(Name in print)" /></div>
               <div><p className="mb-1" style={{ fontWeight: 400 }}>Relationship to the Child</p><FormLine value={form.informantRelationship} onChange={(v) => update('informantRelationship', v)} placeholder="(e.g. Mother, Father)" /></div>
-              <div><p className="mb-1" style={{ fontWeight: 400 }}>Address</p><textarea value={form.informantAddress} onChange={(e) => update('informantAddress', e.target.value)} placeholder="(Complete address)" rows={2} className="w-full focus:outline-none" style={{ fontFamily: FONT_FAMILY, fontSize: '14px', backgroundColor: COLORS.white, border: `1px solid ${COLORS.borderGray}`, borderRadius: 0, padding: '4px' }} /></div>
+              <div><p className="mb-1" style={{ fontWeight: 400 }}>Address</p><textarea value={form.informantAddress} onChange={(e) => update('informantAddress', e.target.value.toUpperCase())} placeholder="(Complete address)" rows={2} className="w-full focus:outline-none" style={{ fontFamily: FONT_FAMILY, fontSize: '14px', backgroundColor: COLORS.white, border: `1px solid ${COLORS.borderGray}`, borderRadius: 0, padding: '4px' }} /></div>
               <div>
                 <p className="mb-1" style={{ fontWeight: 400 }}>Date</p>
                 <div className="flex items-center gap-1">

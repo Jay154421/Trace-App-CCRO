@@ -1,0 +1,437 @@
+[
+    {
+        "id": 1,
+        "code": "*",
+        "religion": "NOT APPLICABLE"
+    },
+    {
+        "id": 2,
+        "code": "+",
+        "religion": "NOT STATED"
+    },
+    {
+        "id": 3,
+        "code": "0",
+        "religion": "NONE"
+    },
+    {
+        "id": 4,
+        "code": "1",
+        "religion": "AGLIPAY"
+    },
+    {
+        "id": 5,
+        "code": "2",
+        "religion": "BUDDHIST"
+    },
+    {
+        "id": 6,
+        "code": "3",
+        "religion": "CHURCH OF JESUS CHRIST OF THE LATTER DAY SAINTS"
+    },
+    {
+        "id": 7,
+        "code": "4",
+        "religion": "IGLESIA NI CRISTO"
+    },
+    {
+        "id": 8,
+        "code": "5",
+        "religion": "ISLAM"
+    },
+    {
+        "id": 9,
+        "code": "6",
+        "religion": "JEHOVA'S WITNESS"
+    },
+    {
+        "id": 10,
+        "code": "7",
+        "religion": "PHILIPPINE BENEVOLENT MISSIONARIES ASSOCIATION"
+    },
+    {
+        "id": 11,
+        "code": "8",
+        "religion": "ROMAN CATHOLIC INCLUDING CATHOLIC CHARISMATIC"
+    },
+    {
+        "id": 12,
+        "code": "8",
+        "religion": "ROMAN CATHOLIC"
+    },
+    {
+        "id": 13,
+        "code": "8",
+        "religion": "CATHOLIC"
+    },
+    {
+        "id": 14,
+        "code": "9",
+        "religion": "SEVENTH DAY ADVENTIST"
+    },
+    {
+        "id": 15,
+        "code": "11",
+        "religion": "CONVENTION OF THE PHILIPPINE BAPTIST CHURCH"
+    },
+    {
+        "id": 16,
+        "code": "12",
+        "religion": "IGLESIA EVANGELISTA METHODISTA EN LAS FILIPINAS"
+    },
+    {
+        "id": 17,
+        "code": "13",
+        "religion": "LUTHERIAN CHURCH OF THE PHILIPPINES"
+    },
+    {
+        "id": 18,
+        "code": "14",
+        "religion": "PHILIPPINES EPISCOPAL CHURCH"
+    },
+    {
+        "id": 19,
+        "code": "15",
+        "religion": "SALVATION ARMY, PHILIPPINES"
+    },
+    {
+        "id": 20,
+        "code": "16",
+        "religion": "UNITED CHURCH OF CHRIST IN THE PHILIPPINES"
+    },
+    {
+        "id": 21,
+        "code": "17",
+        "religion": "UNITED METHODIST CHURCH"
+    },
+    {
+        "id": 22,
+        "code": "19",
+        "religion": "OTHER METHODIST"
+    },
+    {
+        "id": 23,
+        "code": "21",
+        "religion": "ASSOCIATION OF BAPTIST CHURCHES"
+    },
+    {
+        "id": 24,
+        "code": "22",
+        "religion": "ASSOCIATION OF FUNDAMENTAL BAPTIST CHURCH OF THE PHILIPPINES"
+    },
+    {
+        "id": 25,
+        "code": "23",
+        "religion": "BAPTIST CONFERENCE OF THE PHILIPPINES"
+    },
+    {
+        "id": 26,
+        "code": "24",
+        "religion": "BIBLE BAPTIST CHURCH"
+    },
+    {
+        "id": 27,
+        "code": "25",
+        "religion": "SOUTHERN BAPTIST CHURCH"
+    },
+    {
+        "id": 28,
+        "code": "29",
+        "religion": "OTHER BAPTIST"
+    },
+    {
+        "id": 29,
+        "code": "31",
+        "religion": "ALLIANCE OF BIBLE CHRISTIAN COMMUNITIES OF THE PHILIPPINES"
+    },
+    {
+        "id": 30,
+        "code": "32",
+        "religion": "ASSEMBLIES OF GOD"
+    },
+    {
+        "id": 31,
+        "code": "33",
+        "religion": "BREAD OF LIFE MINISTRIES"
+    },
+    {
+        "id": 32,
+        "code": "34",
+        "religion": "CHARISMATIC FULL GOSPEL MINISTRIES"
+    },
+    {
+        "id": 33,
+        "code": "35",
+        "religion": "CHRISTIAN MISSIONARY ALLIANCE CHURCH OF THE PHILIPPINES"
+    },
+    {
+        "id": 34,
+        "code": "36",
+        "religion": "CHRISTIANS MISSIONS IN THE PHILIPPINES"
+    },
+    {
+        "id": 35,
+        "code": "37",
+        "religion": "CHRIST THE LIVING STONE FELLOWSHIP"
+    },
+    {
+        "id": 36,
+        "code": "38",
+        "religion": "CHURCH OF CHRIST"
+    },
+    {
+        "id": 37,
+        "code": "39",
+        "religion": "CHURCH OF GOOD WORLD MISSION IN THE PHILLINES"
+    },
+    {
+        "id": 38,
+        "code": "40",
+        "religion": "CHURCH OF THE NAZARENE"
+    },
+    {
+        "id": 39,
+        "code": "41",
+        "religion": "CONSERVATIVE BAPTIST ASSOCIATION IN THE PHILIPPINES"
+    },
+    {
+        "id": 40,
+        "code": "42",
+        "religion": "DOOR OF FAITH"
+    },
+    {
+        "id": 41,
+        "code": "43",
+        "religion": "EVANGELICAL CHRISTIAN OUTREACH FOUNDATION"
+    },
+    {
+        "id": 42,
+        "code": "44",
+        "religion": "EVANGELICAL FREE CHURCH OF THE PHILIPPINES"
+    },
+    {
+        "id": 43,
+        "code": "45",
+        "religion": "EVANGELICAL PRESBYTERIAN CHURCH"
+    },
+    {
+        "id": 44,
+        "code": "46",
+        "religion": "FAITH TABERNACLE CHURCH (LIVING ROCK MINISTRIES)"
+    },
+    {
+        "id": 45,
+        "code": "47",
+        "religion": "FILIPINO ASSEMBLIES OF THE BORN, INC."
+    },
+    {
+        "id": 46,
+        "code": "48",
+        "religion": "FOURSQUARE GOSPEL CHURCH IN THE PHILIPPINES"
+    },
+    {
+        "id": 47,
+        "code": "49",
+        "religion": "FREE BELIEVERS IN CHRIST FELLOWSHIP"
+    },
+    {
+        "id": 48,
+        "code": "50",
+        "religion": "FREE METHODIST CHURCH IN THE PHILIPPINES"
+    },
+    {
+        "id": 49,
+        "code": "51",
+        "religion": "FREE MISSION IN THE PHILIPPINES, INC."
+    },
+    {
+        "id": 50,
+        "code": "52",
+        "religion": "GENERAL BAPTIST CHURCHES OF THE PHILIPPINES"
+    },
+    {
+        "id": 51,
+        "code": "53",
+        "religion": "GOOD NEWS CHRISTIAN CHURCHES"
+    },
+    {
+        "id": 52,
+        "code": "54",
+        "religion": "HIGHER GROUND BAPTIST MISSION"
+    },
+    {
+        "id": 53,
+        "code": "55",
+        "religion": "IEMELIF REFORM MOVEMENT"
+    },
+    {
+        "id": 54,
+        "code": "56",
+        "religion": "INDEPENDENT BAPTIST CHURCHES OF THE PHILIPPINES"
+    },
+    {
+        "id": 55,
+        "code": "57",
+        "religion": "INTERNATIONAL BAPTIST MISSIONARY FELLOWSHIP"
+    },
+    {
+        "id": 56,
+        "code": "58",
+        "religion": "INTERNATIONAL ONE WAY OUTREACH"
+    },
+    {
+        "id": 57,
+        "code": "59",
+        "religion": "JESUS CHRIST SAVES GLOBAL OUTREACH"
+    },
+    {
+        "id": 58,
+        "code": "60",
+        "religion": "JESUS IS LORD CHURCH"
+    },
+    {
+        "id": 59,
+        "code": "61",
+        "religion": "JESUS REIGNS MINISTRIES"
+    },
+    {
+        "id": 60,
+        "code": "62",
+        "religion": "LOVE OF CHRIST INTERNATIONAL MINISTRIES"
+    },
+    {
+        "id": 61,
+        "code": "63",
+        "religion": "MIRACLE LIFE FELLOWSHIP INTERNATIONAL"
+    },
+    {
+        "id": 62,
+        "code": "64",
+        "religion": "MIRACLE REVIVAL CHURCH OF THE PHILIPPINES"
+    },
+    {
+        "id": 63,
+        "code": "65",
+        "religion": "MISSIONARY BAPTIST CHURCHES OF THE PHILIPPINES"
+    },
+    {
+        "id": 64,
+        "code": "66",
+        "religion": "PENTECOSTAL CHURCH OF GOD ASIA MISSION"
+    },
+    {
+        "id": 65,
+        "code": "67",
+        "religion": "PHILIPPINE EVANGELICAL MISSION"
+    },
+    {
+        "id": 66,
+        "code": "68",
+        "religion": "PHILIPPINE GOOD NEWS MINISTRIES"
+    },
+    {
+        "id": 67,
+        "code": "69",
+        "religion": "PHILIPPINE GRACE GOSPEL FELLOWSHIP"
+    },
+    {
+        "id": 68,
+        "code": "70",
+        "religion": "PHILIPPINE MISSIONARY FELLOWSHIP"
+    },
+    {
+        "id": 69,
+        "code": "71",
+        "religion": "PHILIPPINE PENTECOSTAL HOLINESS CHURCH"
+    },
+    {
+        "id": 70,
+        "code": "72",
+        "religion": "POTTER'S HOUSE CHRISTIAN CENTER"
+    },
+    {
+        "id": 71,
+        "code": "73",
+        "religion": "PRESBYTERIAN CHURCH IN THE PHILIPPINES"
+    },
+    {
+        "id": 72,
+        "code": "74",
+        "religion": "TAKE THE NATION"
+    },
+    {
+        "id": 73,
+        "code": "75",
+        "religion": "THE WESLEYAN CHURCH"
+    },
+    {
+        "id": 74,
+        "code": "76",
+        "religion": "THINGS TO COME"
+    },
+    {
+        "id": 75,
+        "code": "77",
+        "religion": "UNIDA EVANGELICAL CHURCH"
+    },
+    {
+        "id": 76,
+        "code": "78",
+        "religion": "UNITED EVANGELICAL CHURCH OF THE PHILIPPINES (CHINESE)"
+    },
+    {
+        "id": 77,
+        "code": "79",
+        "religion": "UNIVERSAL PENTACOSTAL CHURCH"
+    },
+    {
+        "id": 78,
+        "code": "80",
+        "religion": "VICTORY CHAPEL CHRISTIAN FELLOWSHIP"
+    },
+    {
+        "id": 79,
+        "code": "81",
+        "religion": "WAY OF SALVATION"
+    },
+    {
+        "id": 80,
+        "code": "82",
+        "religion": "WORD FOR THE WORLD"
+    },
+    {
+        "id": 81,
+        "code": "83",
+        "religion": "WORLD MISSIONARY EVANGELISM"
+    },
+    {
+        "id": 82,
+        "code": "84",
+        "religion": "WORLDWIDE CHURCH OF GOD"
+    },
+    {
+        "id": 83,
+        "code": "85",
+        "religion": "ZION CHRISTIAN COMMUNITY CHURCH"
+    },
+    {
+        "id": 84,
+        "code": "89",
+        "religion": "OTHER EVANGELICAL CHURCHES"
+    },
+    {
+        "id": 85,
+        "code": "91",
+        "religion": "OTHER PROTESTANTS"
+    },
+    {
+        "id": 86,
+        "code": "92",
+        "religion": "TRIBAL RELIGIONS"
+    },
+    {
+        "id": 87,
+        "code": "99",
+        "religion": "OTHERS"
+    }
+]

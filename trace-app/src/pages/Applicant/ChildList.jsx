@@ -5,7 +5,6 @@ import { useQuery } from '../../hooks/useQuery';
 import { childrenApi } from '../../services/api';
 import { AddApplicantModal } from '../../components/AddApplicantModal';
 import { formatDateDDMMYYYY } from '../../utils/date';
-import toast from 'react-hot-toast';
 import { getApplicantStatusDisplay, applicantStatusBadgeClass } from '../../utils/applicantStatus';
 
 function statusFilterPillActiveClass(value) {
@@ -105,15 +104,9 @@ export function ChildList() {
   const listApplicationType = basePath === '/colb-brap' ? 'colb_brap' : 'applicant';
   const isColbBrapList = listApplicationType === 'colb_brap';
   const [modalOpen, setModalOpen] = useState(false);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [listKey, setListKey] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-
-  // Multi-select / bulk-delete state
-  const [selectMode, setSelectMode] = useState(false);
-  const [selectedIds, setSelectedIds] = useState(new Set());
-  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(8);
@@ -154,69 +147,9 @@ export function ChildList() {
     setCurrentPage(1);
   }, [searchQuery, statusFilter, itemsPerPage]);
 
-  // Clear selection when exiting select mode
-  useEffect(() => {
-    if (!selectMode) setSelectedIds(new Set());
-  }, [selectMode]);
-
   const totalPages = Math.max(1, Math.ceil(filteredList.length / itemsPerPage));
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedList = filteredList.slice(startIndex, startIndex + itemsPerPage);
-
-  // ── Selection helpers ────────────────────────────────────────────────────────
-  const visibleIds = paginatedList.map((c) => c.id);
-  const allVisibleSelected =
-    visibleIds.length > 0 && visibleIds.every((id) => selectedIds.has(id));
-
-  function toggleItem(id) {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
-
-  function toggleSelectAll() {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (allVisibleSelected) {
-        visibleIds.forEach((id) => next.delete(id));
-      } else {
-        visibleIds.forEach((id) => next.add(id));
-      }
-      return next;
-    });
-  }
-
-  // ── Bulk delete ──────────────────────────────────────────────────────────────
-  function openDeleteConfirmModal() {
-    if (selectedIds.size === 0) return;
-    setDeleteConfirmOpen(true);
-  }
-
-  function closeDeleteConfirmModal() {
-    if (bulkDeleting) return;
-    setDeleteConfirmOpen(false);
-  }
-
-  async function handleBulkDelete() {
-    if (selectedIds.size === 0) return;
-    setBulkDeleting(true);
-    try {
-      await childrenApi.bulkRemove([...selectedIds]);
-      toast.success(
-        `${selectedIds.size} ${isColbBrapList ? 'COLB BRAP record' : 'applicant'}${selectedIds.size > 1 ? 's' : ''} deleted.`
-      );
-      setDeleteConfirmOpen(false);
-      setListKey((k) => k + 1);
-      setSelectMode(false);
-    } catch (err) {
-      toast.error(err?.message || 'Bulk delete failed.');
-    } finally {
-      setBulkDeleting(false);
-    }
-  }
 
   return (
     <div>
@@ -224,48 +157,13 @@ export function ChildList() {
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <h1 className="text-2xl font-semibold text-slate-800">{isColbBrapList ? 'COLB BRAP' : 'Applicants'}</h1>
         <div className="flex items-center gap-2">
-          {/* Bulk-delete toolbar */}
-          {selectMode ? (
-            <>
-              <span className="text-sm text-slate-500">
-                {selectedIds.size} selected
-              </span>
-              <button
-                type="button"
-                onClick={openDeleteConfirmModal}
-                disabled={selectedIds.size === 0 || bulkDeleting}
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
-              >
-                {bulkDeleting ? 'Deleting…' : 'Delete selected'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectMode(false)}
-                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
-              >
-                Cancel
-              </button>
-            </>
-          ) : (
-            <>
-              {listForSection.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setSelectMode(true)}
-                  className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
-                >
-                  Select
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => setModalOpen(true)}
-                className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
-              >
-                {isColbBrapList ? 'Add COLB BRAP' : 'Add applicant'}
-              </button>
-            </>
-          )}
+          <button
+            type="button"
+            onClick={() => setModalOpen(true)}
+            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+          >
+            {isColbBrapList ? 'Add COLB BRAP' : 'Add applicant'}
+          </button>
         </div>
       </div>
 
@@ -323,49 +221,6 @@ export function ChildList() {
         basePath={basePath}
       />
 
-      {deleteConfirmOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="delete-applicants-modal-title"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) closeDeleteConfirmModal();
-          }}
-        >
-          <div
-            className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 id="delete-applicants-modal-title" className="text-lg font-semibold text-slate-800">
-              Delete {selectedIds.size}{' '}
-              {isColbBrapList ? `COLB BRAP record${selectedIds.size > 1 ? 's' : ''}` : `applicant${selectedIds.size > 1 ? 's' : ''}`}?
-            </h2>
-            <p className="mt-2 text-sm text-slate-600">
-              This action cannot be undone.
-            </p>
-            <div className="mt-5 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={closeDeleteConfirmModal}
-                disabled={bulkDeleting}
-                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleBulkDelete}
-                disabled={bulkDeleting}
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {bulkDeleting ? 'Deleting…' : 'OK'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {error && (
         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800" role="alert">
           {error.message}
@@ -401,26 +256,6 @@ export function ChildList() {
         </div>
       ) : (
         <>
-          {/* Select-all row (only in select mode) */}
-          {selectMode && (
-            <div className="mb-2 flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2">
-              <input
-                id="select-all-checkbox"
-                type="checkbox"
-                checked={allVisibleSelected}
-                onChange={toggleSelectAll}
-                className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
-                aria-label="Select all on this page"
-              />
-              <label
-                htmlFor="select-all-checkbox"
-                className="text-sm text-slate-600 cursor-pointer select-none"
-              >
-                {allVisibleSelected ? 'Deselect all on this page' : 'Select all on this page'}
-              </label>
-            </div>
-          )}
-
           <ul className="space-y-3">
             {paginatedList.map((c) => {
               const statusDisplay = getApplicantStatusDisplay({
@@ -428,37 +263,11 @@ export function ChildList() {
                 checklist_checked: c.checklist_checked,
                 staff_process_status: c.staff_process_status,
               });
-              const isSelected = selectedIds.has(c.id);
-
               return (
                 <li key={c.id} className="flex items-center gap-3">
-                  {/* Checkbox (visible only in select mode) */}
-                  {selectMode && (
-                    <input
-                      type="checkbox"
-                      id={`select-${c.id}`}
-                      checked={isSelected}
-                      onChange={() => toggleItem(c.id)}
-                      aria-label={`Select ${getApplicantFullName(c)}`}
-                      className="h-4 w-4 shrink-0 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
-                    />
-                  )}
-
-                  {/* Card */}
                   <Link
                     to={applicantDetailPath(basePath, c.id)}
-                    onClick={(e) => {
-                      // In select mode, clicking the card toggles selection instead
-                      if (selectMode) {
-                        e.preventDefault();
-                        toggleItem(c.id);
-                      }
-                    }}
-                    className={`group flex flex-1 items-center gap-4 rounded-xl border bg-white px-4 py-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
-                      isSelected
-                        ? 'border-emerald-400 ring-1 ring-emerald-300'
-                        : 'border-slate-200 hover:border-emerald-300'
-                    }`}
+                    className="group flex flex-1 items-center gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
                   >
                     {/* Icon */}
                     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-amber-700">
@@ -512,18 +321,15 @@ export function ChildList() {
                       {statusDisplay.label}
                     </span>
 
-                    {/* Chevron (hidden in select mode) */}
-                    {!selectMode && (
-                      <span className="shrink-0 text-slate-400 transition group-hover:text-emerald-600" aria-hidden="true">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
-                          <path
-                            fillRule="evenodd"
-                            d="M7.22 4.97a.75.75 0 0 1 1.06 0l4.5 4.5a.75.75 0 0 1 0 1.06l-4.5 4.5a.75.75 0 1 1-1.06-1.06L11.19 10 7.22 6.03a.75.75 0 0 1 0-1.06Z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      </span>
-                    )}
+                    <span className="shrink-0 text-slate-400 transition group-hover:text-emerald-600" aria-hidden="true">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
+                        <path
+                          fillRule="evenodd"
+                          d="M7.22 4.97a.75.75 0 0 1 1.06 0l4.5 4.5a.75.75 0 0 1 0 1.06l-4.5 4.5a.75.75 0 1 1-1.06-1.06L11.19 10 7.22 6.03a.75.75 0 0 1 0-1.06Z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </span>
                   </Link>
                 </li>
               );

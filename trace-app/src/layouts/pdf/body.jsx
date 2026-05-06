@@ -43,7 +43,7 @@ export default function Certification({
             <input
               type="text"
               value={editableRequestPerson}
-              onChange={(e) => onRequestPersonChange?.(e.target.value)}
+              onChange={(e) => onRequestPersonChange?.(e.target.value.toUpperCase())}
               onBlur={() => setIsEditingRequestPerson(false)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === 'Escape') {
@@ -70,7 +70,7 @@ export default function Certification({
             <input
               type="text"
               value={editablePurpose}
-              onChange={(e) => onPurposeChange?.(e.target.value)}
+              onChange={(e) => onPurposeChange?.(e.target.value.toUpperCase())}
               onBlur={() => setIsEditingPurpose(false)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === 'Escape') {

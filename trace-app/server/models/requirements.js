@@ -66,6 +66,7 @@ const CONDITIONAL_DOCS = {
   death_cert_hilot: { id: 'death_cert_hilot', label: 'Death certificate (HILOT)' },
   foreign_parent_id: { id: 'foreign_parent_id', label: 'Passport or Bureau of Immigration cert. (foreign parent)' },
   affidavit_corroboration_out_of_town: { id: 'out_of_town_affidavit_legal_office', label: 'Affidavit w/ Corroboration for Out-of-Town Applicant (Legal Office)' },
+  marriage_certificate: { id: 'marriage_certificate', label: 'Marriage Certificate' },
 };
 
 const PHOTO_ID_SCANNER_CAPTURE_SIZE = { width: 600, height: 600, label: '2 x 2 in' };
@@ -102,11 +103,15 @@ function getRequirementsForChild(child) {
   const applicationType = String(child?.application_type || 'applicant').trim().toLowerCase();
   if (applicationType === 'colb_brap') {
     const general = COLB_BRAP_DOCS.map((d) => ({ ...withScannerCaptureSize(d), category: 'general' }));
+    const conditional = [];
+    if (child.has_marriage_certificate) {
+      conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.marriage_certificate), category: 'conditional' });
+    }
     return {
       general,
       ageSpecific: [],
-      conditional: [],
-      all: [...general],
+      conditional,
+      all: [...general, ...conditional],
     };
   }
 

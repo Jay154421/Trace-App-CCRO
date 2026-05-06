@@ -76,6 +76,11 @@ function isOutOfTownAffidavitRequirement(requirement) {
     || (label.includes('affidavit') && label.includes('corroboration') && label.includes('out-of-town'));
 }
 
+function isMarriageCertificateRequirement(requirement) {
+  const label = String(requirement?.label || '').toLowerCase();
+  return requirement?.id === 'marriage_certificate' || label === 'marriage certificate';
+}
+
 function buildPhotoFilename(child) {
   const firstName = toSafeFilenamePart(child?.first_name);
   const middleName = toSafeFilenamePart(child?.middle_name);
@@ -136,16 +141,21 @@ function buildChecklist(requirements, existing = [], child = null) {
   const byKey = new Map(existing.map((e) => [`${e.category}:${e.label}`, e]));
   const allRequirements = Array.isArray(requirements?.all) ? requirements.all : [];
   const normalizedOutOfTown = isTruthyFlag(child?.out_of_town);
+  const normalizedHasMarriageCertificate = isTruthyFlag(child?.has_marriage_certificate);
   const hasOutOfTownAffidavit = allRequirements.some((requirement) => isOutOfTownAffidavitRequirement(requirement));
   const filteredRequirements = allRequirements.filter((requirement) => {
     if (isOutOfTownAffidavitRequirement(requirement)) {
       return normalizedOutOfTown;
+    }
+    if (isMarriageCertificateRequirement(requirement)) {
+      return normalizedHasMarriageCertificate;
     }
     return true;
   });
   const missingExistingRequirements = existing.filter((item) => {
     if (!item?.label || !item?.category) return false;
     if (!normalizedOutOfTown && isOutOfTownAffidavitRequirement(item)) return false;
+    if (!normalizedHasMarriageCertificate && isMarriageCertificateRequirement(item)) return false;
     return !filteredRequirements.some((requirement) => (
       requirement?.label === item.label && requirement?.category === item.category
     ));
@@ -477,9 +487,10 @@ export function DocumentsWizard() {
   };
 
   const updateNotes = (index, notes) => {
+    const normalized = String(notes ?? '').toUpperCase();
     setChecklist((prev) => {
       const next = [...prev];
-      next[index] = { ...next[index], notes };
+      next[index] = { ...next[index], notes: normalized };
       return next;
     });
   };

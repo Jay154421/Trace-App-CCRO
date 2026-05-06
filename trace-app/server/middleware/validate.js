@@ -21,6 +21,7 @@ const childCreate = [
   body('hilot_deceased').optional().isBoolean().toBoolean(),
   body('parent_foreigner').optional().isBoolean().toBoolean(),
   body('out_of_town').optional().isBoolean().toBoolean(),
+  body('has_marriage_certificate').optional().isBoolean().toBoolean(),
 ];
 
 const childUpdate = [
@@ -35,6 +36,7 @@ const childUpdate = [
   body('hilot_deceased').optional().isBoolean().toBoolean(),
   body('parent_foreigner').optional().isBoolean().toBoolean(),
   body('out_of_town').optional().isBoolean().toBoolean(),
+  body('has_marriage_certificate').optional().isBoolean().toBoolean(),
 ];
 
 const idParam = [param('id').isInt({ min: 1 })];

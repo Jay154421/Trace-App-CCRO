@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { childrenApi } from '../services/api';
+import { buildApplicantPayload } from '../utils/applicantForm';
 
 const emptyForm = {
   first_name: '',
@@ -14,6 +15,7 @@ const emptyForm = {
   hilot_deceased: false,
   parent_foreigner: false,
   out_of_town: false,
+  has_marriage_certificate: false,
 };
 
 export function AddApplicantModal({
@@ -37,17 +39,14 @@ export function AddApplicantModal({
   const submit = (e) => {
     e.preventDefault();
     setLoading(true);
+    const base = buildApplicantPayload(form);
     const payload = {
-      first_name: form.first_name.trim(),
-      middle_name: form.middle_name.trim() || undefined,
-      last_name: form.last_name.trim(),
-      date_of_birth: form.date_of_birth,
-      place_of_birth: form.place_of_birth.trim() || undefined,
-      contact_no: form.contact_no.trim() || undefined,
-      registrant_deceased: isColbBrap ? false : form.registrant_deceased,
-      hilot_deceased: isColbBrap ? false : form.hilot_deceased,
-      parent_foreigner: isColbBrap ? false : form.parent_foreigner,
-      out_of_town: isColbBrap ? false : form.out_of_town,
+      ...base,
+      registrant_deceased: isColbBrap ? false : base.registrant_deceased,
+      hilot_deceased: isColbBrap ? false : base.hilot_deceased,
+      parent_foreigner: isColbBrap ? false : base.parent_foreigner,
+      out_of_town: isColbBrap ? false : base.out_of_town,
+      has_marriage_certificate: isColbBrap ? form.has_marriage_certificate : false,
       application_type: isColbBrap ? 'colb_brap' : 'applicant',
     };
     childrenApi
@@ -104,7 +103,7 @@ export function AddApplicantModal({
                   type="text"
                   required
                   value={form.first_name}
-                  onChange={(e) => update('first_name', e.target.value)}
+                  onChange={(e) => update('first_name', e.target.value.toUpperCase())}
                   className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
                   autoComplete="given-name"
                   aria-required="true"
@@ -115,7 +114,7 @@ export function AddApplicantModal({
                 <input
                   type="text"
                   value={form.middle_name}
-                  onChange={(e) => update('middle_name', e.target.value)}
+                  onChange={(e) => update('middle_name', e.target.value.toUpperCase())}
                   className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
                   autoComplete="additional-name"
                 />
@@ -126,7 +125,7 @@ export function AddApplicantModal({
                   type="text"
                   required
                   value={form.last_name}
-                  onChange={(e) => update('last_name', e.target.value)}
+                  onChange={(e) => update('last_name', e.target.value.toUpperCase())}
                   className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
                   autoComplete="family-name"
                   aria-required="true"
@@ -153,7 +152,7 @@ export function AddApplicantModal({
                 <input
                   type="text"
                   value={form.contact_no}
-                  onChange={(e) => update('contact_no', e.target.value)}
+                  onChange={(e) => update('contact_no', e.target.value.toUpperCase())}
                   className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
                 />
               </label>
@@ -164,7 +163,7 @@ export function AddApplicantModal({
               <input
                 type="text"
                 value={form.place_of_birth}
-                onChange={(e) => update('place_of_birth', e.target.value)}
+                onChange={(e) => update('place_of_birth', e.target.value.toUpperCase())}
                 className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
               />
             </label>
@@ -202,6 +201,21 @@ export function AddApplicantModal({
                     <span className="text-sm text-slate-700">One parent is foreigner (attach passport or Bureau of Immigration cert.)</span>
                   </label>
                 </div>
+              </fieldset>
+            ) : null}
+            {isColbBrap ? (
+              <fieldset className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
+                <legend className="px-1 text-sm font-semibold text-slate-700">COLB BRAP conditional requirement</legend>
+                <p className="mb-4 mt-2 text-sm text-slate-500">Check this if the applicant has a marriage certificate.</p>
+                <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 transition hover:border-emerald-200 hover:bg-emerald-50/50">
+                  <input
+                    type="checkbox"
+                    checked={form.has_marriage_certificate}
+                    onChange={(e) => update('has_marriage_certificate', e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <span className="text-sm text-slate-700">Has Marriage Certificate</span>
+                </label>
               </fieldset>
             ) : null}
             </div>

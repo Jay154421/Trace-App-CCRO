@@ -7,6 +7,7 @@ export function ApplicantFormFields({
   onFieldChange,
   hideCoreIdentityFields = false,
   hideConditionalRequirements = false,
+  showMarriageCertificateToggle = false,
 }) {
   return (
     <>
@@ -25,7 +26,7 @@ export function ApplicantFormFields({
                 type="text"
                 required
                 value={form.first_name}
-                onChange={(e) => onFieldChange('first_name', e.target.value)}
+                onChange={(e) => onFieldChange('first_name', e.target.value.toUpperCase())}
                 className={inputClassName}
                 autoComplete="given-name"
                 aria-required="true"
@@ -36,7 +37,7 @@ export function ApplicantFormFields({
               <input
                 type="text"
                 value={form.middle_name}
-                onChange={(e) => onFieldChange('middle_name', e.target.value)}
+                onChange={(e) => onFieldChange('middle_name', e.target.value.toUpperCase())}
                 className={inputClassName}
                 autoComplete="additional-name"
               />
@@ -47,7 +48,7 @@ export function ApplicantFormFields({
                 type="text"
                 required
                 value={form.last_name}
-                onChange={(e) => onFieldChange('last_name', e.target.value)}
+                onChange={(e) => onFieldChange('last_name', e.target.value.toUpperCase())}
                 className={inputClassName}
                 autoComplete="family-name"
                 aria-required="true"
@@ -77,7 +78,7 @@ export function ApplicantFormFields({
           <input
             type="text"
             value={form.contact_no}
-            onChange={(e) => onFieldChange('contact_no', e.target.value)}
+            onChange={(e) => onFieldChange('contact_no', e.target.value.toUpperCase())}
             className={inputClassName}
           />
         </label>
@@ -89,7 +90,7 @@ export function ApplicantFormFields({
           <input
             type="text"
             value={form.place_of_birth}
-            onChange={(e) => onFieldChange('place_of_birth', e.target.value)}
+            onChange={(e) => onFieldChange('place_of_birth', e.target.value.toUpperCase())}
             className={inputClassName}
           />
         </label>
@@ -128,6 +129,24 @@ export function ApplicantFormFields({
               <span className="text-sm text-slate-700">One parent is foreigner (attach passport or Bureau of Immigration cert.)</span>
             </label>
           </div>
+        </fieldset>
+      ) : null}
+
+      {showMarriageCertificateToggle ? (
+        <fieldset className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
+          <legend className="px-1 text-sm font-semibold text-slate-700">COLB BRAP conditional requirement</legend>
+          <p className="mb-4 mt-2 text-sm text-slate-500">
+            Check this if the applicant has a marriage certificate so it is added to the document checklist.
+          </p>
+          <label className={checkboxWrapperClassName}>
+            <input
+              type="checkbox"
+              checked={form.has_marriage_certificate}
+              onChange={(e) => onFieldChange('has_marriage_certificate', e.target.checked)}
+              className={checkboxClassName}
+            />
+            <span className="text-sm text-slate-700">Has Marriage Certificate</span>
+          </label>
         </fieldset>
       ) : null}
     </>

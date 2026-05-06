@@ -177,6 +177,7 @@ export function ChildDetail() {
   const hasHilotDeceased = isTruthyFlag(child.hilot_deceased);
   const hasParentForeigner = isTruthyFlag(child.parent_foreigner);
   const hasOutOfTown = isTruthyFlag(child.out_of_town);
+  const hasMarriageCertificate = isTruthyFlag(child.has_marriage_certificate);
   const isColbBrap = String(child.application_type || '').toLowerCase() === 'colb_brap';
 
   return (
@@ -290,6 +291,10 @@ export function ChildDetail() {
             <div>
               <dt className="text-sm text-slate-500">Contact no.</dt>
               <dd className="mt-0.5 font-medium text-slate-800">{child.contact_no || '—'}</dd>
+            </div>
+            <div>
+              <dt className="text-sm text-slate-500">Marriage certificate</dt>
+              <dd className="mt-0.5 font-medium text-slate-800">{hasMarriageCertificate ? 'Yes' : 'No'}</dd>
             </div>
             {child.created_at ? (
               <div>
@@ -460,6 +465,7 @@ export function ChildDetail() {
                   onFieldChange={updateEditForm}
                   hideCoreIdentityFields
                   hideConditionalRequirements={isColbBrap}
+                  showMarriageCertificateToggle={isColbBrap}
                 />
               </div>
               <div className="flex flex-col-reverse gap-3 border-t border-slate-200 bg-white px-6 py-4 sm:flex-row sm:justify-end">

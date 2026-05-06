@@ -137,10 +137,10 @@ async function importDatabase(req, res) {
         const inserted = db.prepare(
           `INSERT INTO children (
             first_name, middle_name, last_name, date_of_birth, place_of_birth, contact_no, age_group,
-            registrant_deceased, hilot_deceased, parent_foreigner, out_of_town, certificate_of_live_birth,
+            registrant_deceased, hilot_deceased, parent_foreigner, out_of_town, has_marriage_certificate, certificate_of_live_birth,
             paternity_affidavit, delayed_registration_affidavit,
             staff_process_status, created_at, updated_at, application_type
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
         ).run(
           normalizedChild.first_name,
           normalizedChild.middle_name,
@@ -153,6 +153,7 @@ async function importDatabase(req, res) {
           normalizedChild.hilot_deceased,
           normalizedChild.parent_foreigner,
           normalizedChild.out_of_town,
+          normalizedChild.has_marriage_certificate,
           normalizedChild.certificate_of_live_birth,
           normalizedChild.paternity_affidavit,
           normalizedChild.delayed_registration_affidavit,
@@ -320,6 +321,7 @@ function normalizeImportChildRow(child) {
     hilot_deceased: toIntBool(child.hilot_deceased),
     parent_foreigner: toIntBool(child.parent_foreigner),
     out_of_town: toIntBool(child.out_of_town),
+    has_marriage_certificate: toIntBool(child.has_marriage_certificate),
     certificate_of_live_birth: normalizeOptionalText(child.certificate_of_live_birth),
     paternity_affidavit: normalizeOptionalText(child.paternity_affidavit),
     delayed_registration_affidavit: normalizeOptionalText(child.delayed_registration_affidavit),
