@@ -12,6 +12,16 @@ import provinceGeoRows from '../../utils/provinces_list.json';
 const DEFAULT_PROVINCE = 'LANAO DEL NORTE';
 const DEFAULT_CITY_MUNICIPALITY = 'ILIGAN CITY';
 const DEFAULT_CERTIFICATION_PURPOSE = 'ANY LEGAL';
+const REGISTRAR_BOX_GROUPS = [
+  { label: '8', key: 'registrarBox8', digits: 2 },
+  { label: '9', key: 'registrarBox9', digits: 2 },
+  { label: '11', key: 'registrarBox11', digits: 3 },
+  { label: '13', key: 'registrarBox13', digits: 8 },
+  { label: '15', key: 'registrarBox15', digits: 2 },
+  { label: '16', key: 'registrarBox16', digits: 2 },
+  { label: '17', key: 'registrarBox17', digits: 2 },
+  { label: '19', key: 'registrarBox19', digits: 8 },
+];
 
 const DEFAULT_CERT = {
   registryNo: '',
@@ -84,6 +94,14 @@ const DEFAULT_CERT = {
   registeredByTitle: '',
   registeredByDate: '',
   remarks: '',
+  registrarBox8: '',
+  registrarBox9: '',
+  registrarBox11: '',
+  registrarBox13: '',
+  registrarBox15: '',
+  registrarBox16: '',
+  registrarBox17: '',
+  registrarBox19: '',
   certificationPurpose: DEFAULT_CERTIFICATION_PURPOSE,
 };
 
@@ -1105,6 +1123,7 @@ export function CertificateOfLiveBirth() {
   const saveTimeoutRef = useRef(null);
   const lastSavedRef = useRef(null);
   const certContentRef = useRef(null);
+  const registrarInputRefs = useRef({});
   const [openPickerId, setOpenPickerId] = useState(null);
 
   useEffect(() => {
@@ -1269,6 +1288,29 @@ export function CertificateOfLiveBirth() {
 
   const update = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+  };
+  const focusRegistrarInput = (key, index) => {
+    const input = registrarInputRefs.current?.[`${key}-${index}`];
+    if (input) input.focus();
+  };
+  const updateRegistrarBoxChars = (key, digits, index, rawValue) => {
+    const nextValue = String(rawValue || '').toUpperCase().replace(/\s+/g, '');
+    setForm((prev) => {
+      const current = String(prev[key] || '');
+      const chars = Array.from({ length: digits }, (_, i) => current.charAt(i) || '');
+      if (!nextValue) {
+        chars[index] = '';
+      } else {
+        const values = nextValue.split('');
+        for (let i = 0; i < values.length && index + i < digits; i += 1) {
+          chars[index + i] = values[i];
+        }
+      }
+      return { ...prev, [key]: chars.join('').replace(/\s+$/, '') };
+    });
+    const jump = nextValue.length > 1 ? nextValue.length : 1;
+    const nextIndex = Math.min(index + jump, digits - 1);
+    if (nextValue) setTimeout(() => focusRegistrarInput(key, nextIndex), 0);
   };
 
   if (loading) return <p className="text-slate-500">Loading…</p>;
@@ -2049,6 +2091,113 @@ export function CertificateOfLiveBirth() {
         </div>
         </SectionPanel>
           </div>
+        <div
+          className="certificate-card"
+          style={{
+            fontFamily: FONT_FAMILY,
+            color: COLORS.black,
+            marginTop: '8px',
+          }}
+        >
+          <div style={{ borderBottom: `2px solid ${COLORS.accentGreen}`, padding: '8px 10px' }}>
+            <p style={{ fontSize: '20px', fontWeight: 700, margin: 0 }}>
+              REMARKS/ANNOTATIONS (For LCRO/OCRG Use Only)
+            </p>
+            <textarea
+              value={form.remarks}
+              onChange={(e) => update('remarks', e.target.value.toUpperCase())}
+              placeholder="(Enter remarks/annotations)"
+              className="mt-2 w-full resize-none focus:outline-none focus:ring-0"
+              rows={3}
+              style={{
+                fontFamily: FONT_FAMILY,
+                fontSize: '16px',
+                backgroundColor: COLORS.white,
+                border: `1px solid ${COLORS.accentGreen}`,
+                borderRadius: 0,
+                padding: '4px 6px',
+                color: COLORS.black,
+              }}
+            />
+          </div>
+          <div style={{ padding: '8px 10px' }}>
+            <div
+              className="flex flex-col gap-2"
+              style={{
+                border: `2px solid ${COLORS.accentGreen}`,
+                borderRadius: 0,
+                padding: '6px',
+              }}
+            >
+              <p style={{ fontSize: '20px', fontWeight: 700, margin: 0, whiteSpace: 'nowrap' }}>
+                TO BE FILLED-UP AT THE OFFICE OF THE CIVIL REGISTRAR
+              </p>
+              <div className="flex-1 min-w-0 overflow-x-auto">
+                <div className="inline-flex gap-2" style={{ minWidth: '860px' }}>
+                  {REGISTRAR_BOX_GROUPS.map((group) => (
+                    <div key={group.label}>
+                      <p
+                        style={{
+                          fontSize: '18px',
+                          fontWeight: 700,
+                          margin: '0 0 3px 2px',
+                          lineHeight: 1,
+                        }}
+                      >
+                        {group.label}
+                      </p>
+                      <div className="flex">
+                        {Array.from({ length: group.digits }).map((_, idx) => (
+                          <input
+                            key={`${group.label}-${idx}`}
+                            value={String(form[group.key] || '').charAt(idx) || ''}
+                            ref={(el) => {
+                              registrarInputRefs.current[`${group.key}-${idx}`] = el;
+                            }}
+                            onChange={(e) => updateRegistrarBoxChars(group.key, group.digits, idx, e.target.value)}
+                            onPaste={(e) => {
+                              e.preventDefault();
+                              updateRegistrarBoxChars(
+                                group.key,
+                                group.digits,
+                                idx,
+                                e.clipboardData.getData('text'),
+                              );
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Backspace' && !String(form[group.key] || '').charAt(idx) && idx > 0) {
+                                setTimeout(() => focusRegistrarInput(group.key, idx - 1), 0);
+                              }
+                            }}
+                            inputMode="text"
+                            style={{
+                              width: '18px',
+                              height: '28px',
+                              borderTop: `1px solid ${COLORS.accentGreen}`,
+                              borderBottom: `1px solid ${COLORS.accentGreen}`,
+                              borderLeft: `1px solid ${COLORS.accentGreen}`,
+                              borderRight:
+                                idx === group.digits - 1 ? `1px solid ${COLORS.accentGreen}` : 'none',
+                              display: 'inline-block',
+                              textAlign: 'center',
+                              fontSize: '14px',
+                              fontFamily: FONT_FAMILY,
+                              color: COLORS.black,
+                              backgroundColor: COLORS.white,
+                              borderRadius: 0,
+                              outline: 'none',
+                              padding: 0,
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
         <div className="certificate-sticky-bar sticky top-0 z-10 mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-3 shadow-sm sm:gap-4 sm:px-4 print:hidden">
         <Link to={applicantDetailPath(basePath, id)} className="text-sm font-medium text-slate-600 hover:text-slate-900">← Back to applicant</Link>
         <span className="order-3 w-full truncate text-sm font-medium text-slate-700 sm:order-none sm:w-auto">
