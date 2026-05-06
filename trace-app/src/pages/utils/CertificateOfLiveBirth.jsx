@@ -96,6 +96,16 @@ const RECEIVED_BY_OPTIONS = [
   { name: 'JAN FLAURENCE A. OBLENDA', title: 'REGISTRATION OFFICER II' },
 ];
 
+const LCRO_STAFF_MEMBERS = [
+  { name: 'ANGELINE T. PARAYDAY', title: 'LCRO STAFF' },
+  { name: 'BUENA MAY G. MORALDE', title: 'LCRO STAFF' },
+  { name: 'SHIRLEY L. DEMECILLO', title: 'LCRO STAFF' },
+  { name: 'ULYNDA P. ZALSOS', title: 'LCRO STAFF' },
+  { name: 'PHOEBE L. BENIGA', title: 'REGISTRATION OFFICER II' },
+  { name: 'ATTY. YUSSIF DON JUSTIN F. MARTIL', title: 'CITY CIVIL REGISTRAR' },
+];
+const LCRO_STAFF_MEMBER_NAMES = LCRO_STAFF_MEMBERS.map((member) => member.name);
+
 
 const FALLBACK_COUNTRY_OPTIONS = [
   { code: 'PH', name: 'PHILIPPINES' },
@@ -919,6 +929,7 @@ function getAutocompleteLabelSuggestions(query, suggestionOptions, maxRows = 40,
 function FormTextCombo({
   value = '',
   onInputChange,
+  onOptionPick,
   suggestionOptions,
   placeholder,
   className = '',
@@ -956,9 +967,10 @@ function FormTextCombo({
     (item) => {
       if (!item) return;
       onInputChange(item.label);
+      onOptionPick?.(item.label);
       setOpen(false);
     },
-    [onInputChange],
+    [onInputChange, onOptionPick],
   );
 
   const borderColor = COLORS.accentGreen;
@@ -1885,7 +1897,27 @@ export function CertificateOfLiveBirth() {
             <h3 className="mb-2 text-base font-bold">23. PREPARED BY</h3>
             <div className="space-y-2" style={{ fontSize: '14px' }}>
               
-              <div><p className="mb-1" style={{ fontWeight: 400 }}>Name in Print</p><FormLine value={form.preparedByName} onChange={(v) => update('preparedByName', v)} placeholder="(Name in print)" /></div>
+              <div>
+                <p className="mb-1" style={{ fontWeight: 400 }}>Name in Print</p>
+                <FormTextCombo
+                  value={form.preparedByName}
+                  onInputChange={(v) => {
+                    update('preparedByName', v);
+                    const chosen = LCRO_STAFF_MEMBERS.find((o) => o.name === v);
+                    if (chosen) update('preparedByTitle', chosen.title);
+                  }}
+                  onOptionPick={(pickedName) => {
+                    const chosen = LCRO_STAFF_MEMBERS.find((o) => o.name === pickedName);
+                    if (chosen) update('preparedByTitle', chosen.title);
+                  }}
+                  suggestionOptions={LCRO_STAFF_MEMBER_NAMES}
+                  placeholder="(Name in print)"
+                  ariaLabel="Prepared by name in print"
+                  className="w-full"
+                  width="w-full"
+                  includeNotApplicable={false}
+                />
+              </div>
               <div><p className="mb-1" style={{ fontWeight: 400 }}>Title or Position</p><FormLine value={form.preparedByTitle} onChange={(v) => update('preparedByTitle', v)} placeholder="(Title or position)" /></div>
               <div>
                 <p className="mb-1" style={{ fontWeight: 400 }}>Date</p>
