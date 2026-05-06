@@ -1,17 +1,16 @@
 import { useParams, Link, useLocation } from 'react-router-dom';
 import { applicantDetailPath, getApplicantBasePath } from '../../utils/applicantRoutes';
-import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo, memo, useId } from 'react';
 import toast from 'react-hot-toast';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { childrenApi } from '../../services/api';
 import regionReligionRows from '../../utils/region_list.json';
 import occupationRows from '../../utils/occupations_list.json';
+import provinceGeoRows from '../../utils/provinces_list.json';
 
 const DEFAULT_PROVINCE = 'LANAO DEL NORTE';
 const DEFAULT_CITY_MUNICIPALITY = 'ILIGAN CITY';
-const DEFAULT_COUNTRY_CODE = 'PH';
-const DEFAULT_COUNTRY_TEXT = 'PHILIPPINES';
 const DEFAULT_CERTIFICATION_PURPOSE = 'ANY LEGAL';
 
 const DEFAULT_CERT = {
@@ -45,7 +44,7 @@ const DEFAULT_CERT = {
   motherResidenceLine1: '',
   motherResidenceCity: '',
   motherResidenceProvince: '',
-  motherResidenceCountry: DEFAULT_COUNTRY_CODE,
+  motherResidenceCountry: '',
   fatherFirst: '',
   fatherMiddle: '',
   fatherLast: '',
@@ -56,13 +55,13 @@ const DEFAULT_CERT = {
   fatherResidenceLine1: '',
   fatherResidenceCity: '',
   fatherResidenceProvince: '',
-  fatherResidenceCountry: DEFAULT_COUNTRY_CODE,
+  fatherResidenceCountry: '',
   marriageMonth: '',
   marriageDay: '',
   marriageYear: '',
   marriagePlaceCity: '',
   marriagePlaceProvince: '',
-  marriagePlaceCountry: DEFAULT_COUNTRY_TEXT,
+  marriagePlaceCountry: '',
   attendantType: '',
   attendantOthersSpecify: '',
   attendantTime: '',
@@ -98,16 +97,16 @@ const RECEIVED_BY_OPTIONS = [
 ];
 
 const FALLBACK_COUNTRY_OPTIONS = [
-  { code: 'PH', name: 'Philippines' },
-  { code: 'US', name: 'United States' },
-  { code: 'GB', name: 'United Kingdom' },
-  { code: 'AU', name: 'Australia' },
-  { code: 'CA', name: 'Canada' },
-  { code: 'SA', name: 'Saudi Arabia' },
-  { code: 'AE', name: 'United Arab Emirates' },
-  { code: 'JP', name: 'Japan' },
-  { code: 'SG', name: 'Singapore' },
-  { code: 'MY', name: 'Malaysia' },
+  { code: 'PH', name: 'PHILIPPINES' },
+  { code: 'US', name: 'UNITED STATES' },
+  { code: 'GB', name: 'UNITED KINGDOM' },
+  { code: 'AU', name: 'AUSTRALIA' },
+  { code: 'CA', name: 'CANADA' },
+  { code: 'SA', name: 'SAUDI ARABIA' },
+  { code: 'AE', name: 'UNITED ARAB EMIRATES' },
+  { code: 'JP', name: 'JAPAN' },
+  { code: 'SG', name: 'SINGAPORE' },
+  { code: 'MY', name: 'MALAYSIA' },
 ];
 
 const ATTENDANT_HOUR_OPTIONS = Array.from({ length: 12 }, (_, hourIdx) =>
@@ -132,7 +131,6 @@ function buildDistinctReligionLabels(rows) {
 }
 
 const RELIGION_AUTOCOMPLETE_OPTIONS = buildDistinctReligionLabels(regionReligionRows);
-const RELIGION_DATALIST_ID = 'certificate-of-live-birth-religion-datalist';
 
 /** Distinct PSA occupation labels from `occupations_list.json`. */
 function buildDistinctOccupationLabels(rows) {
@@ -149,25 +147,93 @@ function buildDistinctOccupationLabels(rows) {
 }
 
 const OCCUPATION_AUTOCOMPLETE_OPTIONS = buildDistinctOccupationLabels(occupationRows);
-const OCCUPATION_DATALIST_ID = 'certificate-of-live-birth-occupation-datalist';
 
-const CertificateReligionDataList = memo(function CertificateReligionDataList() {
-  return (
-    <datalist id={RELIGION_DATALIST_ID}>
-      {RELIGION_AUTOCOMPLETE_OPTIONS.map((label) => (
-        <option key={label} value={label} />
-      ))}
-    </datalist>
+/** Distinct PSA province/country strings from `provinces_list.json` (province & country datalists). */
+function buildPhGeoAutocompleteOptions(rows) {
+  const provinces = new Set();
+  const countries = new Set();
+  for (const row of rows) {
+    const province = String(row?.province ?? '').trim().toUpperCase();
+    const country = String(row?.country ?? '').trim().toUpperCase();
+    if (province) provinces.add(province);
+    if (country) countries.add(country);
+  }
+  return {
+    provinces: [...provinces].sort((a, b) => a.localeCompare(b)),
+    jsonCountries: [...countries].sort((a, b) => a.localeCompare(b)),
+  };
+}
+
+const PH_GEO_AUTOCOMPLETE = buildPhGeoAutocompleteOptions(provinceGeoRows);
+const PH_GEO_PROVINCE_DATALIST_ID = 'certificate-of-live-birth-ph-province-datalist';
+const PH_JSON_COUNTRY_DATALIST_ID = 'certificate-of-live-birth-ph-json-country-datalist';
+
+/** Deduped PSA locality rows (one per `code`) for city picker. */
+function buildPhGeoPickRecords(rows) {
+  const byCode = new Map();
+  for (const row of rows) {
+    const city = String(row?.city ?? '').trim().toUpperCase();
+    const province = String(row?.province ?? '').trim().toUpperCase();
+    const country = String(row?.country ?? '').trim().toUpperCase();
+    const code = String(row?.code ?? '').trim().toUpperCase();
+    if (!city) continue;
+    if (byCode.has(code)) continue;
+    byCode.set(code, { city, province, country, code });
+  }
+  return [...byCode.values()];
+}
+
+const PH_GEO_PICK_RECORDS = buildPhGeoPickRecords(provinceGeoRows);
+
+function getPhCityPickerSuggestions(query, maxRows = 40) {
+  const q = query.trim().toUpperCase();
+  if (!q) return [];
+  const scored = [];
+  for (const r of PH_GEO_PICK_RECORDS) {
+    if (!r.city.includes(q)) continue;
+    scored.push({ r, pri: r.city.startsWith(q) ? 0 : 1 });
+  }
+  scored.sort(
+    (a, b) =>
+      a.pri - b.pri ||
+      a.r.city.localeCompare(b.r.city) ||
+      a.r.province.localeCompare(b.r.province) ||
+      a.r.code.localeCompare(b.r.code),
   );
-});
+  const out = [];
+  for (const { r } of scored) {
+    out.push({
+      key: `${r.code}-short`,
+      label: `${r.city} | ${r.country} | ${r.code}`,
+      record: r,
+      /** Short line: fill city/country/code only; leave province blank. */
+      omitProvince: true,
+    });
+    out.push({
+      key: `${r.code}-full`,
+      label: `${r.city} | ${r.province} | ${r.country} | ${r.code}`,
+      record: r,
+      omitProvince: false,
+    });
+    if (out.length >= maxRows) break;
+  }
+  return out;
+}
 
-const CertificateOccupationDataList = memo(function CertificateOccupationDataList() {
+const CertificatePhGeoDataLists = memo(function CertificatePhGeoDataLists() {
   return (
-    <datalist id={OCCUPATION_DATALIST_ID}>
-      {OCCUPATION_AUTOCOMPLETE_OPTIONS.map((label) => (
-        <option key={label} value={label} />
-      ))}
-    </datalist>
+    <>
+      <datalist id={PH_GEO_PROVINCE_DATALIST_ID}>
+        {PH_GEO_AUTOCOMPLETE.provinces.map((label) => (
+          <option key={label} value={label} />
+        ))}
+      </datalist>
+      <datalist id={PH_JSON_COUNTRY_DATALIST_ID}>
+        {PH_GEO_AUTOCOMPLETE.jsonCountries.map((label) => (
+          <option key={label} value={label} />
+        ))}
+      </datalist>
+    </>
   );
 });
 
@@ -180,7 +246,7 @@ function buildIso3166CountryOptions() {
         const code = String.fromCharCode(65 + i, 65 + j);
         const name = dn.of(code);
         if (!name || name === code) continue;
-        list.push({ code, name });
+        list.push({ code, name: String(name).toUpperCase() });
       }
     }
     return list.sort((a, b) => a.name.localeCompare(b.name));
@@ -202,7 +268,7 @@ function normalizeStoredCountry(value) {
   return t;
 }
 
-/** Full country name for PDF / printed field (from ISO code or legacy text). */
+/** Full country name for PDF / printed field (from ISO code or legacy text). Always uppercase. */
 function countryCodeToDisplayName(value) {
   if (!value || typeof value !== 'string') return '';
   const t = value.trim();
@@ -213,11 +279,23 @@ function countryCodeToDisplayName(value) {
     try {
       const dn = new Intl.DisplayNames(['en'], { type: 'region' });
       const n = dn.of(code);
-      if (n && n !== code) return n;
+      if (n && n !== code) return String(n).toUpperCase();
     } catch (_) {}
     return code;
   }
-  return t;
+  return t.toUpperCase();
+}
+
+/** Map PSA `country` text from `provinces_list.json` to ISO alpha-2 for residence selects. */
+function phGeoCountryToIsoCode(countryUpper) {
+  const c = String(countryUpper || '').trim().toUpperCase();
+  if (!c || c === 'NOT APPLICABLE') return '';
+  if (c === 'PHILIPPINES') return 'PH';
+  const hit = COUNTRY_OPTIONS.find((o) => o.name.toUpperCase() === c);
+  if (hit) return hit.code;
+  const normalized = normalizeStoredCountry(c);
+  if (normalized.length === 2 && COUNTRY_CODE_SET.has(normalized.toUpperCase())) return normalized.toUpperCase();
+  return '';
 }
 
 function sanitizePurpose(value) {
@@ -572,7 +650,7 @@ function FormCountrySelect({ value = '', onChange, className = '', width }) {
     >
       <option value="">(Country)</option>
       {showLegacyOption && (
-        <option value={t}>{t} (update)</option>
+        <option value={t}>{String(t).toUpperCase()} (update)</option>
       )}
       {COUNTRY_OPTIONS.map(({ code, name }) => (
         <option key={code} value={code}>
@@ -592,17 +670,21 @@ function FormLine({
   readOnly,
   disabled,
   useLowerStyle = false,
+  datalistId,
+  ariaLabel,
 }) {
   const borderColor = useLowerStyle ? COLORS.borderGray : COLORS.accentGreen;
   const locked = Boolean(disabled || readOnly);
   return (
     <input
       type="text"
+      {...(datalistId ? { list: datalistId, autoComplete: 'off', spellCheck: false } : {})}
       value={value}
       onChange={locked ? undefined : (e) => onChange(e.target.value.toUpperCase())}
       readOnly={readOnly && !disabled}
       disabled={disabled}
       placeholder={placeholder}
+      aria-label={ariaLabel}
       className={`focus:outline-none focus:ring-0 min-h-[1.25rem] ${width || 'flex-1 min-w-0'} ${
         disabled ? 'cursor-not-allowed opacity-70' : ''
       } ${className}`}
@@ -620,57 +702,310 @@ function FormLine({
   );
 }
 
-function FormOccupationLine({ value = '', onChange, placeholder, className = '', width, ariaLabel }) {
+/**
+ * PSA city picker: dropdown lines like `CITY | COUNTRY | code` and `CITY | PROVINCE | COUNTRY | code`.
+ * Short line clears province; full line sets province from the PSA row.
+ */
+function FormPhCityCombo({
+  cityValue = '',
+  onCityInputChange,
+  onGeoPick,
+  placeholder,
+  className = '',
+  width,
+  ariaLabel,
+  maxSuggestionRows = 40,
+}) {
+  const listboxBaseId = useId();
+  const listboxId = `${listboxBaseId}-listbox`;
+
+  const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const wrapRef = useRef(null);
+
+  const suggestions = useMemo(
+    () => getPhCityPickerSuggestions(cityValue, maxSuggestionRows),
+    [cityValue, maxSuggestionRows],
+  );
+
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [cityValue]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDocDown = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onDocDown);
+    return () => document.removeEventListener('mousedown', onDocDown);
+  }, [open]);
+
+  const applyItem = useCallback(
+    (item) => {
+      if (!item) return;
+      const { record, omitProvince } = item;
+      onGeoPick({
+        ...record,
+        province: omitProvince ? '' : record.province,
+      });
+      setOpen(false);
+    },
+    [onGeoPick],
+  );
+
   const borderColor = COLORS.accentGreen;
+  const showList = open && suggestions.length > 0;
+
   return (
-    <input
-      type="text"
-      list={OCCUPATION_DATALIST_ID}
-      autoComplete="off"
-      spellCheck={false}
+    <div className={`relative min-w-0 ${width || ''} ${className}`} ref={wrapRef}>
+      <input
+        type="text"
+        value={cityValue}
+        aria-label={ariaLabel}
+        aria-autocomplete="list"
+        aria-expanded={showList}
+        aria-controls={showList ? listboxId : undefined}
+        aria-activedescendant={showList ? `${listboxId}-opt-${activeIndex}` : undefined}
+        autoComplete="off"
+        spellCheck={false}
+        onChange={(e) => {
+          const v = e.target.value.toUpperCase();
+          onCityInputChange(v);
+          setOpen(true);
+        }}
+        onFocus={() => {
+          if (suggestions.length) setOpen(true);
+        }}
+        onKeyDown={(e) => {
+          if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && suggestions.length) setOpen(true);
+          if (!showList) return;
+          if (e.key === 'Escape') {
+            setOpen(false);
+            e.preventDefault();
+          } else if (e.key === 'ArrowDown') {
+            setActiveIndex((i) => Math.min(i + 1, suggestions.length - 1));
+            e.preventDefault();
+          } else if (e.key === 'ArrowUp') {
+            setActiveIndex((i) => Math.max(i - 1, 0));
+            e.preventDefault();
+          } else if (e.key === 'Enter') {
+            e.preventDefault();
+            applyItem(suggestions[activeIndex]);
+          }
+        }}
+        placeholder={placeholder}
+        className="focus:outline-none focus:ring-0 min-h-[1.25rem] w-full"
+        style={{
+          fontFamily: FONT_FAMILY,
+          fontSize: '16px',
+          backgroundColor: COLORS.white,
+          border: 'none',
+          borderBottom: `1px solid ${borderColor}`,
+          borderRadius: 0,
+          padding: '2px 4px',
+          color: COLORS.black,
+        }}
+      />
+      {showList && (
+        <ul
+          id={listboxId}
+          role="listbox"
+          className="absolute left-0 top-full z-[100] mt-0.5 max-h-56 min-w-full w-max max-w-[min(100vw-1rem,36rem)] overflow-auto rounded border border-slate-200 bg-white py-1 text-left shadow-lg"
+        >
+          {suggestions.map((item, idx) => (
+            <li
+              key={item.key}
+              id={`${listboxId}-opt-${idx}`}
+              role="option"
+              aria-selected={idx === activeIndex}
+              className={`cursor-pointer px-2 py-1.5 text-xs text-slate-800 sm:text-sm ${
+                idx === activeIndex ? 'bg-emerald-200' : 'hover:bg-emerald-100'
+              }`}
+              style={{ fontFamily: FONT_FAMILY }}
+              onMouseEnter={() => setActiveIndex(idx)}
+              onMouseDown={(ev) => {
+                ev.preventDefault();
+                applyItem(item);
+              }}
+            >
+              {item.label}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function FormOccupationLine({ value = '', onChange, placeholder, className = '', width, ariaLabel }) {
+  return (
+    <FormTextCombo
       value={value}
-      onChange={(e) => onChange(e.target.value.toUpperCase())}
+      onInputChange={onChange}
+      suggestionOptions={OCCUPATION_AUTOCOMPLETE_OPTIONS}
       placeholder={placeholder}
-      aria-label={ariaLabel || placeholder || 'Occupation'}
-      className={`focus:outline-none focus:ring-0 min-h-[1.25rem] ${width || 'flex-1 min-w-0'} ${className}`}
-      style={{
-        fontFamily: FONT_FAMILY,
-        fontSize: '16px',
-        backgroundColor: COLORS.white,
-        border: 'none',
-        borderBottom: `1px solid ${borderColor}`,
-        borderRadius: 0,
-        padding: '2px 4px',
-        color: COLORS.black,
-      }}
+      ariaLabel={ariaLabel || placeholder || 'Occupation'}
+      className={className}
+      width={width || 'flex-1 min-w-0'}
     />
   );
 }
 
 function FormReligionLine({ value = '', onChange, placeholder, className = '', width, ariaLabel }) {
-  const borderColor = COLORS.accentGreen;
   return (
-    <input
-      type="text"
-      list={RELIGION_DATALIST_ID}
-      autoComplete="off"
-      spellCheck={false}
+    <FormTextCombo
       value={value}
-      onChange={(e) => onChange(e.target.value.toUpperCase())}
+      onInputChange={onChange}
+      suggestionOptions={RELIGION_AUTOCOMPLETE_OPTIONS}
       placeholder={placeholder}
-      aria-label={ariaLabel || placeholder || 'Religion or religious sect'}
-      className={`focus:outline-none focus:ring-0 min-h-[1.25rem] ${width || 'flex-1 min-w-0'} ${className}`}
-      style={{
-        fontFamily: FONT_FAMILY,
-        fontSize: '16px',
-        backgroundColor: COLORS.white,
-        border: 'none',
-        borderBottom: `1px solid ${borderColor}`,
-        borderRadius: 0,
-        padding: '2px 4px',
-        color: COLORS.black,
-      }}
+      ariaLabel={ariaLabel || placeholder || 'Religion or religious sect'}
+      className={className}
+      width={width || 'flex-1 min-w-0'}
     />
+  );
+}
+
+function getAutocompleteLabelSuggestions(query, suggestionOptions, maxRows = 40) {
+  const q = query.trim().toUpperCase();
+  if (!q) return [];
+  const scored = [];
+  for (const rawLabel of suggestionOptions) {
+    const label = String(rawLabel || '').trim().toUpperCase();
+    if (!label || !label.includes(q)) continue;
+    scored.push({ label, pri: label.startsWith(q) ? 0 : 1 });
+  }
+  scored.sort((a, b) => a.pri - b.pri || a.label.localeCompare(b.label));
+  return scored.slice(0, maxRows).map(({ label }, idx) => ({
+    key: `${label}-${idx}`,
+    label,
+  }));
+}
+
+function FormTextCombo({
+  value = '',
+  onInputChange,
+  suggestionOptions,
+  placeholder,
+  className = '',
+  width,
+  ariaLabel,
+  maxSuggestionRows = 40,
+}) {
+  const listboxBaseId = useId();
+  const listboxId = `${listboxBaseId}-listbox`;
+  const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const wrapRef = useRef(null);
+
+  const suggestions = useMemo(
+    () => getAutocompleteLabelSuggestions(value, suggestionOptions, maxSuggestionRows),
+    [value, suggestionOptions, maxSuggestionRows],
+  );
+
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [value]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDocDown = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onDocDown);
+    return () => document.removeEventListener('mousedown', onDocDown);
+  }, [open]);
+
+  const applyItem = useCallback(
+    (item) => {
+      if (!item) return;
+      onInputChange(item.label);
+      setOpen(false);
+    },
+    [onInputChange],
+  );
+
+  const borderColor = COLORS.accentGreen;
+  const showList = open && suggestions.length > 0;
+
+  return (
+    <div className={`relative min-w-0 ${width || ''} ${className}`} ref={wrapRef}>
+      <input
+        type="text"
+        value={value}
+        aria-label={ariaLabel}
+        aria-autocomplete="list"
+        aria-expanded={showList}
+        aria-controls={showList ? listboxId : undefined}
+        aria-activedescendant={showList ? `${listboxId}-opt-${activeIndex}` : undefined}
+        autoComplete="off"
+        spellCheck={false}
+        onChange={(e) => {
+          const nextValue = e.target.value.toUpperCase();
+          onInputChange(nextValue);
+          setOpen(true);
+        }}
+        onFocus={() => {
+          if (suggestions.length) setOpen(true);
+        }}
+        onKeyDown={(e) => {
+          if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && suggestions.length) setOpen(true);
+          if (!showList) return;
+          if (e.key === 'Escape') {
+            setOpen(false);
+            e.preventDefault();
+          } else if (e.key === 'ArrowDown') {
+            setActiveIndex((i) => Math.min(i + 1, suggestions.length - 1));
+            e.preventDefault();
+          } else if (e.key === 'ArrowUp') {
+            setActiveIndex((i) => Math.max(i - 1, 0));
+            e.preventDefault();
+          } else if (e.key === 'Enter') {
+            e.preventDefault();
+            applyItem(suggestions[activeIndex]);
+          }
+        }}
+        placeholder={placeholder}
+        className="focus:outline-none focus:ring-0 min-h-[1.25rem] w-full"
+        style={{
+          fontFamily: FONT_FAMILY,
+          fontSize: '16px',
+          backgroundColor: COLORS.white,
+          border: 'none',
+          borderBottom: `1px solid ${borderColor}`,
+          borderRadius: 0,
+          padding: '2px 4px',
+          color: COLORS.black,
+        }}
+      />
+      {showList && (
+        <ul
+          id={listboxId}
+          role="listbox"
+          className="absolute left-0 top-full z-[100] mt-0.5 max-h-56 min-w-full w-max max-w-[min(100vw-1rem,36rem)] overflow-auto rounded border border-slate-200 bg-white py-1 text-left shadow-lg"
+        >
+          {suggestions.map((item, idx) => (
+            <li
+              key={item.key}
+              id={`${listboxId}-opt-${idx}`}
+              role="option"
+              aria-selected={idx === activeIndex}
+              className={`cursor-pointer px-2 py-1.5 text-xs text-slate-800 sm:text-sm ${
+                idx === activeIndex ? 'bg-emerald-200' : 'hover:bg-emerald-100'
+              }`}
+              style={{ fontFamily: FONT_FAMILY }}
+              onMouseEnter={() => setActiveIndex(idx)}
+              onMouseDown={(ev) => {
+                ev.preventDefault();
+                applyItem(item);
+              }}
+            >
+              {item.label}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
@@ -739,23 +1074,15 @@ export function CertificateOfLiveBirth() {
         base.placeOfBirthProvince = trimStr(base.placeOfBirthProvince) || trimStr(base.place_of_birth_province);
         base.motherResidenceCountry = normalizeStoredCountry(base.motherResidenceCountry);
         base.fatherResidenceCountry = normalizeStoredCountry(base.fatherResidenceCountry);
-        if (!String(base.motherResidenceCountry || '').trim()) {
-          base.motherResidenceCountry = DEFAULT_COUNTRY_CODE;
-        }
-        if (!String(base.fatherResidenceCountry || '').trim()) {
-          base.fatherResidenceCountry = DEFAULT_COUNTRY_CODE;
-        }
-        if (!String(base.marriagePlaceCountry || '').trim()) {
-          base.marriagePlaceCountry = DEFAULT_COUNTRY_TEXT;
-        }
         if (!String(base.motherCountry || '').trim()) {
-          const motherCountryName = countryCodeToDisplayName(base.motherResidenceCountry);
-          base.motherCountry = motherCountryName ? motherCountryName.toUpperCase() : DEFAULT_COUNTRY_TEXT;
+          base.motherCountry = countryCodeToDisplayName(base.motherResidenceCountry);
         }
         if (!String(base.fatherCountry || '').trim()) {
-          const fatherCountryName = countryCodeToDisplayName(base.fatherResidenceCountry);
-          base.fatherCountry = fatherCountryName ? fatherCountryName.toUpperCase() : DEFAULT_COUNTRY_TEXT;
+          base.fatherCountry = countryCodeToDisplayName(base.fatherResidenceCountry);
         }
+        base.motherCountry = String(base.motherCountry || '').trim().toUpperCase();
+        base.fatherCountry = String(base.fatherCountry || '').trim().toUpperCase();
+        base.marriagePlaceCountry = String(base.marriagePlaceCountry || '').trim().toUpperCase();
         const loadedPurpose = sanitizePurpose(
           base.certificationPurpose ?? base.certification_purpose ?? base.purpose,
         );
@@ -833,12 +1160,23 @@ export function CertificateOfLiveBirth() {
 
   const save = useCallback(async () => {
     if (!id) return;
-    const payload = { ...form };
+    const payload = {
+      ...form,
+      motherCountry: String(form.motherCountry || '').trim().toUpperCase(),
+      fatherCountry: String(form.fatherCountry || '').trim().toUpperCase(),
+      marriagePlaceCountry: String(form.marriagePlaceCountry || '').trim().toUpperCase(),
+    };
     if (JSON.stringify(payload) === lastSavedRef.current) return;
     lastSavedRef.current = JSON.stringify(payload);
     setSaving(true);
     try {
       await childrenApi.updateCertificateOfLiveBirth(id, payload);
+      setForm((prev) => ({
+        ...prev,
+        motherCountry: payload.motherCountry,
+        fatherCountry: payload.fatherCountry,
+        marriagePlaceCountry: payload.marriagePlaceCountry,
+      }));
       const nextPlaceOfBirth = formatPlaceOfBirthForApplicant(payload);
       const currentPlaceOfBirth = typeof child?.place_of_birth === 'string' ? child.place_of_birth.trim() : '';
 
@@ -910,8 +1248,7 @@ export function CertificateOfLiveBirth() {
           color: COLORS.black,
         }}
       >
-        <CertificateReligionDataList />
-        <CertificateOccupationDataList />
+        <CertificatePhGeoDataLists />
           <div className="certificate-card" id="header">
             <header className="pb-3" style={{ borderBottom: `2px solid ${COLORS.accentGreen}` }}>
           <div className="text-center" style={{ marginTop: '8px' }}>
@@ -928,11 +1265,26 @@ export function CertificateOfLiveBirth() {
                   onChange={(v) => update('province', v)}
                   placeholder="(Province)"
                   disabled
+                  datalistId={PH_GEO_PROVINCE_DATALIST_ID}
+                  aria-label="Certificate province"
                 />
               </div>
               <div className="flex flex-col min-w-0">
                 <span className="mb-1">City/Municipality</span>
-                <FormLine value={form.cityMunicipality} onChange={(v) => update('cityMunicipality', v)} placeholder="(City/Municipality)" />
+                <FormPhCityCombo
+                  cityValue={form.cityMunicipality}
+                  onCityInputChange={(v) => update('cityMunicipality', v)}
+                  onGeoPick={(r) =>
+                    setForm((p) => ({
+                      ...p,
+                      cityMunicipality: r.city,
+                      province: r.province,
+                    }))
+                  }
+                  placeholder="(City/Municipality)"
+                  width="w-full"
+                  ariaLabel="Certificate city or municipality"
+                />
               </div>
               <div className="flex flex-col min-w-0">
                 <span className="mb-1">Registry No.</span>
@@ -1005,12 +1357,27 @@ export function CertificateOfLiveBirth() {
               <div className="space-y-2 w-full">
                 <FormLine value={form.placeOfBirthName} onChange={(v) => update('placeOfBirthName', v)} placeholder="(Name of Hospital/Clinic/Institution/House No., St., Barangay)" className="w-full" width="w-full" />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <FormLine value={form.placeOfBirthCity} onChange={(v) => update('placeOfBirthCity', v)} placeholder="(City/Municipality)" />
+                  <FormPhCityCombo
+                    cityValue={form.placeOfBirthCity}
+                    onCityInputChange={(v) => update('placeOfBirthCity', v)}
+                    onGeoPick={(r) =>
+                      setForm((p) => ({
+                        ...p,
+                        placeOfBirthCity: r.city,
+                        placeOfBirthProvince: r.province,
+                      }))
+                    }
+                    placeholder="(City/Municipality)"
+                    width="w-full"
+                    ariaLabel="Place of birth city or municipality"
+                  />
                   <FormLine
                     value={form.placeOfBirthProvince}
                     onChange={(v) => update('placeOfBirthProvince', v)}
                     placeholder="(Province)"
                     disabled
+                    datalistId={PH_GEO_PROVINCE_DATALIST_ID}
+                    aria-label="Place of birth province"
                   />
                 </div>
               </div>
@@ -1088,14 +1455,33 @@ export function CertificateOfLiveBirth() {
               <div className="space-y-2 w-full">
                 <FormLine value={form.motherResidenceLine1} onChange={(v) => update('motherResidenceLine1', v)} placeholder="(House No., St., Barangay)" className="w-full" width="w-full" />
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <FormLine value={form.motherResidenceCity} onChange={(v) => update('motherResidenceCity', v)} placeholder="(City/Municipality)" className="w-full" width="w-full" />
+                  <FormPhCityCombo
+                    cityValue={form.motherResidenceCity}
+                    onCityInputChange={(v) => update('motherResidenceCity', v)}
+                    onGeoPick={(r) => {
+                      const code = phGeoCountryToIsoCode(r.country);
+                      setForm((p) => ({
+                        ...p,
+                        motherResidenceCity: r.city,
+                        motherResidenceProvince: r.province,
+                        motherResidenceCountry: code,
+                        motherCountry: countryCodeToDisplayName(code),
+                      }));
+                    }}
+                    placeholder="(City/Municipality)"
+                    className="w-full"
+                    width="w-full"
+                    ariaLabel="Mother residence city or municipality"
+                  />
                   <FormLine
                     value={form.motherResidenceProvince}
                     onChange={(v) => update('motherResidenceProvince', v)}
                     placeholder="(Province)"
+                    disabled
                     className="w-full"
                     width="w-full"
-                    disabled
+                    datalistId={PH_GEO_PROVINCE_DATALIST_ID}
+                    aria-label="Mother residence province"
                   />
                   <FormCountrySelect
                     value={form.motherResidenceCountry}
@@ -1104,7 +1490,7 @@ export function CertificateOfLiveBirth() {
                       setForm((p) => ({
                         ...p,
                         motherResidenceCountry: n,
-                        motherCountry: countryCodeToDisplayName(n) || '',
+                        motherCountry: countryCodeToDisplayName(n),
                       }));
                     }}
                     className="w-full"
@@ -1152,14 +1538,33 @@ export function CertificateOfLiveBirth() {
               <div className="space-y-2 w-full">
                 <FormLine value={form.fatherResidenceLine1} onChange={(v) => update('fatherResidenceLine1', v)} placeholder="(House No., St., Barangay)" className="w-full" width="w-full" />
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <FormLine value={form.fatherResidenceCity} onChange={(v) => update('fatherResidenceCity', v)} placeholder="(City/Municipality)" className="w-full" width="w-full" />
+                  <FormPhCityCombo
+                    cityValue={form.fatherResidenceCity}
+                    onCityInputChange={(v) => update('fatherResidenceCity', v)}
+                    onGeoPick={(r) => {
+                      const code = phGeoCountryToIsoCode(r.country);
+                      setForm((p) => ({
+                        ...p,
+                        fatherResidenceCity: r.city,
+                        fatherResidenceProvince: r.province,
+                        fatherResidenceCountry: code,
+                        fatherCountry: countryCodeToDisplayName(code),
+                      }));
+                    }}
+                    placeholder="(City/Municipality)"
+                    className="w-full"
+                    width="w-full"
+                    ariaLabel="Father residence city or municipality"
+                  />
                   <FormLine
                     value={form.fatherResidenceProvince}
                     onChange={(v) => update('fatherResidenceProvince', v)}
                     placeholder="(Province)"
+                    disabled
                     className="w-full"
                     width="w-full"
-                    disabled
+                    datalistId={PH_GEO_PROVINCE_DATALIST_ID}
+                    aria-label="Father residence province"
                   />
                   <FormCountrySelect
                     value={form.fatherResidenceCountry}
@@ -1168,7 +1573,7 @@ export function CertificateOfLiveBirth() {
                       setForm((p) => ({
                         ...p,
                         fatherResidenceCountry: n,
-                        fatherCountry: countryCodeToDisplayName(n) || '',
+                        fatherCountry: countryCodeToDisplayName(n),
                       }));
                     }}
                     className="w-full"
@@ -1231,20 +1636,31 @@ export function CertificateOfLiveBirth() {
             <div>
               <label className="block mb-1 font-normal">20b. PLACE</label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <FormLine
-                  value={form.marriagePlaceCity}
-                  onChange={(v) => update('marriagePlaceCity', v)}
+                <FormPhCityCombo
+                  cityValue={form.marriagePlaceCity}
+                  onCityInputChange={(v) => update('marriagePlaceCity', v)}
+                  onGeoPick={(r) =>
+                    setForm((p) => ({
+                      ...p,
+                      marriagePlaceCity: r.city,
+                      marriagePlaceProvince: r.province,
+                      marriagePlaceCountry: r.country,
+                    }))
+                  }
                   placeholder="(City/Municipality)"
                   className="w-full"
                   width="w-full"
+                  ariaLabel="Parents marriage place city or municipality"
                 />
                 <FormLine
                   value={form.marriagePlaceProvince}
                   onChange={(v) => update('marriagePlaceProvince', v)}
                   placeholder="(Province)"
+                  disabled
                   className="w-full"
                   width="w-full"
-                  disabled
+                  datalistId={PH_GEO_PROVINCE_DATALIST_ID}
+                  aria-label="Parents marriage place province"
                 />
                 <FormLine
                   value={form.marriagePlaceCountry}
@@ -1252,6 +1668,8 @@ export function CertificateOfLiveBirth() {
                   placeholder="(Country)"
                   className="w-full"
                   width="w-full"
+                  datalistId={PH_JSON_COUNTRY_DATALIST_ID}
+                  aria-label="Parents marriage place country"
                 />
               </div>
             </div>

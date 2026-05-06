@@ -292,14 +292,15 @@ function parseDateOfBirth(dateStr) {
 function countryDisplayFromCodeOrText(codeOrText) {
     if (!codeOrText || typeof codeOrText !== 'string') return '';
     const text = codeOrText.trim();
+    let out = text;
     if (text.length === 2 && /^[A-Za-z]{2}$/.test(text)) {
         try {
             const displayNames = new Intl.DisplayNames(['en'], { type: 'region' });
             const name = displayNames.of(text.toUpperCase());
-            if (name && name !== text.toUpperCase()) return name;
+            if (name && name !== text.toUpperCase()) out = name;
         } catch (_) { /* ignore */ }
     }
-    return text;
+    return String(out).toUpperCase();
 }
 
 /**

@@ -314,14 +314,15 @@ function parseDateOfBirth(dateStr) {
 function countryDisplayFromCodeOrText(codeOrText) {
   if (!codeOrText || typeof codeOrText !== 'string') return '';
   const text = codeOrText.trim();
+  let out = text;
   if (text.length === 2 && /^[A-Za-z]{2}$/.test(text)) {
     try {
       const displayNames = new Intl.DisplayNames(['en'], { type: 'region' });
       const name = displayNames.of(text.toUpperCase());
-      if (name && name !== text.toUpperCase()) return name;
+      if (name && name !== text.toUpperCase()) out = name;
     } catch (_) { /* ignore */ }
   }
-  return text;
+  return String(out).toUpperCase();
 }
 
 /**
@@ -466,6 +467,11 @@ function buildMergedCertData(child, cert) {
     (cert.father_country && String(cert.father_country).trim()) ||
     countryDisplayFromCodeOrText(resFather);
 
+  const marriageCountry =
+    (cert.marriagePlaceCountry && String(cert.marriagePlaceCountry).trim()) ||
+    (cert.marriage_place_country && String(cert.marriage_place_country).trim()) ||
+    '';
+
   return {
     ...cert,
     childFirst: cert.childFirst ?? cert.child_first ?? child?.first_name ?? '',
@@ -474,8 +480,9 @@ function buildMergedCertData(child, cert) {
     birthDay: cert.birthDay ?? cert.birth_day ?? birth.day ?? '',
     birthMonth: cert.birthMonth ?? cert.birth_month ?? birth.month ?? '',
     birthYear: cert.birthYear ?? cert.birth_year ?? birth.year ?? '',
-    motherCountry: mc,
-    fatherCountry: fc,
+    motherCountry: String(mc || '').trim().toUpperCase(),
+    fatherCountry: String(fc || '').trim().toUpperCase(),
+    marriagePlaceCountry: String(marriageCountry || '').trim().toUpperCase(),
   };
 }
 
