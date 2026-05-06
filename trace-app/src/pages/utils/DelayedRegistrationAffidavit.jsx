@@ -1,20 +1,173 @@
 import { useParams, Link, useLocation } from 'react-router-dom';
 import { applicantDetailPath, getApplicantBasePath } from '../../utils/applicantRoutes';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef, useId, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { childrenApi } from '../../services/api';
 
 const FONT_FAMILY = 'Arial, Helvetica, sans-serif';
+const NOT_APPLICABLE_LABEL = 'NOT APPLICABLE';
+
+function getAutocompleteLabelSuggestions(query, suggestionOptions, maxRows = 40, includeNotApplicable = true) {
+  const q = String(query || '').trim().toUpperCase();
+  const base = Array.isArray(suggestionOptions) ? suggestionOptions : [];
+  const mergedSuggestionOptions = includeNotApplicable ? [...base, NOT_APPLICABLE_LABEL] : base;
+
+  if (!q) {
+    const seen = new Set();
+    const out = [];
+    // On empty query, do NOT show "NOT APPLICABLE" unless the user types it.
+    for (const rawLabel of mergedSuggestionOptions) {
+      const label = String(rawLabel || '').trim().toUpperCase();
+      if (label === NOT_APPLICABLE_LABEL) continue;
+      if (!label || seen.has(label)) continue;
+      seen.add(label);
+      out.push(label);
+      if (out.length >= maxRows) break;
+    }
+    return out.map((label, idx) => ({ key: `${label}-${idx}`, label }));
+  }
+
+  const scored = [];
+  const seen = new Set();
+  for (const rawLabel of mergedSuggestionOptions) {
+    const label = String(rawLabel || '').trim().toUpperCase();
+    if (!label || seen.has(label) || !label.includes(q)) continue;
+    seen.add(label);
+    scored.push({ label, pri: label.startsWith(q) ? 0 : 1 });
+  }
+  scored.sort((a, b) => a.pri - b.pri || a.label.localeCompare(b.label));
+  return scored.slice(0, maxRows).map(({ label }, idx) => ({ key: `${label}-${idx}`, label }));
+}
+
+function FormTextCombo({
+  value = '',
+  onInputChange,
+  suggestionOptions = [],
+  placeholder,
+  width = 'flex-1',
+  className = '',
+  ariaLabel,
+  maxSuggestionRows = 40,
+  includeNotApplicable = true,
+}) {
+  const listboxBaseId = useId();
+  const listboxId = `${listboxBaseId}-listbox`;
+  const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const wrapRef = useRef(null);
+
+  const suggestions = useMemo(
+    () => getAutocompleteLabelSuggestions(value, suggestionOptions, maxSuggestionRows, includeNotApplicable),
+    [value, suggestionOptions, maxSuggestionRows, includeNotApplicable],
+  );
+
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [value]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDocDown = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onDocDown);
+    return () => document.removeEventListener('mousedown', onDocDown);
+  }, [open]);
+
+  const applyItem = useCallback(
+    (item) => {
+      if (!item) return;
+      onInputChange(item.label);
+      setOpen(false);
+    },
+    [onInputChange],
+  );
+
+  const showList = open && suggestions.length > 0;
+
+  return (
+    <div className={`relative min-w-0 ${width} ${className}`} ref={wrapRef}>
+      <input
+        type="text"
+        value={value}
+        aria-label={ariaLabel || placeholder || 'Text field'}
+        aria-autocomplete="list"
+        aria-expanded={showList}
+        aria-controls={showList ? listboxId : undefined}
+        aria-activedescendant={showList ? `${listboxId}-opt-${activeIndex}` : undefined}
+        autoComplete="off"
+        spellCheck={false}
+        onChange={(e) => {
+          const nextValue = e.target.value.toUpperCase();
+          onInputChange(nextValue);
+          setOpen(true);
+        }}
+        onFocus={() => {
+          if (suggestions.length) setOpen(true);
+        }}
+        onKeyDown={(e) => {
+          if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && suggestions.length) setOpen(true);
+          if (!showList) return;
+          if (e.key === 'Escape') {
+            setOpen(false);
+            e.preventDefault();
+          } else if (e.key === 'ArrowDown') {
+            setActiveIndex((i) => Math.min(i + 1, suggestions.length - 1));
+            e.preventDefault();
+          } else if (e.key === 'ArrowUp') {
+            setActiveIndex((i) => Math.max(i - 1, 0));
+            e.preventDefault();
+          } else if (e.key === 'Enter') {
+            e.preventDefault();
+            applyItem(suggestions[activeIndex]);
+          }
+        }}
+        placeholder={placeholder}
+        className="focus:outline-none focus:ring-0 min-h-[1.25rem] w-full border-b border-green-600 bg-transparent px-1 py-0.5 text-black"
+        style={{ fontFamily: FONT_FAMILY, fontSize: '14px' }}
+      />
+      {showList && (
+        <ul
+          id={listboxId}
+          role="listbox"
+          className="absolute left-0 top-full z-[100] mt-0.5 max-h-56 min-w-full w-max max-w-[min(100vw-1rem,36rem)] overflow-auto rounded border border-slate-200 bg-white py-1 text-left shadow-lg"
+        >
+          {suggestions.map((item, idx) => (
+            <li
+              key={item.key}
+              id={`${listboxId}-opt-${idx}`}
+              role="option"
+              aria-selected={idx === activeIndex}
+              className={`cursor-pointer px-2 py-1.5 text-xs text-slate-800 sm:text-sm ${
+                idx === activeIndex ? 'bg-emerald-200' : 'hover:bg-emerald-100'
+              }`}
+              style={{ fontFamily: FONT_FAMILY }}
+              onMouseEnter={() => setActiveIndex(idx)}
+              onMouseDown={(ev) => {
+                ev.preventDefault();
+                applyItem(item);
+              }}
+            >
+              {item.label}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 function FormLine({ value = '', onChange, placeholder, width = 'flex-1', className = '' }) {
   return (
-    <input
-      type="text"
+    <FormTextCombo
       value={value}
-      onChange={(e) => onChange(e.target.value.toUpperCase())}
+      onInputChange={onChange}
+      suggestionOptions={[]}
       placeholder={placeholder}
-      className={`focus:outline-none border-b border-green-600 bg-transparent px-1 py-0.5 text-black ${width} ${className}`}
-      style={{ fontFamily: FONT_FAMILY, fontSize: '14px' }}
+      width={width}
+      className={className}
+      includeNotApplicable
+      ariaLabel={placeholder || 'Text field'}
     />
   );
 }
