@@ -19,7 +19,7 @@ const REGISTRAR_BOX_GROUPS = [
   { label: '13', key: 'registrarBox13', digits: 8 },
   { label: '15', key: 'registrarBox15', digits: 2 },
   { label: '16', key: 'registrarBox16', digits: 2 },
-  { label: '17', key: 'registrarBox17', digits: 2 },
+  { label: '17', key: 'registrarBox17', digits: 3 },
   { label: '19', key: 'registrarBox19', digits: 8 },
 ];
 
