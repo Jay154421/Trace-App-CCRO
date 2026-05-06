@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Bar,
@@ -13,8 +13,10 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import toast from 'react-hot-toast';
 import { useQuery } from '../hooks/useQuery';
 import { childrenApi } from '../services/api';
+import { exportDatabaseFile, fetchDatabaseInfo, importDatabaseFile } from '../services/databaseApi';
 import { AddApplicantModal } from '../components/AddApplicantModal';
 
 function formatAgeGroupLabel(value) {
@@ -25,7 +27,10 @@ function formatAgeGroupLabel(value) {
 export function Dashboard() {
   const [modalOpen, setModalOpen] = useState(false);
   const [listKey, setListKey] = useState(0);
+  const [dbBusy, setDbBusy] = useState(false);
+  const importDbInputRef = useRef(null);
   const { data, loading, error } = useQuery(childrenApi.list, [listKey]);
+  const { data: dbInfo, error: dbInfoError } = useQuery(fetchDatabaseInfo, []);
   const list = Array.isArray(data) ? data : [];
   const recentApplicants = list.slice(0, 5);
 
@@ -65,6 +70,55 @@ export function Dashboard() {
     { id: 'pending', label: 'Pending Registrations', value: pendingCount, hint: 'Missing or incomplete documents' },
   ];
 
+  const handleExportDatabase = async () => {
+    setDbBusy(true);
+    try {
+      const blob = await exportDatabaseFile();
+      const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `trace-backup-${stamp}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Backup exported (database and attachments).');
+    } catch (err) {
+      toast.error(err?.message || 'Export failed.');
+    } finally {
+      setDbBusy(false);
+    }
+  };
+
+  const handleImportDatabase = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.zip')) {
+      toast.error('Select a .zip backup file.');
+      return;
+    }
+    if (!window.confirm('Import new applicants and attachments from this backup? Existing matching applicants will be skipped.')) {
+      return;
+    }
+    setDbBusy(true);
+    try {
+      const result = await importDatabaseFile(file);
+      const summary = result?.summary;
+      if (summary) {
+        toast.success(
+          `Import complete: ${summary.addedApplicants} applicants added, ${summary.skippedApplicants} skipped, ${summary.addedChecklistItems} checklist added, ${summary.mergedChecklistItems} checklist merged, ${summary.copiedAttachments} attachments copied.`
+        );
+      } else {
+        toast.success('Backup imported.');
+      }
+      setListKey((k) => k + 1);
+    } catch (err) {
+      toast.error(err?.message || 'Import failed.');
+    } finally {
+      setDbBusy(false);
+    }
+  };
+
   return (  
     <div className="space-y-6 lg:space-y-8">
       <header className="rounded-2xl border border-emerald-100 bg-gradient-to-r from-white via-emerald-50/70 to-white p-6 shadow-sm">
@@ -75,7 +129,37 @@ export function Dashboard() {
               Overview of applicants and document requirements.
             </p>
           </div>
+          <div className="flex items-center gap-2">
+            <input
+              ref={importDbInputRef}
+              type="file"
+              accept=".zip,application/zip"
+              className="sr-only"
+              onChange={handleImportDatabase}
+              aria-label="Import backup zip"
+            />
+            <button
+              type="button"
+              onClick={handleExportDatabase}
+              disabled={dbBusy}
+              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            >
+              Export backup
+            </button>
+            <button
+              type="button"
+              onClick={() => importDbInputRef.current?.click()}
+              disabled={dbBusy}
+              className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-900 hover:bg-amber-100 disabled:opacity-50"
+            >
+              Import backup
+            </button>
+          </div>
         </div>
+        {(dbInfo || dbInfoError) && (
+          <div>
+          </div>
+        )}
       </header>
 
       <AddApplicantModal

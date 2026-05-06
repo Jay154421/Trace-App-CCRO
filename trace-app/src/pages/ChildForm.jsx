@@ -62,7 +62,12 @@ export function ChildForm() {
     (isEdit ? childrenApi.update(id, payload) : childrenApi.create(payload))
       .then((res) => {
         toast.success(isEdit ? 'Applicant updated.' : 'Applicant added.');
-        navigate(isEdit ? `/children/${id}` : `/children/${res.id}`);
+        // Ensure accurate routing and redirection (replace) to ChildDetail
+        if (isEdit) {
+          navigate(`/children/${id}`, { replace: true });
+        } else {
+          navigate(`/children/${res.id}`, { replace: true });
+        }
       })
       .catch((err) => {
         toast.error(err.message || 'Failed to save.');

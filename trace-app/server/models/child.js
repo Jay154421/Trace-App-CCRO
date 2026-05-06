@@ -133,13 +133,29 @@ function update(id, data) {
 
 function remove(id) {
   const db = getDb();
-  const doc = db.prepare('DELETE FROM documents WHERE child_id = ?');
-  const check = db.prepare('DELETE FROM checklist_items WHERE child_id = ?');
-  doc.run(id);
-  check.run(id);
+  // sql.js only allows one active prepared statement per database; run each DELETE immediately.
+  db.prepare('DELETE FROM documents WHERE child_id = ?').run(id);
+  db.prepare('DELETE FROM checklist_items WHERE child_id = ?').run(id);
   const result = db.prepare('DELETE FROM children WHERE id = ?').run(id);
   db.close();
   return result.changes > 0;
 }
 
-module.exports = { all, findById, create, update, remove, getAgeGroup, calculateAge, updateCertificateOfLiveBirth };
+function bulkRemove(ids) {
+  if (!Array.isArray(ids) || ids.length === 0) return 0;
+  const db = getDb();
+  let deleted = 0;
+  try {
+    for (const id of ids) {
+      db.prepare('DELETE FROM documents WHERE child_id = ?').run(id);
+      db.prepare('DELETE FROM checklist_items WHERE child_id = ?').run(id);
+      const result = db.prepare('DELETE FROM children WHERE id = ?').run(id);
+      deleted += result.changes;
+    }
+    return deleted;
+  } finally {
+    db.close();
+  }
+}
+
+module.exports = { all, findById, create, update, remove, bulkRemove, getAgeGroup, calculateAge, updateCertificateOfLiveBirth };

@@ -2,9 +2,19 @@ import { apiUrl } from '../config/api';
 
 async function request(path, options = {}) {
   const url = apiUrl(path);
+  const { headers: headerOverrides, ...fetchOptions } = options;
+  const headers = { ...headerOverrides };
+  if (
+    fetchOptions.body != null &&
+    fetchOptions.body !== '' &&
+    !headers['Content-Type'] &&
+    !headers['content-type']
+  ) {
+    headers['Content-Type'] = 'application/json';
+  }
   const res = await fetch(url, {
-    ...options,
-    headers: { 'Content-Type': 'application/json', ...options.headers },
+    ...fetchOptions,
+    headers,
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || res.statusText || 'Request failed');
@@ -17,6 +27,7 @@ export const childrenApi = {
   create: (body) => request('/children', { method: 'POST', body: JSON.stringify(body) }),
   update: (id, body) => request(`/children/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
   remove: (id) => request(`/children/${id}`, { method: 'DELETE' }),
+  bulkRemove: (ids) => request('/children/bulk', { method: 'DELETE', body: JSON.stringify({ ids }) }),
   updateChecklist: (id, items) => request(`/children/${id}/checklist`, { method: 'PUT', body: JSON.stringify({ items }) }),
   updateCertificateOfLiveBirth: (id, data) =>
     request(`/children/${id}/certificate-of-live-birth`, { method: 'PUT', body: JSON.stringify(data) }),

@@ -173,6 +173,27 @@ function parseDateOfBirth(dateStr) {
   };
 }
 
+function parsePlaceOfBirth(raw) {
+  const text = typeof raw === 'string' ? raw.trim() : '';
+  if (!text) return { name: '', city: '', province: '' };
+  const parts = text.split(',').map((p) => p.trim()).filter(Boolean);
+  if (parts.length >= 3) {
+    return {
+      name: parts.slice(0, -2).join(', '),
+      city: parts[parts.length - 2],
+      province: parts[parts.length - 1],
+    };
+  }
+  if (parts.length === 2) {
+    return {
+      name: parts[0],
+      city: parts[1],
+      province: '',
+    };
+  }
+  return { name: parts[0], city: '', province: '' };
+}
+
 // Pixel-perfect colors from Certificate of Live Birth (Municipal Form No. 102)
 const COLORS = {
   white: '#FFFFFF',
@@ -195,14 +216,6 @@ function CalendarIcon() {
       <line x1="1" y1="5" x2="15" y2="5" stroke={COLORS.iconGray} strokeWidth="1.2" />
       <line x1="5" y1="1" x2="5" y2="4" stroke={COLORS.iconGray} strokeWidth="1.2" />
       <line x1="11" y1="1" x2="11" y2="4" stroke={COLORS.iconGray} strokeWidth="1.2" />
-    </svg>
-  );
-}
-
-function DropdownArrowIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0 }} aria-hidden>
-      <path d="M2 4l4 4 4-4" stroke={COLORS.iconGray} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -347,14 +360,19 @@ export function CertificateOfLiveBirth() {
         const fromChild = {
           province: base.province || DEFAULT_PROVINCE,
           cityMunicipality: base.cityMunicipality || DEFAULT_CITY_MUNICIPALITY,
-          childFirst: base.childFirst || (data.first_name ?? ''),
-          childMiddle: base.childMiddle || (data.middle_name ?? ''),
-          childLast: base.childLast || (data.last_name ?? ''),
+          // Keep these synced with applicant edits.
+          childFirst: data.first_name ?? '',
+          childMiddle: data.middle_name ?? '',
+          childLast: data.last_name ?? '',
         };
         const { day, month, year } = parseDateOfBirth(data.date_of_birth);
-        if (!base.birthDay && day) fromChild.birthDay = day;
-        if (!base.birthMonth && month) fromChild.birthMonth = month;
-        if (!base.birthYear && year) fromChild.birthYear = year;
+        fromChild.birthDay = day;
+        fromChild.birthMonth = month;
+        fromChild.birthYear = year;
+        const parsedPlace = parsePlaceOfBirth(data.place_of_birth);
+        fromChild.placeOfBirthName = parsedPlace.name;
+        fromChild.placeOfBirthCity = parsedPlace.city;
+        fromChild.placeOfBirthProvince = parsedPlace.province;
         setForm({ ...base, ...fromChild });
       })
       .catch(setError)
@@ -527,10 +545,26 @@ export function CertificateOfLiveBirth() {
             </div>
             <div>
               <label className="block mb-1 font-normal">2. SEX (Male/Female)</label>
-              <div className="flex items-center gap-1">
-                <FormLine value={form.sex} onChange={(v) => update('sex', v)} className="w-28" width="w-28" />
-                <DropdownArrowIcon />
-              </div>
+              <select
+                aria-label="Sex"
+                value={form.sex}
+                onChange={(e) => update('sex', e.target.value)}
+                className="focus:outline-none focus:ring-0 min-h-[1.25rem] cursor-pointer appearance-none bg-no-repeat bg-[length:12px] bg-[right_4px_center] w-28"
+                style={{
+                  fontFamily: FONT_FAMILY,
+                  fontSize: '16px',
+                  backgroundColor: COLORS.white,
+                  border: 'none',
+                  borderBottom: `1px solid ${COLORS.accentGreen}`,
+                  borderRadius: 0,
+                  padding: '2px 22px 2px 4px',
+                  color: COLORS.black,
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%23666' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
+                }}
+              >
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
             </div>
             <div>
               <label className="block mb-1 font-normal">3. DATE OF BIRTH</label>
