@@ -1874,7 +1874,15 @@ export function CertificateOfLiveBirth() {
               
               <div><p className="mb-1" style={{ fontWeight: 400 }}>Name in Print</p><FormLine value={form.informantName} onChange={(v) => update('informantName', v)} placeholder="(Name in print)" /></div>
               <div><p className="mb-1" style={{ fontWeight: 400 }}>Relationship to the Child</p><FormLine value={form.informantRelationship} onChange={(v) => update('informantRelationship', v)} placeholder="(e.g. Mother, Father)" /></div>
-              <div><p className="mb-1" style={{ fontWeight: 400 }}>Address</p><textarea value={form.informantAddress} onChange={(e) => update('informantAddress', e.target.value.toUpperCase())} placeholder="(Complete address)" rows={2} className="w-full focus:outline-none" style={{ fontFamily: FONT_FAMILY, fontSize: '14px', backgroundColor: COLORS.white, border: `1px solid ${COLORS.borderGray}`, borderRadius: 0, padding: '4px' }} /></div>
+              <div>
+                <p className="mb-1" style={{ fontWeight: 400 }}>Address</p>
+                <FormLine
+                  value={form.informantAddress}
+                  onChange={(v) => update('informantAddress', v.toUpperCase())}
+                  placeholder="(Complete address)"
+                  className="w-full"
+                />
+              </div>
               <div>
                 <p className="mb-1" style={{ fontWeight: 400 }}>Date</p>
                 <div className="flex items-center gap-1">
