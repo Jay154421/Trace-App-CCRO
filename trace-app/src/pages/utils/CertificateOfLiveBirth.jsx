@@ -199,7 +199,7 @@ const PH_JSON_COUNTRY_DATALIST_ID = 'certificate-of-live-birth-ph-json-country-d
 const GENERIC_NOT_APPLICABLE_DATALIST_ID = 'certificate-of-live-birth-not-applicable-datalist';
 const NOT_APPLICABLE_LABEL = 'NOT APPLICABLE';
 
-/** Deduped PSA locality rows (one per `code`) for city picker. */
+/** Deduped PSA locality rows (one per `code`) for city picker internals. */
 function buildPhGeoPickRecords(rows) {
   const byCode = new Map();
   for (const row of rows) {
@@ -235,14 +235,14 @@ function getPhCityPickerSuggestions(query, maxRows = 40) {
   for (const { r } of scored) {
     out.push({
       key: `${r.code}-short`,
-      label: `${r.city} | ${r.country} | ${r.code}`,
+      label: `${r.city} | ${r.country}`,
       record: r,
       /** Short line: fill city/country/code only; leave province blank. */
       omitProvince: true,
     });
     out.push({
       key: `${r.code}-full`,
-      label: `${r.city} | ${r.province} | ${r.country} | ${r.code}`,
+      label: `${r.city} | ${r.province} | ${r.country}`,
       record: r,
       omitProvince: false,
     });
@@ -758,7 +758,7 @@ function FormLine({
 }
 
 /**
- * PSA city picker: dropdown lines like `CITY | COUNTRY | code` and `CITY | PROVINCE | COUNTRY | code`.
+ * PSA city picker: dropdown lines like `CITY | COUNTRY` and `CITY | PROVINCE | COUNTRY`.
  * Short line clears province; full line sets province from the PSA row.
  */
 function FormPhCityCombo({
