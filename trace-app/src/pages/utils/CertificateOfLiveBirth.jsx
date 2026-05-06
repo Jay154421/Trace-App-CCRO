@@ -96,6 +96,7 @@ const RECEIVED_BY_OPTIONS = [
   { name: 'JAN FLAURENCE A. OBLENDA', title: 'REGISTRATION OFFICER II' },
 ];
 
+
 const FALLBACK_COUNTRY_OPTIONS = [
   { code: 'PH', name: 'PHILIPPINES' },
   { code: 'US', name: 'UNITED STATES' },
@@ -167,6 +168,8 @@ function buildPhGeoAutocompleteOptions(rows) {
 const PH_GEO_AUTOCOMPLETE = buildPhGeoAutocompleteOptions(provinceGeoRows);
 const PH_GEO_PROVINCE_DATALIST_ID = 'certificate-of-live-birth-ph-province-datalist';
 const PH_JSON_COUNTRY_DATALIST_ID = 'certificate-of-live-birth-ph-json-country-datalist';
+const GENERIC_NOT_APPLICABLE_DATALIST_ID = 'certificate-of-live-birth-not-applicable-datalist';
+const NOT_APPLICABLE_LABEL = 'NOT APPLICABLE';
 
 /** Deduped PSA locality rows (one per `code`) for city picker. */
 function buildPhGeoPickRecords(rows) {
@@ -224,14 +227,19 @@ const CertificatePhGeoDataLists = memo(function CertificatePhGeoDataLists() {
   return (
     <>
       <datalist id={PH_GEO_PROVINCE_DATALIST_ID}>
+        <option value={NOT_APPLICABLE_LABEL} />
         {PH_GEO_AUTOCOMPLETE.provinces.map((label) => (
           <option key={label} value={label} />
         ))}
       </datalist>
       <datalist id={PH_JSON_COUNTRY_DATALIST_ID}>
+        <option value={NOT_APPLICABLE_LABEL} />
         {PH_GEO_AUTOCOMPLETE.jsonCountries.map((label) => (
           <option key={label} value={label} />
         ))}
+      </datalist>
+      <datalist id={GENERIC_NOT_APPLICABLE_DATALIST_ID}>
+        <option value={NOT_APPLICABLE_LABEL} />
       </datalist>
     </>
   );
@@ -672,13 +680,32 @@ function FormLine({
   useLowerStyle = false,
   datalistId,
   ariaLabel,
+  includeNotApplicable = true,
 }) {
+  if (includeNotApplicable && !datalistId) {
+    return (
+      <FormTextCombo
+        value={value}
+        onInputChange={onChange}
+        suggestionOptions={[]}
+        placeholder={placeholder}
+        className={className}
+        width={width || 'flex-1 min-w-0'}
+        ariaLabel={ariaLabel || placeholder || 'Text field'}
+        includeNotApplicable
+      />
+    );
+  }
+
   const borderColor = useLowerStyle ? COLORS.borderGray : COLORS.accentGreen;
   const locked = Boolean(disabled || readOnly);
+  const listId = includeNotApplicable ? datalistId || GENERIC_NOT_APPLICABLE_DATALIST_ID : datalistId;
   return (
     <input
       type="text"
-      {...(datalistId ? { list: datalistId, autoComplete: 'off', spellCheck: false } : {})}
+      list={listId}
+      autoComplete="off"
+      spellCheck={false}
       value={value}
       onChange={locked ? undefined : (e) => onChange(e.target.value.toUpperCase())}
       readOnly={readOnly && !disabled}
@@ -848,6 +875,7 @@ function FormOccupationLine({ value = '', onChange, placeholder, className = '',
       ariaLabel={ariaLabel || placeholder || 'Occupation'}
       className={className}
       width={width || 'flex-1 min-w-0'}
+      includeNotApplicable={false}
     />
   );
 }
@@ -862,17 +890,23 @@ function FormReligionLine({ value = '', onChange, placeholder, className = '', w
       ariaLabel={ariaLabel || placeholder || 'Religion or religious sect'}
       className={className}
       width={width || 'flex-1 min-w-0'}
+      includeNotApplicable={false}
     />
   );
 }
 
-function getAutocompleteLabelSuggestions(query, suggestionOptions, maxRows = 40) {
+function getAutocompleteLabelSuggestions(query, suggestionOptions, maxRows = 40, includeNotApplicable = true) {
   const q = query.trim().toUpperCase();
   if (!q) return [];
+  const mergedSuggestionOptions = includeNotApplicable
+    ? [NOT_APPLICABLE_LABEL, ...suggestionOptions]
+    : suggestionOptions;
   const scored = [];
-  for (const rawLabel of suggestionOptions) {
+  const seen = new Set();
+  for (const rawLabel of mergedSuggestionOptions) {
     const label = String(rawLabel || '').trim().toUpperCase();
-    if (!label || !label.includes(q)) continue;
+    if (!label || seen.has(label) || !label.includes(q)) continue;
+    seen.add(label);
     scored.push({ label, pri: label.startsWith(q) ? 0 : 1 });
   }
   scored.sort((a, b) => a.pri - b.pri || a.label.localeCompare(b.label));
@@ -891,6 +925,7 @@ function FormTextCombo({
   width,
   ariaLabel,
   maxSuggestionRows = 40,
+  includeNotApplicable = true,
 }) {
   const listboxBaseId = useId();
   const listboxId = `${listboxBaseId}-listbox`;
@@ -899,8 +934,9 @@ function FormTextCombo({
   const wrapRef = useRef(null);
 
   const suggestions = useMemo(
-    () => getAutocompleteLabelSuggestions(value, suggestionOptions, maxSuggestionRows),
-    [value, suggestionOptions, maxSuggestionRows],
+    () =>
+      getAutocompleteLabelSuggestions(value, suggestionOptions, maxSuggestionRows, includeNotApplicable),
+    [value, suggestionOptions, maxSuggestionRows, includeNotApplicable],
   );
 
   useEffect(() => {
@@ -1398,7 +1434,7 @@ export function CertificateOfLiveBirth() {
             <div>
               <label className="block mb-1 font-normal">6. WEIGHT AT BIRTH</label>
               <div className="flex items-baseline gap-2">
-                <FormLine value={form.weightGrams} onChange={(v) => update('weightGrams', v)} placeholder="(e.g. 3200)" className="w-24" width="w-24" />
+                <FormLine value={form.weightGrams} onChange={(v) => update('weightGrams', v)} placeholder="(e.g. 3200)" className="w-24" width="w-24" includeNotApplicable={false} />
                 <span>grams</span>
               </div>
             </div>
@@ -1446,7 +1482,7 @@ export function CertificateOfLiveBirth() {
             <div>
               <label className="block mb-1 font-normal">12. AGE at the time of this birth (completed years)</label>
               <div className="flex items-baseline gap-2">
-                <FormLine value={form.motherAge} onChange={(v) => update('motherAge', v)} placeholder="(Age)" className="w-20" width="w-20" />
+                <FormLine value={form.motherAge} onChange={(v) => update('motherAge', v)} placeholder="(Age)" className="w-20" width="w-20" includeNotApplicable={false} />
                 <span style={{ fontSize: '14px' }}>#</span>
               </div>
             </div>
@@ -1529,7 +1565,7 @@ export function CertificateOfLiveBirth() {
             <div>
               <label className="block mb-1 font-normal">18. AGE at the time of this birth (completed years)</label>
               <div className="flex items-baseline gap-2">
-                <FormLine value={form.fatherAge} onChange={(v) => update('fatherAge', v)} placeholder="(Age)" className="w-20" width="w-20" />
+                <FormLine value={form.fatherAge} onChange={(v) => update('fatherAge', v)} placeholder="(Age)" className="w-20" width="w-20" includeNotApplicable={false} />
                 <span style={{ fontSize: '14px' }}>#</span>
               </div>
             </div>
