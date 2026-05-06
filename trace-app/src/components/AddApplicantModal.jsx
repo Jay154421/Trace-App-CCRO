@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { childrenApi } from '../services/api';
-import { buildApplicantPayload } from '../utils/applicantForm';
+import { applicantInputPlaceholders, buildApplicantPayload } from '../utils/applicantForm';
 
 const emptyForm = {
   first_name: '',
@@ -105,6 +105,7 @@ export function AddApplicantModal({
                   value={form.first_name}
                   onChange={(e) => update('first_name', e.target.value.toUpperCase())}
                   className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
+                  placeholder={applicantInputPlaceholders.firstName}
                   autoComplete="given-name"
                   aria-required="true"
                 />
@@ -116,6 +117,7 @@ export function AddApplicantModal({
                   value={form.middle_name}
                   onChange={(e) => update('middle_name', e.target.value.toUpperCase())}
                   className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
+                  placeholder={applicantInputPlaceholders.middleName}
                   autoComplete="additional-name"
                 />
               </label>
@@ -127,6 +129,7 @@ export function AddApplicantModal({
                   value={form.last_name}
                   onChange={(e) => update('last_name', e.target.value.toUpperCase())}
                   className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
+                  placeholder={applicantInputPlaceholders.lastName}
                   autoComplete="family-name"
                   aria-required="true"
                 />
@@ -143,6 +146,7 @@ export function AddApplicantModal({
                   value={form.date_of_birth}
                   onChange={(e) => update('date_of_birth', e.target.value)}
                   className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
+                  placeholder={applicantInputPlaceholders.dateOfBirth}
                   aria-required="true"
                 />
               </label>
@@ -154,6 +158,7 @@ export function AddApplicantModal({
                   value={form.contact_no}
                   onChange={(e) => update('contact_no', e.target.value.toUpperCase())}
                   className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
+                  placeholder={applicantInputPlaceholders.contactNo}
                 />
               </label>
             </div>
@@ -165,6 +170,7 @@ export function AddApplicantModal({
                 value={form.place_of_birth}
                 onChange={(e) => update('place_of_birth', e.target.value.toUpperCase())}
                 className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
+                placeholder={applicantInputPlaceholders.placeOfBirth}
               />
             </label>
 

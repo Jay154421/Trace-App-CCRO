@@ -1,3 +1,5 @@
+import { applicantInputPlaceholders as placeholders } from '../../utils/applicantForm';
+
 const inputClassName = 'mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200';
 const checkboxClassName = 'mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500';
 const checkboxWrapperClassName = 'flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 transition hover:border-emerald-200 hover:bg-emerald-50/50';
@@ -28,6 +30,7 @@ export function ApplicantFormFields({
                 value={form.first_name}
                 onChange={(e) => onFieldChange('first_name', e.target.value.toUpperCase())}
                 className={inputClassName}
+                placeholder={placeholders.firstName}
                 autoComplete="given-name"
                 aria-required="true"
               />
@@ -39,6 +42,7 @@ export function ApplicantFormFields({
                 value={form.middle_name}
                 onChange={(e) => onFieldChange('middle_name', e.target.value.toUpperCase())}
                 className={inputClassName}
+                placeholder={placeholders.middleName}
                 autoComplete="additional-name"
               />
             </label>
@@ -50,6 +54,7 @@ export function ApplicantFormFields({
                 value={form.last_name}
                 onChange={(e) => onFieldChange('last_name', e.target.value.toUpperCase())}
                 className={inputClassName}
+                placeholder={placeholders.lastName}
                 autoComplete="family-name"
                 aria-required="true"
               />
@@ -68,6 +73,7 @@ export function ApplicantFormFields({
               value={form.date_of_birth}
               onChange={(e) => onFieldChange('date_of_birth', e.target.value)}
               className={inputClassName}
+              placeholder={placeholders.dateOfBirth}
               aria-required="true"
             />
           </label>
@@ -80,6 +86,7 @@ export function ApplicantFormFields({
             value={form.contact_no}
             onChange={(e) => onFieldChange('contact_no', e.target.value.toUpperCase())}
             className={inputClassName}
+            placeholder={placeholders.contactNo}
           />
         </label>
       </div>
@@ -92,6 +99,7 @@ export function ApplicantFormFields({
             value={form.place_of_birth}
             onChange={(e) => onFieldChange('place_of_birth', e.target.value.toUpperCase())}
             className={inputClassName}
+            placeholder={placeholders.placeOfBirth}
           />
         </label>
       ) : null}

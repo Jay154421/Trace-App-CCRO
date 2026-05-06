@@ -11504,14 +11504,14 @@
         "id": 1644,
         "code": "60809701",
         "city": "CITY OF ISABELA",
-        "province": NaN,
+        "province": "",
         "country": "PHILIPPINES"
     },
     {
         "id": 1645,
         "code": "60809804",
         "city": "COTABATO CITY",
-        "province": NaN,
+        "province": "",
         "country": "PHILIPPINES"
     }
 ]

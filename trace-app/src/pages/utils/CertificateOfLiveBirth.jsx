@@ -168,9 +168,6 @@ function sanitizePurpose(value) {
   return String(value || '').trim().replace(/\s+/g, ' ');
 }
 
-const SECTION_IDS = ['header', 'child', 'mother', 'father', 'marriage', 'attendant', 'signatures'];
-const SECTION_LABELS = ['Header', 'Child', 'Mother', 'Father', 'Marriage', 'Attendant', 'Signatures'];
-
 function parseDateOfBirth(dateStr) {
   if (!dateStr || typeof dateStr !== 'string') return { day: '', month: '', year: '' };
   const trimmed = dateStr.trim();
@@ -602,7 +599,6 @@ export function CertificateOfLiveBirth() {
   const saveTimeoutRef = useRef(null);
   const lastSavedRef = useRef(null);
   const certContentRef = useRef(null);
-  const [activeTabIndex, setActiveTabIndex] = useState(0);
   const [openPickerId, setOpenPickerId] = useState(null);
 
   useEffect(() => {
@@ -691,15 +687,6 @@ export function CertificateOfLiveBirth() {
       .certificate-of-live-birth-form input:focus-visible,
       .certificate-of-live-birth-form textarea:focus-visible,
       .certificate-of-live-birth-form select:focus-visible { outline: 2px solid #00CC00; outline-offset: 2px; }
-      .certificate-tabs-wrap { max-width: 100%; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
-      .certificate-tabs-nav { display: flex; gap: 0; border-bottom: 2px solid #e2e8f0; background: #f8fafc; padding: 0 0.5rem; min-height: 2.75rem; align-items: stretch; }
-      .certificate-tab { flex-shrink: 0; padding: 0.5rem 1rem; font-size: 0.8125rem; font-weight: 500; color: #64748b; background: none; border: none; border-bottom: 3px solid transparent; margin-bottom: -2px; cursor: pointer; transition: color 0.15s, border-color 0.15s; font-family: inherit; }
-      .certificate-tab:hover { color: #0f172a; }
-      .certificate-tab.active { color: #059669; border-bottom-color: #059669; background: #fff; }
-      .certificate-step-nav { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 0; border-top: 1px solid #e2e8f0; margin-top: 1rem; }
-      .certificate-step-nav span { font-size: 0.8125rem; color: #64748b; }
-      .certificate-tab-panel { display: none; }
-      .certificate-tab-panel.active { display: block; }
       .certificate-card { border-radius: 10px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow: visible; background: #fff; padding: 1.25rem; margin-bottom: 0; }
       @media (min-width: 768px) {
         .certificate-card { padding: 1.5rem; }
@@ -711,9 +698,6 @@ export function CertificateOfLiveBirth() {
         body { height: 14in; overflow: hidden !important; }
         .certificate-section-nav { display: none !important; }
         .certificate-sticky-bar { display: none !important; }
-        .certificate-tabs-wrap { display: none !important; }
-        .certificate-step-nav { display: none !important; }
-        .certificate-tab-panel { display: block !important; }
         .certificate-card { border-radius: 0 !important; box-shadow: none !important; border: none !important; margin-bottom: 0 !important; padding: 0 !important; }
       }
     `;
@@ -782,10 +766,6 @@ export function CertificateOfLiveBirth() {
   if (error) return <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">{error.message}</div>;
   if (!child) return null;
 
-  const totalSteps = SECTION_IDS.length;
-  const canPrev = activeTabIndex > 0;
-  const canNext = activeTabIndex < totalSteps - 1;
-
   return (
     <div className="mx-auto w-full max-w-5xl px-2 pb-8 sm:px-4 print:max-w-none print:px-0 print:pb-0">
       <div className="certificate-sticky-bar sticky top-0 z-10 mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-3 shadow-sm sm:gap-4 sm:px-4 print:hidden">
@@ -794,22 +774,6 @@ export function CertificateOfLiveBirth() {
           {child.first_name} {child.last_name}
         </span>
         {saving && <span className="text-sm text-emerald-600">Saving…</span>}
-      </div>
-
-      <div className="certificate-tabs-wrap print:hidden">
-        <nav className="certificate-tabs-nav" aria-label="Form sections">
-          {SECTION_LABELS.map((label, i) => (
-            <button
-              key={SECTION_IDS[i]}
-              type="button"
-              onClick={() => setActiveTabIndex(i)}
-              className={`certificate-tab ${activeTabIndex === i ? 'active' : ''}`}
-              aria-current={activeTabIndex === i ? 'step' : undefined}
-            >
-              {label}
-            </button>
-          ))}
-        </nav>
       </div>
 
       <div
@@ -823,7 +787,7 @@ export function CertificateOfLiveBirth() {
           color: COLORS.black,
         }}
       >
-          <div className={`certificate-tab-panel certificate-card ${activeTabIndex === 0 ? 'active' : ''}`} id="header">
+          <div className="certificate-card" id="header">
             <header className="pb-3" style={{ borderBottom: `2px solid ${COLORS.accentGreen}` }}>
           <div className="text-center" style={{ marginTop: '8px' }}>
             <p style={{ fontFamily: FONT_FAMILY, fontSize: '15px', fontWeight: 400, color: COLORS.black, margin: 0 }}>Republic of the Philippines</p>
@@ -849,7 +813,7 @@ export function CertificateOfLiveBirth() {
             </header>
           </div>
 
-          <div className={`certificate-tab-panel certificate-card ${activeTabIndex === 1 ? 'active' : ''}`} id="child">
+          <div className="certificate-card" id="child">
         <SectionPanel title="Child">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4" style={{ fontSize: '16px' }}>
             <div className="md:col-span-2">
@@ -940,7 +904,7 @@ export function CertificateOfLiveBirth() {
         </SectionPanel>
           </div>
 
-          <div className={`certificate-tab-panel certificate-card ${activeTabIndex === 2 ? 'active' : ''}`} id="mother">
+          <div className="certificate-card" id="mother">
         <SectionPanel title="Mother">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4" style={{ fontSize: '16px' }}>
             <div className="md:col-span-2">
@@ -1011,7 +975,7 @@ export function CertificateOfLiveBirth() {
         </SectionPanel>
           </div>
 
-          <div className={`certificate-tab-panel certificate-card ${activeTabIndex === 3 ? 'active' : ''}`} id="father">
+          <div className="certificate-card" id="father">
         <SectionPanel title="Father">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4" style={{ fontSize: '16px' }}>
             <div className="md:col-span-2">
@@ -1068,7 +1032,7 @@ export function CertificateOfLiveBirth() {
         </SectionPanel>
           </div>
 
-          <div className={`certificate-tab-panel certificate-card ${activeTabIndex === 4 ? 'active' : ''}`} id="marriage">
+          <div className="certificate-card" id="marriage">
         <SectionPanel title="Marriage of Parents">
           <p className="mb-4 text-sm text-slate-700">
             (If not married, accomplish Affidavit of Acknowledgement/Admission of Paternity at the back.)
@@ -1145,7 +1109,7 @@ export function CertificateOfLiveBirth() {
         </SectionPanel>
           </div>
 
-          <div className={`certificate-tab-panel certificate-card ${activeTabIndex === 5 ? 'active' : ''}`} id="attendant">
+          <div className="certificate-card" id="attendant">
         <SectionPanel title="Attendant">
           <div className="mb-4">
             <h3 className="mb-2 text-base font-bold">21a. ATTENDANT</h3>
@@ -1284,7 +1248,7 @@ export function CertificateOfLiveBirth() {
         </SectionPanel>
           </div>
 
-          <div className={`certificate-tab-panel certificate-card ${activeTabIndex === 6 ? 'active' : ''}`} id="signatures">
+          <div className="certificate-card" id="signatures">
         <SectionPanel title="Signatures">
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2" style={{ fontFamily: FONT_FAMILY, color: COLORS.black }}>
           <div>
@@ -1298,7 +1262,7 @@ export function CertificateOfLiveBirth() {
               <div>
                 <p className="mb-1" style={{ fontWeight: 400 }}>Date</p>
                 <div className="flex items-center gap-1">
-                  <FormLine value={form.informantDate} onChange={(v) => update('informantDate', v)} placeholder="(YYYY-MM-DD)" />
+                  <FormLine value={form.informantDate} onChange={(v) => update('informantDate', v)} placeholder="(DATE)" />
                   <CertificateDatePicker
                     pickerId="informantDate"
                     openPickerId={openPickerId}
@@ -1322,7 +1286,7 @@ export function CertificateOfLiveBirth() {
               <div>
                 <p className="mb-1" style={{ fontWeight: 400 }}>Date</p>
                 <div className="flex items-center gap-1">
-                  <FormLine value={form.preparedByDate} onChange={(v) => update('preparedByDate', v)} placeholder="(YYYY-MM-DD)" />
+                  <FormLine value={form.preparedByDate} onChange={(v) => update('preparedByDate', v)} placeholder="(DATE)" />
                   <CertificateDatePicker
                     pickerId="preparedByDate"
                     openPickerId={openPickerId}
@@ -1374,7 +1338,7 @@ export function CertificateOfLiveBirth() {
               <div>
                 <p className="mb-1" style={{ fontWeight: 400 }}>Date</p>
                 <div className="flex items-center gap-1">
-                  <FormLine value={form.receivedByDate} onChange={(v) => update('receivedByDate', v)} placeholder="(YYYY-MM-DD)" />
+                  <FormLine value={form.receivedByDate} onChange={(v) => update('receivedByDate', v)} placeholder="(DATE)" />
                   <CertificateDatePicker
                     pickerId="receivedByDate"
                     openPickerId={openPickerId}
@@ -1423,7 +1387,7 @@ export function CertificateOfLiveBirth() {
               <div>
                 <p className="mb-1" style={{ fontWeight: 400 }}>Date</p>
                 <div className="flex items-center gap-1">
-                  <FormLine value={form.registeredByDate} onChange={(v) => update('registeredByDate', v)} placeholder="(YYYY-MM-DD)" />
+                  <FormLine value={form.registeredByDate} onChange={(v) => update('registeredByDate', v)} placeholder="(DATE)" />
                   <CertificateDatePicker
                     pickerId="registeredByDate"
                     openPickerId={openPickerId}
@@ -1442,29 +1406,7 @@ export function CertificateOfLiveBirth() {
         </SectionPanel>
           </div>
 
-        <div className="certificate-step-nav print:hidden">
-          <button
-            type="button"
-            onClick={() => setActiveTabIndex((i) => Math.max(0, i - 1))}
-            disabled={!canPrev}
-            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 disabled:pointer-events-none disabled:opacity-50"
-          >
-            ← Previous
-          </button>
-          <span className="text-slate-500">
-            Step {activeTabIndex + 1} of {totalSteps}
-          </span>
-          <button
-            type="button"
-            onClick={() => setActiveTabIndex((i) => Math.min(totalSteps - 1, i + 1))}
-            disabled={!canNext}
-            className="rounded-lg border border-emerald-600 bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 disabled:pointer-events-none disabled:opacity-50"
-          >
-            Next →
-          </button>
-        </div>
-
-        <p className="mt-4 text-sm text-slate-600 print:hidden">Switch tabs or use Previous/Next. Changes save automatically.</p>
+        <p className="mt-4 text-sm text-slate-600 print:hidden">Changes save automatically.</p>
       </div>
     </div>
   );

@@ -18,6 +18,16 @@ export function isTruthyFlag(value) {
   return Boolean(value);
 }
 
+/** Shared placeholders for applicant profile text/date inputs (modal + full-page form). */
+export const applicantInputPlaceholders = {
+  firstName: 'Enter first name',
+  middleName: 'Middle name (optional)',
+  lastName: 'Enter last name',
+  dateOfBirth: 'dd/mm/yyyy',
+  contactNo: '09XX XXX XXXX',
+  placeOfBirth: '(Name of Hospital/Clinic/Institution/House No., St., Barangay)',
+};
+
 export const emptyApplicantForm = {
   first_name: '',
   middle_name: '',
