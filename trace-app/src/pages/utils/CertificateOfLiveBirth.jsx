@@ -1,13 +1,15 @@
 import { useParams, Link, useLocation } from 'react-router-dom';
 import { applicantDetailPath, getApplicantBasePath } from '../../utils/applicantRoutes';
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import toast from 'react-hot-toast';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { childrenApi } from '../../services/api';
+import regionReligionRows from '../../utils/region_list.json';
+import occupationRows from '../../utils/occupations_list.json';
 
-const DEFAULT_PROVINCE = 'Lanao Del Norte';
-const DEFAULT_CITY_MUNICIPALITY = 'Iligan City';
+const DEFAULT_PROVINCE = 'LANAO DEL NORTE';
+const DEFAULT_CITY_MUNICIPALITY = 'ILIGAN CITY';
 const DEFAULT_COUNTRY_CODE = 'PH';
 const DEFAULT_COUNTRY_TEXT = 'PHILIPPINES';
 const DEFAULT_CERTIFICATION_PURPOSE = 'ANY LEGAL';
@@ -114,6 +116,60 @@ const ATTENDANT_HOUR_OPTIONS = Array.from({ length: 12 }, (_, hourIdx) =>
 const ATTENDANT_MINUTE_OPTIONS = Array.from({ length: 60 }, (_, minuteIdx) =>
   String(minuteIdx).padStart(2, '0'),
 );
+
+/** Distinct PSA religion labels from `region_list.json` (datalist suggestions). */
+function buildDistinctReligionLabels(rows) {
+  const seen = new Set();
+  const out = [];
+  for (const row of rows) {
+    const r = String(row?.religion ?? '').trim();
+    if (!r || seen.has(r)) continue;
+    seen.add(r);
+    out.push(r);
+  }
+  out.sort((a, b) => a.localeCompare(b));
+  return out;
+}
+
+const RELIGION_AUTOCOMPLETE_OPTIONS = buildDistinctReligionLabels(regionReligionRows);
+const RELIGION_DATALIST_ID = 'certificate-of-live-birth-religion-datalist';
+
+/** Distinct PSA occupation labels from `occupations_list.json`. */
+function buildDistinctOccupationLabels(rows) {
+  const seen = new Set();
+  const out = [];
+  for (const row of rows) {
+    const o = String(row?.occupation ?? '').trim();
+    if (!o || seen.has(o)) continue;
+    seen.add(o);
+    out.push(o);
+  }
+  out.sort((a, b) => a.localeCompare(b));
+  return out;
+}
+
+const OCCUPATION_AUTOCOMPLETE_OPTIONS = buildDistinctOccupationLabels(occupationRows);
+const OCCUPATION_DATALIST_ID = 'certificate-of-live-birth-occupation-datalist';
+
+const CertificateReligionDataList = memo(function CertificateReligionDataList() {
+  return (
+    <datalist id={RELIGION_DATALIST_ID}>
+      {RELIGION_AUTOCOMPLETE_OPTIONS.map((label) => (
+        <option key={label} value={label} />
+      ))}
+    </datalist>
+  );
+});
+
+const CertificateOccupationDataList = memo(function CertificateOccupationDataList() {
+  return (
+    <datalist id={OCCUPATION_DATALIST_ID}>
+      {OCCUPATION_AUTOCOMPLETE_OPTIONS.map((label) => (
+        <option key={label} value={label} />
+      ))}
+    </datalist>
+  );
+});
 
 function buildIso3166CountryOptions() {
   try {
@@ -527,22 +583,89 @@ function FormCountrySelect({ value = '', onChange, className = '', width }) {
   );
 }
 
-function FormLine({ value = '', onChange, placeholder, className = '', width, readOnly, useLowerStyle = false }) {
+function FormLine({
+  value = '',
+  onChange,
+  placeholder,
+  className = '',
+  width,
+  readOnly,
+  disabled,
+  useLowerStyle = false,
+}) {
   const borderColor = useLowerStyle ? COLORS.borderGray : COLORS.accentGreen;
+  const locked = Boolean(disabled || readOnly);
   return (
     <input
       type="text"
       value={value}
-      onChange={readOnly ? undefined : (e) => onChange(e.target.value.toUpperCase())}
-      readOnly={readOnly}
+      onChange={locked ? undefined : (e) => onChange(e.target.value.toUpperCase())}
+      readOnly={readOnly && !disabled}
+      disabled={disabled}
       placeholder={placeholder}
-      className={`focus:outline-none focus:ring-0 min-h-[1.25rem] ${width || 'flex-1 min-w-0'} ${className}`}
+      className={`focus:outline-none focus:ring-0 min-h-[1.25rem] ${width || 'flex-1 min-w-0'} ${
+        disabled ? 'cursor-not-allowed opacity-70' : ''
+      } ${className}`}
       style={{
         fontFamily: FONT_FAMILY,
         fontSize: '16px',
         backgroundColor: COLORS.white,
         border: useLowerStyle ? `1px solid ${COLORS.borderGray}` : 'none',
         borderBottom: useLowerStyle ? undefined : `1px solid ${borderColor}`,
+        borderRadius: 0,
+        padding: '2px 4px',
+        color: COLORS.black,
+      }}
+    />
+  );
+}
+
+function FormOccupationLine({ value = '', onChange, placeholder, className = '', width, ariaLabel }) {
+  const borderColor = COLORS.accentGreen;
+  return (
+    <input
+      type="text"
+      list={OCCUPATION_DATALIST_ID}
+      autoComplete="off"
+      spellCheck={false}
+      value={value}
+      onChange={(e) => onChange(e.target.value.toUpperCase())}
+      placeholder={placeholder}
+      aria-label={ariaLabel || placeholder || 'Occupation'}
+      className={`focus:outline-none focus:ring-0 min-h-[1.25rem] ${width || 'flex-1 min-w-0'} ${className}`}
+      style={{
+        fontFamily: FONT_FAMILY,
+        fontSize: '16px',
+        backgroundColor: COLORS.white,
+        border: 'none',
+        borderBottom: `1px solid ${borderColor}`,
+        borderRadius: 0,
+        padding: '2px 4px',
+        color: COLORS.black,
+      }}
+    />
+  );
+}
+
+function FormReligionLine({ value = '', onChange, placeholder, className = '', width, ariaLabel }) {
+  const borderColor = COLORS.accentGreen;
+  return (
+    <input
+      type="text"
+      list={RELIGION_DATALIST_ID}
+      autoComplete="off"
+      spellCheck={false}
+      value={value}
+      onChange={(e) => onChange(e.target.value.toUpperCase())}
+      placeholder={placeholder}
+      aria-label={ariaLabel || placeholder || 'Religion or religious sect'}
+      className={`focus:outline-none focus:ring-0 min-h-[1.25rem] ${width || 'flex-1 min-w-0'} ${className}`}
+      style={{
+        fontFamily: FONT_FAMILY,
+        fontSize: '16px',
+        backgroundColor: COLORS.white,
+        border: 'none',
+        borderBottom: `1px solid ${borderColor}`,
         borderRadius: 0,
         padding: '2px 4px',
         color: COLORS.black,
@@ -787,6 +910,8 @@ export function CertificateOfLiveBirth() {
           color: COLORS.black,
         }}
       >
+        <CertificateReligionDataList />
+        <CertificateOccupationDataList />
           <div className="certificate-card" id="header">
             <header className="pb-3" style={{ borderBottom: `2px solid ${COLORS.accentGreen}` }}>
           <div className="text-center" style={{ marginTop: '8px' }}>
@@ -798,7 +923,12 @@ export function CertificateOfLiveBirth() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="flex flex-col min-w-0">
                 <span className="mb-1">Province</span>
-                <FormLine value={form.province} onChange={(v) => update('province', v)} placeholder="(Province)" />
+                <FormLine
+                  value={form.province}
+                  onChange={(v) => update('province', v)}
+                  placeholder="(Province)"
+                  disabled
+                />
               </div>
               <div className="flex flex-col min-w-0">
                 <span className="mb-1">City/Municipality</span>
@@ -876,7 +1006,12 @@ export function CertificateOfLiveBirth() {
                 <FormLine value={form.placeOfBirthName} onChange={(v) => update('placeOfBirthName', v)} placeholder="(Name of Hospital/Clinic/Institution/House No., St., Barangay)" className="w-full" width="w-full" />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <FormLine value={form.placeOfBirthCity} onChange={(v) => update('placeOfBirthCity', v)} placeholder="(City/Municipality)" />
-                  <FormLine value={form.placeOfBirthProvince} onChange={(v) => update('placeOfBirthProvince', v)} placeholder="(Province)" />
+                  <FormLine
+                    value={form.placeOfBirthProvince}
+                    onChange={(v) => update('placeOfBirthProvince', v)}
+                    placeholder="(Province)"
+                    disabled
+                  />
                 </div>
               </div>
             </div>
@@ -921,7 +1056,7 @@ export function CertificateOfLiveBirth() {
             </div>
             <div>
               <label className="block mb-1 font-normal">9. RELIGION/RELIGIOUS SECT</label>
-              <FormLine value={form.motherReligion} onChange={(v) => update('motherReligion', v)} placeholder="(Religion/Religious sect)" className="w-full" width="w-full" />
+              <FormReligionLine value={form.motherReligion} onChange={(v) => update('motherReligion', v)} placeholder="(Religion/Religious sect)" ariaLabel="Mother religion or religious sect" className="w-full" width="w-full" />
             </div>
             <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
@@ -939,7 +1074,7 @@ export function CertificateOfLiveBirth() {
             </div>
             <div>
               <label className="block mb-1 font-normal">11. OCCUPATION</label>
-              <FormLine value={form.motherOccupation} onChange={(v) => update('motherOccupation', v)} placeholder="(Occupation)" className="w-full" width="w-full" />
+              <FormOccupationLine value={form.motherOccupation} onChange={(v) => update('motherOccupation', v)} placeholder="(Occupation)" ariaLabel="Mother occupation" className="w-full" width="w-full" />
             </div>
             <div>
               <label className="block mb-1 font-normal">12. AGE at the time of this birth (completed years)</label>
@@ -954,7 +1089,14 @@ export function CertificateOfLiveBirth() {
                 <FormLine value={form.motherResidenceLine1} onChange={(v) => update('motherResidenceLine1', v)} placeholder="(House No., St., Barangay)" className="w-full" width="w-full" />
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <FormLine value={form.motherResidenceCity} onChange={(v) => update('motherResidenceCity', v)} placeholder="(City/Municipality)" className="w-full" width="w-full" />
-                  <FormLine value={form.motherResidenceProvince} onChange={(v) => update('motherResidenceProvince', v)} placeholder="(Province)" className="w-full" width="w-full" />
+                  <FormLine
+                    value={form.motherResidenceProvince}
+                    onChange={(v) => update('motherResidenceProvince', v)}
+                    placeholder="(Province)"
+                    className="w-full"
+                    width="w-full"
+                    disabled
+                  />
                   <FormCountrySelect
                     value={form.motherResidenceCountry}
                     onChange={(v) => {
@@ -992,11 +1134,11 @@ export function CertificateOfLiveBirth() {
             </div>
             <div>
               <label className="block mb-1 font-normal">16. RELIGION/RELIGIOUS SECT</label>
-              <FormLine value={form.fatherReligion} onChange={(v) => update('fatherReligion', v)} placeholder="(Religion/Religious sect)" className="w-full" width="w-full" />
+              <FormReligionLine value={form.fatherReligion} onChange={(v) => update('fatherReligion', v)} placeholder="(Religion/Religious sect)" ariaLabel="Father religion or religious sect" className="w-full" width="w-full" />
             </div>
             <div>
               <label className="block mb-1 font-normal">17. OCCUPATION</label>
-              <FormLine value={form.fatherOccupation} onChange={(v) => update('fatherOccupation', v)} placeholder="(Occupation)" className="w-full" width="w-full" />
+              <FormOccupationLine value={form.fatherOccupation} onChange={(v) => update('fatherOccupation', v)} placeholder="(Occupation)" ariaLabel="Father occupation" className="w-full" width="w-full" />
             </div>
             <div>
               <label className="block mb-1 font-normal">18. AGE at the time of this birth (completed years)</label>
@@ -1011,7 +1153,14 @@ export function CertificateOfLiveBirth() {
                 <FormLine value={form.fatherResidenceLine1} onChange={(v) => update('fatherResidenceLine1', v)} placeholder="(House No., St., Barangay)" className="w-full" width="w-full" />
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <FormLine value={form.fatherResidenceCity} onChange={(v) => update('fatherResidenceCity', v)} placeholder="(City/Municipality)" className="w-full" width="w-full" />
-                  <FormLine value={form.fatherResidenceProvince} onChange={(v) => update('fatherResidenceProvince', v)} placeholder="(Province)" className="w-full" width="w-full" />
+                  <FormLine
+                    value={form.fatherResidenceProvince}
+                    onChange={(v) => update('fatherResidenceProvince', v)}
+                    placeholder="(Province)"
+                    className="w-full"
+                    width="w-full"
+                    disabled
+                  />
                   <FormCountrySelect
                     value={form.fatherResidenceCountry}
                     onChange={(v) => {
@@ -1095,6 +1244,7 @@ export function CertificateOfLiveBirth() {
                   placeholder="(Province)"
                   className="w-full"
                   width="w-full"
+                  disabled
                 />
                 <FormLine
                   value={form.marriagePlaceCountry}
@@ -1226,7 +1376,7 @@ export function CertificateOfLiveBirth() {
             <div>
               <p className="mb-1" style={{ fontWeight: 400 }}>Date</p>
               <div className="flex items-center gap-1">
-                <FormLine value={form.attendantDate} onChange={(v) => update('attendantDate', v)} placeholder="(YYYY-MM-DD)" className="flex-1 min-w-0" />
+                <FormLine value={form.attendantDate} onChange={(v) => update('attendantDate', v)} placeholder="(DATE)" className="flex-1 min-w-0" />
                 <CertificateDatePicker
                   pickerId="attendantDate"
                   openPickerId={openPickerId}
@@ -1405,8 +1555,12 @@ export function CertificateOfLiveBirth() {
         </div>
         </SectionPanel>
           </div>
-
-        <p className="mt-4 text-sm text-slate-600 print:hidden">Changes save automatically.</p>
+        <div className="certificate-sticky-bar sticky top-0 z-10 mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-3 shadow-sm sm:gap-4 sm:px-4 print:hidden">
+        <Link to={applicantDetailPath(basePath, id)} className="text-sm font-medium text-slate-600 hover:text-slate-900">← Back to applicant</Link>
+        <span className="order-3 w-full truncate text-sm font-medium text-slate-700 sm:order-none sm:w-auto">
+         Changes save automatically.
+        </span>
+      </div>
       </div>
     </div>
   );
