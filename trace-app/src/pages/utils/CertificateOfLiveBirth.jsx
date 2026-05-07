@@ -481,6 +481,28 @@ function dateFromOptionalParts(yearStr, monthStr, dayStr) {
   return dt;
 }
 
+/** Items 21b–25 signature lines: "May 7, 2026" (month name, day without leading zero, 4-digit year). */
+function dateToSignatureLongText(d) {
+  if (!d || Number.isNaN(d.getTime())) return '';
+  return `${CALENDAR_MONTH_LABELS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+}
+
+/** Parse "May 7, 2026"-style strings for calendar seeding. */
+function parseLongMonthCommaYearSeed(text) {
+  const t = trimStr(text);
+  if (!t) return null;
+  const m = /^([A-Za-z]+)\s+(\d{1,2})\s*,\s*(\d{4})\s*$/.exec(t);
+  if (!m) return null;
+  const monthName = m[1].toLowerCase();
+  const day = Number(m[2]);
+  const year = Number(m[3]);
+  const monthIndex = CALENDAR_MONTH_LABELS.findIndex((label) => label.toLowerCase() === monthName);
+  if (monthIndex < 0 || !Number.isInteger(day) || !Number.isInteger(year)) return null;
+  const dt = new Date(year, monthIndex, day);
+  if (dt.getFullYear() !== year || dt.getMonth() !== monthIndex || dt.getDate() !== day) return null;
+  return dt;
+}
+
 /** Parse ISO prefix or Date-parsable text for calendar seed / single-line date fields. */
 function parseFlexibleDateSeed(text) {
   const t = trimStr(text);
@@ -494,6 +516,17 @@ function parseFlexibleDateSeed(text) {
     const dt = new Date(yi, mi - 1, di);
     if (dt.getFullYear() === yi && dt.getMonth() === mi - 1 && dt.getDate() === di) return dt;
   }
+  const dmy = /^(\d{1,2})-(\d{1,2})-(\d{4})$/.exec(t);
+  if (dmy) {
+    const di = Number(dmy[1]);
+    const mi = Number(dmy[2]);
+    const yi = Number(dmy[3]);
+    if (!Number.isInteger(yi) || !Number.isInteger(mi) || !Number.isInteger(di)) return null;
+    const dt = new Date(yi, mi - 1, di);
+    if (dt.getFullYear() === yi && dt.getMonth() === mi - 1 && dt.getDate() === di) return dt;
+  }
+  const longText = parseLongMonthCommaYearSeed(t);
+  if (longText) return longText;
   const parsed = new Date(t);
   if (Number.isNaN(parsed.getTime())) return null;
   return parsed;
@@ -509,6 +542,19 @@ function formatIsoDateLocal(d) {
   const m = d.getMonth() + 1;
   const day = d.getDate();
   return `${y}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+/** Long month format for signature/date lines (items 21b–25), e.g. May 7, 2026. */
+function formatSignatureLineDateLocal(d) {
+  return dateToSignatureLongText(d);
+}
+
+/** Normalize stored values (legacy ISO, DD-MM-YYYY, or long text) for display on load. */
+function toSignatureLineDateDisplay(value) {
+  const t = trimStr(value);
+  if (!t) return '';
+  const parsed = parseFlexibleDateSeed(t);
+  return parsed ? dateToSignatureLongText(parsed) : t;
 }
 
 function buildMonthCells(viewYear, viewMonthIndex) {
@@ -1162,6 +1208,16 @@ export function CertificateOfLiveBirth() {
         base.motherCountry = String(base.motherCountry || '').trim().toUpperCase();
         base.fatherCountry = String(base.fatherCountry || '').trim().toUpperCase();
         base.marriagePlaceCountry = String(base.marriagePlaceCountry || '').trim().toUpperCase();
+        const signatureDateKeys = [
+          'attendantDate',
+          'informantDate',
+          'preparedByDate',
+          'receivedByDate',
+          'registeredByDate',
+        ];
+        for (const key of signatureDateKeys) {
+          base[key] = toSignatureLineDateDisplay(base[key]);
+        }
         const loadedPurpose = sanitizePurpose(
           base.certificationPurpose ?? base.certification_purpose ?? base.purpose,
         );
@@ -1946,14 +2002,14 @@ export function CertificateOfLiveBirth() {
             <div>
               <p className="mb-1" style={{ fontWeight: 400 }}>Date</p>
               <div className="flex items-center gap-1">
-                <FormLine value={form.attendantDate} onChange={(v) => update('attendantDate', v)} placeholder="(DATE)" className="flex-1 min-w-0" />
+                <FormLine value={form.attendantDate} onChange={(v) => update('attendantDate', v)} placeholder="(May 7, 2026)" className="flex-1 min-w-0" />
                 <CertificateDatePicker
                   pickerId="attendantDate"
                   openPickerId={openPickerId}
                   setOpenPickerId={setOpenPickerId}
                   seedText={form.attendantDate}
                   onPick={(d) => {
-                    setForm((p) => ({ ...p, attendantDate: formatIsoDateLocal(d) }));
+                    setForm((p) => ({ ...p, attendantDate: formatSignatureLineDateLocal(d) }));
                   }}
                   ariaLabel="Choose attendant signature date"
                 />
@@ -1990,14 +2046,14 @@ export function CertificateOfLiveBirth() {
               <div>
                 <p className="mb-1" style={{ fontWeight: 400 }}>Date</p>
                 <div className="flex items-center gap-1">
-                  <FormLine value={form.informantDate} onChange={(v) => update('informantDate', v)} placeholder="(DATE)" />
+                  <FormLine value={form.informantDate} onChange={(v) => update('informantDate', v)} placeholder="(MM/DD/YYYY)" />
                   <CertificateDatePicker
                     pickerId="informantDate"
                     openPickerId={openPickerId}
                     setOpenPickerId={setOpenPickerId}
                     seedText={form.informantDate}
                     onPick={(d) => {
-                      setForm((p) => ({ ...p, informantDate: formatIsoDateLocal(d) }));
+                      setForm((p) => ({ ...p, informantDate: formatSignatureLineDateLocal(d) }));
                     }}
                     ariaLabel="Choose informant date"
                   />
@@ -2034,14 +2090,14 @@ export function CertificateOfLiveBirth() {
               <div>
                 <p className="mb-1" style={{ fontWeight: 400 }}>Date</p>
                 <div className="flex items-center gap-1">
-                  <FormLine value={form.preparedByDate} onChange={(v) => update('preparedByDate', v)} placeholder="(DATE)" />
+                  <FormLine value={form.preparedByDate} onChange={(v) => update('preparedByDate', v)} placeholder="(MM/DD/YYYY)" />
                   <CertificateDatePicker
                     pickerId="preparedByDate"
                     openPickerId={openPickerId}
                     setOpenPickerId={setOpenPickerId}
                     seedText={form.preparedByDate}
                     onPick={(d) => {
-                      setForm((p) => ({ ...p, preparedByDate: formatIsoDateLocal(d) }));
+                      setForm((p) => ({ ...p, preparedByDate: formatSignatureLineDateLocal(d) }));
                     }}
                     ariaLabel="Choose prepared by date"
                   />
@@ -2086,14 +2142,14 @@ export function CertificateOfLiveBirth() {
               <div>
                 <p className="mb-1" style={{ fontWeight: 400 }}>Date</p>
                 <div className="flex items-center gap-1">
-                  <FormLine value={form.receivedByDate} onChange={(v) => update('receivedByDate', v)} placeholder="(DATE)" />
+                  <FormLine value={form.receivedByDate} onChange={(v) => update('receivedByDate', v)} placeholder="(MM/DD/YYYY)" />
                   <CertificateDatePicker
                     pickerId="receivedByDate"
                     openPickerId={openPickerId}
                     setOpenPickerId={setOpenPickerId}
                     seedText={form.receivedByDate}
                     onPick={(d) => {
-                      setForm((p) => ({ ...p, receivedByDate: formatIsoDateLocal(d) }));
+                      setForm((p) => ({ ...p, receivedByDate: formatSignatureLineDateLocal(d) }));
                     }}
                     ariaLabel="Choose received by date"
                   />
@@ -2135,14 +2191,14 @@ export function CertificateOfLiveBirth() {
               <div>
                 <p className="mb-1" style={{ fontWeight: 400 }}>Date</p>
                 <div className="flex items-center gap-1">
-                  <FormLine value={form.registeredByDate} onChange={(v) => update('registeredByDate', v)} placeholder="(DATE)" />
+                  <FormLine value={form.registeredByDate} onChange={(v) => update('registeredByDate', v)} placeholder="(MM/DD/YYYY)" />
                   <CertificateDatePicker
                     pickerId="registeredByDate"
                     openPickerId={openPickerId}
                     setOpenPickerId={setOpenPickerId}
                     seedText={form.registeredByDate}
                     onPick={(d) => {
-                      setForm((p) => ({ ...p, registeredByDate: formatIsoDateLocal(d) }));
+                      setForm((p) => ({ ...p, registeredByDate: formatSignatureLineDateLocal(d) }));
                     }}
                     ariaLabel="Choose registered by date"
                   />
