@@ -19,6 +19,23 @@ function joinNameParts(parts) {
   return out.join(' ');
 }
 
+function formatLongUpperDate(yi, mi, di) {
+  if (!Number.isInteger(yi) || !Number.isInteger(mi) || !Number.isInteger(di)) return '';
+  if (yi < 1000 || yi > 9999 || mi < 1 || mi > 12 || di < 1 || di > 31) return '';
+
+  const date = new Date(Date.UTC(yi, mi - 1, di));
+  if (
+    date.getUTCFullYear() !== yi ||
+    date.getUTCMonth() !== mi - 1 ||
+    date.getUTCDate() !== di
+  ) {
+    return '';
+  }
+
+  const month = date.toLocaleString('en-US', { month: 'long', timeZone: 'UTC' }).toUpperCase();
+  return `${month} ${di}, ${yi}`;
+}
+
 function getAutocompleteLabelSuggestions(query, suggestionOptions, maxRows = 40, includeNotApplicable = true) {
   const q = String(query || '').trim().toUpperCase();
   const base = Array.isArray(suggestionOptions) ? suggestionOptions : [];
@@ -248,9 +265,7 @@ export function PaternityAffidavit() {
       const yi = Number(y);
       const mi = Number(m);
       const di = Number(d);
-      if (!Number.isInteger(yi) || !Number.isInteger(mi) || !Number.isInteger(di)) return '';
-      if (yi < 1000 || yi > 9999 || mi < 1 || mi > 12 || di < 1 || di > 31) return '';
-      return `${yi}-${String(mi).padStart(2, '0')}-${String(di).padStart(2, '0')}`;
+      return formatLongUpperDate(yi, mi, di);
     })();
 
     const pobFromCert = (() => {
