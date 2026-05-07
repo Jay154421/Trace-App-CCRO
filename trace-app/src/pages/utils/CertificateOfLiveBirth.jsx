@@ -2523,6 +2523,7 @@ export function CertificateOfLiveBirth() {
                           <input
                             key={`${group.label}-${idx}`}
                             value={String(form[group.key] || '').charAt(idx) || ''}
+                            disabled
                             ref={(el) => {
                               registrarInputRefs.current[`${group.key}-${idx}`] = el;
                             }}

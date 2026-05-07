@@ -7,6 +7,43 @@ import { childrenApi } from '../../services/api';
 const FONT_FAMILY = 'Arial, Helvetica, sans-serif';
 const NOT_APPLICABLE_LABEL = 'NOT APPLICABLE';
 
+function asUpper(value) {
+  return String(value || '').trim().toUpperCase();
+}
+
+function joinUpper(parts) {
+  return parts.map(asUpper).filter(Boolean).join(' ');
+}
+
+function splitPlaceSegments(value) {
+  return String(value || '')
+    .split(',')
+    .map((segment) => asUpper(segment))
+    .filter(Boolean);
+}
+
+function parseChildCityProvince(child) {
+  const placeSegments = splitPlaceSegments(child?.place_of_birth);
+  if (placeSegments.length >= 2) {
+    return {
+      city: placeSegments[placeSegments.length - 2],
+      province: placeSegments[placeSegments.length - 1],
+    };
+  }
+  return { city: '', province: '' };
+}
+
+function toUpperLongDate(rawDate) {
+  if (!rawDate) return '';
+  const date = new Date(rawDate);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  }).toUpperCase();
+}
+
 function getAutocompleteLabelSuggestions(query, suggestionOptions, maxRows = 40, includeNotApplicable = true) {
   const q = String(query || '').trim().toUpperCase();
   const base = Array.isArray(suggestionOptions) ? suggestionOptions : [];
@@ -190,6 +227,7 @@ export function DelayedRegistrationAffidavit() {
   const { id } = useParams();
   const location = useLocation();
   const basePath = getApplicantBasePath(location.pathname);
+  const [child, setChild] = useState(null);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({
     affiantName: '',
@@ -223,6 +261,7 @@ export function DelayedRegistrationAffidavit() {
     issuedOn: '',
     issuedAt: '',
     administeringOfficer: '',
+    affiantSignature: '',
     position: '',
     nameInPrint: '',
     address: '',
@@ -232,6 +271,7 @@ export function DelayedRegistrationAffidavit() {
     if (!id) return;
     childrenApi.get(id)
       .then(data => {
+        setChild(data);
         const stored = data.delayed_registration_affidavit || {};
         setForm(prev => ({ ...prev, ...stored }));
       })
@@ -250,6 +290,51 @@ export function DelayedRegistrationAffidavit() {
   }, [form, id, loading]);
 
   const update = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
+  const cert = child?.certificate_of_live_birth && typeof child.certificate_of_live_birth === 'object'
+    ? child.certificate_of_live_birth
+    : {};
+  const childName = useMemo(
+    () => joinUpper([child?.first_name, child?.middle_name, child?.last_name]),
+    [child],
+  );
+  const fatherName = useMemo(
+    () => joinUpper([cert?.fatherFirst, cert?.fatherMiddle, cert?.fatherLast, child?.father_name]),
+    [cert, child],
+  );
+  const childBirthDate = useMemo(() => toUpperLongDate(child?.date_of_birth), [child]);
+  const childCityProvince = useMemo(() => parseChildCityProvince(child), [child]);
+  const childPlace = useMemo(
+    () => joinUpper([childCityProvince.city, childCityProvince.province]),
+    [childCityProvince],
+  );
+  const attendedBySuggestion = useMemo(() => asUpper(cert?.attendantName), [cert]);
+  const attendantAddressSuggestion = useMemo(() => asUpper(cert?.attendantAddress), [cert]);
+  const registeredNameSuggestion = useMemo(() => asUpper(cert?.registeredByName), [cert]);
+  const registeredPositionSuggestion = useMemo(() => asUpper(cert?.registeredByTitle), [cert]);
+  const affiantNameSuggestions = useMemo(() => (childName ? [childName] : []), [childName]);
+  const affiantSignatureSuggestions = useMemo(
+    () => (asUpper(form.affiantName) ? [asUpper(form.affiantName)] : []),
+    [form.affiantName],
+  );
+  const childPlaceSuggestions = useMemo(() => (childPlace ? [childPlace] : []), [childPlace]);
+  const childDateSuggestions = useMemo(() => (childBirthDate ? [childBirthDate] : []), [childBirthDate]);
+  const attendedBySuggestions = useMemo(
+    () => (attendedBySuggestion ? [attendedBySuggestion] : []),
+    [attendedBySuggestion],
+  );
+  const attendantAddressSuggestions = useMemo(
+    () => (attendantAddressSuggestion ? [attendantAddressSuggestion] : []),
+    [attendantAddressSuggestion],
+  );
+  const fatherNameSuggestions = useMemo(() => (fatherName ? [fatherName] : []), [fatherName]);
+  const nameInPrintSuggestions = useMemo(
+    () => (registeredNameSuggestion ? [registeredNameSuggestion] : []),
+    [registeredNameSuggestion],
+  );
+  const positionSuggestions = useMemo(
+    () => (registeredPositionSuggestion ? [registeredPositionSuggestion] : []),
+    [registeredPositionSuggestion],
+  );
 
   if (loading) return <div className="p-8 text-center">Loading...</div>;
 
@@ -275,7 +360,15 @@ export function DelayedRegistrationAffidavit() {
         <div className="space-y-4 text-sm leading-relaxed text-slate-900">
           <div className="flex flex-wrap items-baseline gap-2">
             <span>I,</span>
-            <FormLine value={form.affiantName} onChange={v => update('affiantName', v)} placeholder="(Affiant's name)" width="w-80" />
+            <FormTextCombo
+              value={form.affiantName}
+              onInputChange={v => update('affiantName', v)}
+              suggestionOptions={affiantNameSuggestions}
+              placeholder="(Affiant's name)"
+              width="w-80"
+              includeNotApplicable={false}
+              ariaLabel="Affiant name"
+            />
             <span>, of legal age, single/married/divorced/widow/widower, with</span>
           </div>
 
@@ -297,24 +390,64 @@ export function DelayedRegistrationAffidavit() {
                   <Checkbox checked={form.isSelfBirth} onChange={v => update('isSelfBirth', v)} />
                   <div className="flex-1 flex flex-wrap items-baseline gap-2">
                     <span>my birth in</span>
-                    <FormLine value={form.selfBirthPlace} onChange={v => update('selfBirthPlace', v)} placeholder="(Place of birth)" width="w-64" />
+                    <FormTextCombo
+                      value={form.selfBirthPlace}
+                      onInputChange={v => update('selfBirthPlace', v)}
+                      suggestionOptions={childPlaceSuggestions}
+                      placeholder="(Place of birth)"
+                      width="w-64"
+                      includeNotApplicable={false}
+                      ariaLabel="Self birth place"
+                    />
                     <span>on</span>
-                    <FormLine value={form.selfBirthDate} onChange={v => update('selfBirthDate', v)} placeholder="(Date of birth)" width="w-40" />
+                    <FormTextCombo
+                      value={form.selfBirthDate}
+                      onInputChange={v => update('selfBirthDate', v)}
+                      suggestionOptions={childDateSuggestions}
+                      placeholder="(Date of birth)"
+                      width="w-40"
+                      includeNotApplicable={false}
+                      ariaLabel="Self birth date"
+                    />
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
                   <Checkbox checked={form.isOtherBirth} onChange={v => update('isOtherBirth', v)} />
                   <div className="flex-1 flex flex-wrap items-baseline gap-2">
                     <span>the birth of</span>
-                    <FormLine value={form.otherBirthName} onChange={v => update('otherBirthName', v)} placeholder="(Child's name)" width="w-64" />
+                    <FormTextCombo
+                      value={form.otherBirthName}
+                      onInputChange={v => update('otherBirthName', v)}
+                      suggestionOptions={affiantNameSuggestions}
+                      placeholder="(Child's name)"
+                      width="w-64"
+                      includeNotApplicable={false}
+                      ariaLabel="Other birth child name"
+                    />
                     <span>who was born in</span>
-                    <FormLine value={form.otherBirthPlace} onChange={v => update('otherBirthPlace', v)} placeholder="(Place of birth)" width="w-64" />
+                    <FormTextCombo
+                      value={form.otherBirthPlace}
+                      onInputChange={v => update('otherBirthPlace', v)}
+                      suggestionOptions={childPlaceSuggestions}
+                      placeholder="(Place of birth)"
+                      width="w-64"
+                      includeNotApplicable={false}
+                      ariaLabel="Other birth place"
+                    />
                   </div>
                 </div>
                 <div className="flex items-start gap-4 pl-8">
                   <div className="flex-1 flex flex-wrap items-baseline gap-2">
                     <span>on</span>
-                    <FormLine value={form.otherBirthDate} onChange={v => update('otherBirthDate', v)} placeholder="(Date of birth)" width="w-40" />
+                    <FormTextCombo
+                      value={form.otherBirthDate}
+                      onInputChange={v => update('otherBirthDate', v)}
+                      suggestionOptions={childDateSuggestions}
+                      placeholder="(Date of birth)"
+                      width="w-40"
+                      includeNotApplicable={false}
+                      ariaLabel="Other birth date"
+                    />
                   </div>
                 </div>
               </div>
@@ -323,9 +456,25 @@ export function DelayedRegistrationAffidavit() {
             <div className="flex flex-wrap items-baseline gap-2">
               <span className="font-bold">2.</span>
               <span>That I/he/she was attended at birth by</span>
-              <FormLine value={form.attendedBy} onChange={v => update('attendedBy', v)} placeholder="(Name of attendant)" width="w-80" />
+              <FormTextCombo
+                value={form.attendedBy}
+                onInputChange={v => update('attendedBy', v)}
+                suggestionOptions={attendedBySuggestions}
+                placeholder="(Name of attendant)"
+                width="w-80"
+                includeNotApplicable={false}
+                ariaLabel="Attended by"
+              />
               <span>who resides at</span>
-              <FormLine value={form.attendantAddress} onChange={v => update('attendantAddress', v)} placeholder="(Address)" width="flex-1" />
+              <FormTextCombo
+                value={form.attendantAddress}
+                onInputChange={v => update('attendantAddress', v)}
+                suggestionOptions={attendantAddressSuggestions}
+                placeholder="(Address)"
+                width="flex-1"
+                includeNotApplicable={false}
+                ariaLabel="Attendant address"
+              />
             </div>
 
             <div className="flex flex-wrap items-baseline gap-2">
@@ -352,7 +501,15 @@ export function DelayedRegistrationAffidavit() {
               </div>
               <div className="pl-14 flex flex-wrap items-baseline gap-2">
                 <span>father whose name is</span>
-                <FormLine value={form.fatherName} onChange={v => update('fatherName', v)} placeholder="(Father's name)" width="w-80" />
+                <FormTextCombo
+                  value={form.fatherName}
+                  onInputChange={v => update('fatherName', v)}
+                  suggestionOptions={fatherNameSuggestions}
+                  placeholder="(Father's name)"
+                  width="w-80"
+                  includeNotApplicable={false}
+                  ariaLabel="Father name"
+                />
               </div>
             </div>
 
@@ -397,7 +554,16 @@ export function DelayedRegistrationAffidavit() {
 
           <div className="flex justify-end mt-8">
             <div className="text-center w-80">
-              <div className="border-b border-green-600 h-8 mb-1"></div>
+              <FormTextCombo
+                value={form.affiantSignature}
+                onInputChange={v => update('affiantSignature', v)}
+                suggestionOptions={affiantSignatureSuggestions}
+                placeholder="(Signature)"
+                width="w-full"
+                className="text-center mb-1"
+                includeNotApplicable={false}
+                ariaLabel="Affiant signature"
+              />
               <p className="text-xs">(Signature Over Printed Name of Affiant)</p>
             </div>
           </div>
@@ -434,13 +600,31 @@ export function DelayedRegistrationAffidavit() {
                 <p className="text-xs">Signature of the Administering Officer</p>
               </div>
               <div className="text-center">
-                <FormLine value={form.nameInPrint} onChange={v => update('nameInPrint', v)} placeholder="(Name in print)" width="w-full" className="text-center uppercase font-bold" />
+                <FormTextCombo
+                  value={form.nameInPrint}
+                  onInputChange={v => update('nameInPrint', v)}
+                  suggestionOptions={nameInPrintSuggestions}
+                  placeholder="(Name in print)"
+                  width="w-full"
+                  className="text-center uppercase font-bold"
+                  includeNotApplicable={false}
+                  ariaLabel="Name in print"
+                />
                 <p className="text-xs border-t border-green-600 pt-1">Name in Print</p>
               </div>
             </div>
             <div className="space-y-4">
               <div className="text-center">
-                <FormLine value={form.position} onChange={v => update('position', v)} placeholder="(Position / Title / Designation)" width="w-full" className="text-center" />
+                <FormTextCombo
+                  value={form.position}
+                  onInputChange={v => update('position', v)}
+                  suggestionOptions={positionSuggestions}
+                  placeholder="(Position / Title / Designation)"
+                  width="w-full"
+                  className="text-center"
+                  includeNotApplicable={false}
+                  ariaLabel="Position title designation"
+                />
                 <p className="text-xs border-t border-green-600 pt-1">Position / Title / Designation</p>
               </div>
               <div className="text-center">
