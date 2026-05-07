@@ -107,6 +107,16 @@ const DEFAULT_CERT = {
 
 const AUTO_SAVE_MS = 700;
 
+/** Fields 10a–10c, 12, 18: digits only, max length 2. */
+function normalizeTwoDigitNumericInput(raw) {
+  const s = String(raw ?? '');
+  const digitsOnly = s.replace(/\D/g, '');
+  const hadNonDigit = /\D/.test(s);
+  const exceededLength = digitsOnly.length > 2;
+  const value = digitsOnly.slice(0, 2);
+  return { value, hadNonDigit, exceededLength };
+}
+
 const RECEIVED_BY_OPTIONS = [
   { name: 'ATTY. YUSSIF DON JUSTIN F. MARTIL', title: 'CITY CIVIL REGISTRAR' },
   { name: 'LORELIE L. CANTO', title: 'REGISTRATION OFFICER IV' },
@@ -765,6 +775,7 @@ function FormPhCityCombo({
   cityValue = '',
   onCityInputChange,
   onGeoPick,
+  onCityEmptied,
   placeholder,
   className = '',
   width,
@@ -827,6 +838,7 @@ function FormPhCityCombo({
         onChange={(e) => {
           const v = e.target.value.toUpperCase();
           onCityInputChange(v);
+          if (!v.trim() && onCityEmptied) onCityEmptied();
           setOpen(true);
         }}
         onFocus={() => {
@@ -1289,6 +1301,16 @@ export function CertificateOfLiveBirth() {
   const update = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
+
+  const updateNumericMaxTwoDigits = (key, rawValue, fieldLabel) => {
+    const { value, hadNonDigit, exceededLength } = normalizeTwoDigitNumericInput(rawValue);
+    if (hadNonDigit) {
+      toast.error(`${fieldLabel}: digits only (0–9), maximum 2 digits.`, { id: `cert-2dig-char-${key}` });
+    } else if (exceededLength) {
+      toast.error(`${fieldLabel}: maximum 2 digits.`, { id: `cert-2dig-len-${key}` });
+    }
+    update(key, value);
+  };
   const focusRegistrarInput = (key, index) => {
     const input = registrarInputRefs.current?.[`${key}-${index}`];
     if (input) input.focus();
@@ -1364,6 +1386,7 @@ export function CertificateOfLiveBirth() {
                 <FormPhCityCombo
                   cityValue={form.cityMunicipality}
                   onCityInputChange={(v) => update('cityMunicipality', v)}
+                  onCityEmptied={() => update('province', '')}
                   onGeoPick={(r) =>
                     setForm((p) => ({
                       ...p,
@@ -1450,6 +1473,7 @@ export function CertificateOfLiveBirth() {
                   <FormPhCityCombo
                     cityValue={form.placeOfBirthCity}
                     onCityInputChange={(v) => update('placeOfBirthCity', v)}
+                    onCityEmptied={() => update('placeOfBirthProvince', '')}
                     onGeoPick={(r) =>
                       setForm((p) => ({
                         ...p,
@@ -1518,15 +1542,36 @@ export function CertificateOfLiveBirth() {
             <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block mb-1 font-normal">10a. Total number of children born alive</label>
-                <FormLine value={form.motherChildrenBornAlive} onChange={(v) => update('motherChildrenBornAlive', v)} placeholder="(Number)" className="w-full" width="w-full" />
+                <FormLine
+                  value={form.motherChildrenBornAlive}
+                  onChange={(v) => updateNumericMaxTwoDigits('motherChildrenBornAlive', v, '10a')}
+                  placeholder="(Number)"
+                  className="w-full"
+                  width="w-full"
+                  includeNotApplicable={false}
+                />
               </div>
               <div>
                 <label className="block mb-1 font-normal">10b. No. of children still living including this birth</label>
-                <FormLine value={form.motherChildrenLiving} onChange={(v) => update('motherChildrenLiving', v)} placeholder="(Number)" className="w-full" width="w-full" />
+                <FormLine
+                  value={form.motherChildrenLiving}
+                  onChange={(v) => updateNumericMaxTwoDigits('motherChildrenLiving', v, '10b')}
+                  placeholder="(Number)"
+                  className="w-full"
+                  width="w-full"
+                  includeNotApplicable={false}
+                />
               </div>
               <div>
                 <label className="block mb-1 font-normal">10c. No. of children born alive but are now dead</label>
-                <FormLine value={form.motherChildrenDead} onChange={(v) => update('motherChildrenDead', v)} placeholder="(Number)" className="w-full" width="w-full" />
+                <FormLine
+                  value={form.motherChildrenDead}
+                  onChange={(v) => updateNumericMaxTwoDigits('motherChildrenDead', v, '10c')}
+                  placeholder="(Number)"
+                  className="w-full"
+                  width="w-full"
+                  includeNotApplicable={false}
+                />
               </div>
             </div>
             <div>
@@ -1536,7 +1581,14 @@ export function CertificateOfLiveBirth() {
             <div>
               <label className="block mb-1 font-normal">12. AGE at the time of this birth (completed years)</label>
               <div className="flex items-baseline gap-2">
-                <FormLine value={form.motherAge} onChange={(v) => update('motherAge', v)} placeholder="(Age)" className="w-20" width="w-20" includeNotApplicable={false} />
+                <FormLine
+                  value={form.motherAge}
+                  onChange={(v) => updateNumericMaxTwoDigits('motherAge', v, '12')}
+                  placeholder="(Age)"
+                  className="w-20"
+                  width="w-20"
+                  includeNotApplicable={false}
+                />
                 <span style={{ fontSize: '14px' }}>#</span>
               </div>
             </div>
@@ -1548,6 +1600,7 @@ export function CertificateOfLiveBirth() {
                   <FormPhCityCombo
                     cityValue={form.motherResidenceCity}
                     onCityInputChange={(v) => update('motherResidenceCity', v)}
+                    onCityEmptied={() => update('motherResidenceProvince', '')}
                     onGeoPick={(r) => {
                       const code = phGeoCountryToIsoCode(r.country);
                       setForm((p) => ({
@@ -1619,7 +1672,14 @@ export function CertificateOfLiveBirth() {
             <div>
               <label className="block mb-1 font-normal">18. AGE at the time of this birth (completed years)</label>
               <div className="flex items-baseline gap-2">
-                <FormLine value={form.fatherAge} onChange={(v) => update('fatherAge', v)} placeholder="(Age)" className="w-20" width="w-20" includeNotApplicable={false} />
+                <FormLine
+                  value={form.fatherAge}
+                  onChange={(v) => updateNumericMaxTwoDigits('fatherAge', v, '18')}
+                  placeholder="(Age)"
+                  className="w-20"
+                  width="w-20"
+                  includeNotApplicable={false}
+                />
                 <span style={{ fontSize: '14px' }}>#</span>
               </div>
             </div>
@@ -1631,6 +1691,7 @@ export function CertificateOfLiveBirth() {
                   <FormPhCityCombo
                     cityValue={form.fatherResidenceCity}
                     onCityInputChange={(v) => update('fatherResidenceCity', v)}
+                    onCityEmptied={() => update('fatherResidenceProvince', '')}
                     onGeoPick={(r) => {
                       const code = phGeoCountryToIsoCode(r.country);
                       setForm((p) => ({
@@ -1729,6 +1790,7 @@ export function CertificateOfLiveBirth() {
                 <FormPhCityCombo
                   cityValue={form.marriagePlaceCity}
                   onCityInputChange={(v) => update('marriagePlaceCity', v)}
+                  onCityEmptied={() => update('marriagePlaceProvince', '')}
                   onGeoPick={(r) =>
                     setForm((p) => ({
                       ...p,
