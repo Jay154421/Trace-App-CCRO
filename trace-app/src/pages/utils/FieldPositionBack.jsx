@@ -54,6 +54,8 @@ const FIELD_POSITIONS = {
     pa_child_name: { x: 1122, y: 354, width: 990 },
     pa_dob: { x: 306, y: 402, width: 567 },
     pa_pob: { x: 965, y: 402, width: 876 },
+    pa_father_signature_name: { x: 234, y: 660, width: 890 },
+    pa_mother_signature_name: { x: 1354, y: 660, width: 890 },
     pa_sworn_day: { x: 1200, y: 837 },
     pa_sworn_month: { x: 1581, y: 837},
     pa_sworn_year: { x: 2076, y: 837},
@@ -84,6 +86,7 @@ const FIELD_POSITIONS = {
     dra_delay_reason: { x: 1488, y: 2706, width: 777 },
     dra_spouse_name: { x: 1192, y: 2848, width: 732 },
     dra_relationship: { x: 1521, y: 2938, width: 402 },
+    dra_affiant_signature: { x: 1428, y: 3399, width: 825 },
     dra_affixed_day: { x: 1251, y: 3192 },
     dra_affixed_month: { x: 1521, y: 3192, width: 675 },
     dra_affixed_at: { x: 1139, y: 3266, width: 840 },
@@ -358,6 +361,8 @@ const FIELD_VALUE_MAP = [
     { key: 'pa_child_name', getValue: (getVal) => getVal('paternity_affidavit')?.childName || '' },
     { key: 'pa_dob', getValue: (getVal) => getVal('paternity_affidavit')?.dob || '' },
     { key: 'pa_pob', getValue: (getVal) => getVal('paternity_affidavit')?.pob || '' },
+    { key: 'pa_father_signature_name', getValue: (getVal) => getVal('paternity_affidavit')?.fatherSignatureName || '' },
+    { key: 'pa_mother_signature_name', getValue: (getVal) => getVal('paternity_affidavit')?.motherSignatureName || '' },
     { key: 'pa_sworn_day', getValue: (getVal) => getVal('paternity_affidavit')?.swornDay || '' },
     { key: 'pa_sworn_month', getValue: (getVal) => getVal('paternity_affidavit')?.swornMonth || '' },
     { key: 'pa_sworn_year', getValue: (getVal) => getVal('paternity_affidavit')?.swornYear || '' },
@@ -388,6 +393,7 @@ const FIELD_VALUE_MAP = [
     { key: 'dra_delay_reason', getValue: (getVal) => getVal('delayed_registration_affidavit')?.delayReason || '' },
     { key: 'dra_spouse_name', getValue: (getVal) => getVal('delayed_registration_affidavit')?.spouseName || '' },
     { key: 'dra_relationship', getValue: (getVal) => getVal('delayed_registration_affidavit')?.relationship || '' },
+    { key: 'dra_affiant_signature', getValue: (getVal) => getVal('delayed_registration_affidavit')?.affiantSignature || '' },
     { key: 'dra_affixed_day', getValue: (getVal) => getVal('delayed_registration_affidavit')?.affixedDay || '' },
     { key: 'dra_affixed_month', getValue: (getVal) => getVal('delayed_registration_affidavit')?.affixedMonth || '' },
     { key: 'dra_affixed_at', getValue: (getVal) => getVal('delayed_registration_affidavit')?.affixedAt || '' },
@@ -1247,6 +1253,8 @@ export function FieldPositionBack() {
                     <PositionedValue fieldKey="pa_child_name" value={getVal('paternity_affidavit')?.childName} />
                     <PositionedValue fieldKey="pa_dob" value={getVal('paternity_affidavit')?.dob} />
                     <PositionedValue fieldKey="pa_pob" value={getVal('paternity_affidavit')?.pob} />
+                    <PositionedValue fieldKey="pa_father_signature_name" value={getVal('paternity_affidavit')?.fatherSignatureName} />
+                    <PositionedValue fieldKey="pa_mother_signature_name" value={getVal('paternity_affidavit')?.motherSignatureName} />
                     <PositionedValue fieldKey="pa_sworn_day" value={getVal('paternity_affidavit')?.swornDay} />
                     <PositionedValue fieldKey="pa_sworn_month" value={getVal('paternity_affidavit')?.swornMonth} />
                     <PositionedValue fieldKey="pa_sworn_year" value={getVal('paternity_affidavit')?.swornYear} />
@@ -1277,6 +1285,7 @@ export function FieldPositionBack() {
                     <PositionedValue fieldKey="dra_delay_reason" value={getVal('delayed_registration_affidavit')?.delayReason} />
                     <PositionedValue fieldKey="dra_spouse_name" value={getVal('delayed_registration_affidavit')?.spouseName} />
                     <PositionedValue fieldKey="dra_relationship" value={getVal('delayed_registration_affidavit')?.relationship} />
+                    <PositionedValue fieldKey="dra_affiant_signature" value={getVal('delayed_registration_affidavit')?.affiantSignature} />
                     <PositionedValue fieldKey="dra_affixed_day" value={getVal('delayed_registration_affidavit')?.affixedDay} />
                     <PositionedValue fieldKey="dra_affixed_month" value={getVal('delayed_registration_affidavit')?.affixedMonth} />
                     <PositionedValue fieldKey="dra_affixed_at" value={getVal('delayed_registration_affidavit')?.affixedAt} />
