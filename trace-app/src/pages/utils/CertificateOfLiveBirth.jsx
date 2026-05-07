@@ -8,6 +8,7 @@ import { childrenApi } from '../../services/api';
 import regionReligionRows from '../../utils/region_list.json';
 import occupationRows from '../../utils/occupations_list.json';
 import provinceGeoRows from '../../utils/provinces_list.json';
+import ccrCitizenshipRows from '../../utils/CCR_citizenships.json';
 
 const DEFAULT_PROVINCE = 'LANAO DEL NORTE';
 const DEFAULT_CITY_MUNICIPALITY = 'ILIGAN CITY';
@@ -187,6 +188,73 @@ function buildDistinctOccupationLabels(rows) {
 
 const OCCUPATION_AUTOCOMPLETE_OPTIONS = buildDistinctOccupationLabels(occupationRows);
 
+/** First PSA code per label (ambiguous occupation labels resolve to earliest row). */
+function buildRegistrarLabelToFirstCodeMap(rows, labelField, codeField) {
+  const map = new Map();
+  for (const row of rows || []) {
+    const label = String(row?.[labelField] ?? '').trim().toUpperCase();
+    const code = String(row?.[codeField] ?? '').trim();
+    if (!label) continue;
+    if (!map.has(label)) map.set(label, code);
+  }
+  return map;
+}
+
+const PSA_CCR_CITIZENSHIP_REGISTRAR_MAP = buildRegistrarLabelToFirstCodeMap(
+  ccrCitizenshipRows,
+  'citizenship',
+  'code',
+);
+const PSA_REGION_RELIGION_REGISTRAR_MAP = buildRegistrarLabelToFirstCodeMap(
+  regionReligionRows,
+  'religion',
+  'code',
+);
+const PSA_OCCUPATION_REGISTRAR_MAP = buildRegistrarLabelToFirstCodeMap(
+  occupationRows,
+  'occupation',
+  'code',
+);
+
+/** Map JSON code string to registrar box slots (pads numeric codes; retains short non-numeric). */
+function formatRegistrarCodeDigits(rawCode, digitCount) {
+  const c = String(rawCode ?? '').trim().toUpperCase();
+  if (!c) return '';
+  if (/^\d+$/.test(c)) {
+    if (c.length > digitCount) return c.slice(-digitCount);
+    return c.padStart(digitCount, '0');
+  }
+  if (c.length > digitCount) return c.slice(-digitCount);
+  return c;
+}
+
+function registrarCodeFromAutocompleteLabel(label, map, digitCount) {
+  const key = String(label ?? '').trim().toUpperCase();
+  if (!key) return '';
+  const raw = map.get(key);
+  if (raw === undefined || raw === '') return '';
+  return formatRegistrarCodeDigits(raw, digitCount);
+}
+
+/** Distinct CCR citizenship labels from `CCR_citizenships.json`. */
+function buildDistinctCcrCitizenshipLabels(rows) {
+  const seen = new Set();
+  const out = [];
+  for (const row of rows) {
+    const c = String(row?.citizenship ?? '').trim().toUpperCase();
+    if (!c || seen.has(c)) continue;
+    seen.add(c);
+    out.push(c);
+  }
+  out.sort((a, b) => a.localeCompare(b));
+  return out;
+}
+
+const CCR_CITIZENSHIP_AUTOCOMPLETE_OPTIONS = buildDistinctCcrCitizenshipLabels(ccrCitizenshipRows);
+
+/** Shown alone when citizenship field is focused/clicked while empty (before user types). */
+const CITIZENSHIP_FOCUS_ONLY_LABELS = ['FILIPINO'];
+
 /** Distinct PSA province/country strings from `provinces_list.json` (province & country datalists). */
 function buildPhGeoAutocompleteOptions(rows) {
   const provinces = new Set();
@@ -341,6 +409,27 @@ function phGeoCountryToIsoCode(countryUpper) {
   if (hit) return hit.code;
   const normalized = normalizeStoredCountry(c);
   if (normalized.length === 2 && COUNTRY_CODE_SET.has(normalized.toUpperCase())) return normalized.toUpperCase();
+  return '';
+}
+
+/** 8-digit PH locality PSA code from city / province / country (matches `provinces_list`). */
+function registrarResidenceCodeFromGeoPick(city, province, countryIso) {
+  const cityU = String(city ?? '').trim().toUpperCase();
+  const provinceU = String(province ?? '').trim().toUpperCase();
+  const iso = String(countryIso ?? '').trim().toUpperCase();
+  if (!cityU) return '';
+  for (const row of provinceGeoRows || []) {
+    const rc = String(row?.city ?? '').trim().toUpperCase();
+    const rp = String(row?.province ?? '').trim().toUpperCase();
+    if (rc !== cityU) continue;
+    if (provinceU && rp !== provinceU) continue;
+    if (iso) {
+      const rowIso = phGeoCountryToIsoCode(String(row?.country ?? '').trim().toUpperCase());
+      if (rowIso && rowIso !== iso) continue;
+    }
+    const raw = String(row?.code ?? '').trim().toUpperCase();
+    return formatRegistrarCodeDigits(raw, 8);
+  }
   return '';
 }
 
@@ -981,6 +1070,22 @@ function FormReligionLine({ value = '', onChange, placeholder, className = '', w
   );
 }
 
+function FormCitizenshipLine({ value = '', onChange, placeholder, className = '', width, ariaLabel }) {
+  return (
+    <FormTextCombo
+      value={value}
+      onInputChange={onChange}
+      suggestionOptions={CCR_CITIZENSHIP_AUTOCOMPLETE_OPTIONS}
+      idleFocusSuggestions={CITIZENSHIP_FOCUS_ONLY_LABELS}
+      placeholder={placeholder}
+      ariaLabel={ariaLabel || placeholder || 'Citizenship'}
+      className={className}
+      width={width || 'flex-1 min-w-0'}
+      includeNotApplicable={false}
+    />
+  );
+}
+
 function getAutocompleteLabelSuggestions(query, suggestionOptions, maxRows = 40, includeNotApplicable = true) {
   const q = query.trim().toUpperCase();
   if (!q) return [];
@@ -1007,6 +1112,7 @@ function FormTextCombo({
   onInputChange,
   onOptionPick,
   suggestionOptions,
+  idleFocusSuggestions,
   placeholder,
   className = '',
   width,
@@ -1020,15 +1126,38 @@ function FormTextCombo({
   const [activeIndex, setActiveIndex] = useState(0);
   const wrapRef = useRef(null);
 
-  const suggestions = useMemo(
-    () =>
-      getAutocompleteLabelSuggestions(value, suggestionOptions, maxSuggestionRows, includeNotApplicable),
-    [value, suggestionOptions, maxSuggestionRows, includeNotApplicable],
-  );
+  const valueTrimmed = String(value ?? '').trim();
+  const showIdleFocusList =
+    open &&
+    idleFocusSuggestions &&
+    idleFocusSuggestions.length > 0 &&
+    !valueTrimmed;
+
+  const suggestions = useMemo(() => {
+    if (showIdleFocusList) {
+      return idleFocusSuggestions
+        .map((raw, idx) => {
+          const label = String(raw ?? '').trim().toUpperCase();
+          return label ? { key: `idle-focus-${label}-${idx}`, label } : null;
+        })
+        .filter(Boolean);
+    }
+    return getAutocompleteLabelSuggestions(value, suggestionOptions, maxSuggestionRows, includeNotApplicable);
+  }, [
+    value,
+    suggestionOptions,
+    maxSuggestionRows,
+    includeNotApplicable,
+    showIdleFocusList,
+    idleFocusSuggestions,
+  ]);
+
+  const canOpenIdleOnFocus =
+    idleFocusSuggestions && idleFocusSuggestions.length > 0 && !valueTrimmed;
 
   useEffect(() => {
     setActiveIndex(0);
-  }, [value]);
+  }, [value, open, showIdleFocusList]);
 
   useEffect(() => {
     if (!open) return;
@@ -1070,10 +1199,15 @@ function FormTextCombo({
           setOpen(true);
         }}
         onFocus={() => {
-          if (suggestions.length) setOpen(true);
+          if (canOpenIdleOnFocus || suggestions.length) setOpen(true);
         }}
         onKeyDown={(e) => {
-          if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && suggestions.length) setOpen(true);
+          if (
+            (e.key === 'ArrowDown' || e.key === 'ArrowUp') &&
+            (canOpenIdleOnFocus || suggestions.length)
+          ) {
+            setOpen(true);
+          }
           if (!showList) return;
           if (e.key === 'Escape') {
             setOpen(false);
@@ -1354,6 +1488,91 @@ export function CertificateOfLiveBirth() {
     };
   }, [form, id, loading, save]);
 
+  useEffect(() => {
+    if (loading) return;
+
+    const next8 = registrarCodeFromAutocompleteLabel(
+      form.motherCitizenship,
+      PSA_CCR_CITIZENSHIP_REGISTRAR_MAP,
+      2,
+    );
+    const next9 = registrarCodeFromAutocompleteLabel(
+      form.motherReligion,
+      PSA_REGION_RELIGION_REGISTRAR_MAP,
+      2,
+    );
+    const next11 = registrarCodeFromAutocompleteLabel(
+      form.motherOccupation,
+      PSA_OCCUPATION_REGISTRAR_MAP,
+      3,
+    );
+    const next13 = registrarResidenceCodeFromGeoPick(
+      form.motherResidenceCity,
+      form.motherResidenceProvince,
+      form.motherResidenceCountry,
+    );
+    const next15 = registrarCodeFromAutocompleteLabel(
+      form.fatherCitizenship,
+      PSA_CCR_CITIZENSHIP_REGISTRAR_MAP,
+      2,
+    );
+    const next16 = registrarCodeFromAutocompleteLabel(
+      form.fatherReligion,
+      PSA_REGION_RELIGION_REGISTRAR_MAP,
+      2,
+    );
+    const next17 = registrarCodeFromAutocompleteLabel(
+      form.fatherOccupation,
+      PSA_OCCUPATION_REGISTRAR_MAP,
+      3,
+    );
+    const next19 = registrarResidenceCodeFromGeoPick(
+      form.fatherResidenceCity,
+      form.fatherResidenceProvince,
+      form.fatherResidenceCountry,
+    );
+
+    setForm((prev) => {
+      if (
+        prev.registrarBox8 === next8 &&
+        prev.registrarBox9 === next9 &&
+        prev.registrarBox11 === next11 &&
+        prev.registrarBox13 === next13 &&
+        prev.registrarBox15 === next15 &&
+        prev.registrarBox16 === next16 &&
+        prev.registrarBox17 === next17 &&
+        prev.registrarBox19 === next19
+      ) {
+        return prev;
+      }
+      return {
+        ...prev,
+        registrarBox8: next8,
+        registrarBox9: next9,
+        registrarBox11: next11,
+        registrarBox13: next13,
+        registrarBox15: next15,
+        registrarBox16: next16,
+        registrarBox17: next17,
+        registrarBox19: next19,
+      };
+    });
+  }, [
+    form.motherCitizenship,
+    form.motherReligion,
+    form.motherOccupation,
+    form.motherResidenceCity,
+    form.motherResidenceProvince,
+    form.motherResidenceCountry,
+    form.fatherCitizenship,
+    form.fatherReligion,
+    form.fatherOccupation,
+    form.fatherResidenceCity,
+    form.fatherResidenceProvince,
+    form.fatherResidenceCountry,
+    loading,
+  ]);
+
   const update = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
@@ -1589,7 +1808,14 @@ export function CertificateOfLiveBirth() {
             </div>
             <div>
               <label className="block mb-1 font-normal">8. CITIZENSHIP</label>
-              <FormLine value={form.motherCitizenship} onChange={(v) => update('motherCitizenship', v)} placeholder="(Citizenship)" className="w-full" width="w-full" />
+              <FormCitizenshipLine
+                value={form.motherCitizenship}
+                onChange={(v) => update('motherCitizenship', v)}
+                placeholder="(Citizenship)"
+                ariaLabel="Mother citizenship"
+                className="w-full"
+                width="w-full"
+              />
             </div>
             <div>
               <label className="block mb-1 font-normal">9. RELIGION/RELIGIOUS SECT</label>
@@ -1715,7 +1941,14 @@ export function CertificateOfLiveBirth() {
             </div>
             <div>
               <label className="block mb-1 font-normal">15. CITIZENSHIP</label>
-              <FormLine value={form.fatherCitizenship} onChange={(v) => update('fatherCitizenship', v)} placeholder="(Citizenship)" className="w-full" width="w-full" />
+              <FormCitizenshipLine
+                value={form.fatherCitizenship}
+                onChange={(v) => update('fatherCitizenship', v)}
+                placeholder="(Citizenship)"
+                ariaLabel="Father citizenship"
+                className="w-full"
+                width="w-full"
+              />
             </div>
             <div>
               <label className="block mb-1 font-normal">16. RELIGION/RELIGIOUS SECT</label>

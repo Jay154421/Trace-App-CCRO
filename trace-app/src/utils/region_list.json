@@ -1,12 +1,12 @@
 [
     {
         "id": 1,
-        "code": "*",
+        "code": "+",
         "religion": "NOT APPLICABLE"
     },
     {
         "id": 2,
-        "code": "+",
+        "code": "*",
         "religion": "NOT STATED"
     },
     {
