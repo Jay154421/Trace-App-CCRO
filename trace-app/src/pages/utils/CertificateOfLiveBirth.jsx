@@ -236,6 +236,12 @@ function registrarCodeFromAutocompleteLabel(label, map, digitCount) {
   return formatRegistrarCodeDigits(raw, digitCount);
 }
 
+function fallbackRegistrarCodeWhenUnmatched(sourceValue, mappedCode) {
+  if (mappedCode) return mappedCode;
+  if (!String(sourceValue ?? '').trim()) return '';
+  return '99';
+}
+
 /** Distinct CCR citizenship labels from `CCR_citizenships.json`. */
 function buildDistinctCcrCitizenshipLabels(rows) {
   const seen = new Set();
@@ -1496,15 +1502,21 @@ export function CertificateOfLiveBirth() {
       PSA_CCR_CITIZENSHIP_REGISTRAR_MAP,
       2,
     );
-    const next9 = registrarCodeFromAutocompleteLabel(
+    const next9 = fallbackRegistrarCodeWhenUnmatched(
       form.motherReligion,
-      PSA_REGION_RELIGION_REGISTRAR_MAP,
-      2,
+      registrarCodeFromAutocompleteLabel(
+        form.motherReligion,
+        PSA_REGION_RELIGION_REGISTRAR_MAP,
+        2,
+      ),
     );
-    const next11 = registrarCodeFromAutocompleteLabel(
+    const next11 = fallbackRegistrarCodeWhenUnmatched(
       form.motherOccupation,
-      PSA_OCCUPATION_REGISTRAR_MAP,
-      3,
+      registrarCodeFromAutocompleteLabel(
+        form.motherOccupation,
+        PSA_OCCUPATION_REGISTRAR_MAP,
+        3,
+      ),
     );
     const next13 = registrarResidenceCodeFromGeoPick(
       form.motherResidenceCity,
@@ -1516,20 +1528,29 @@ export function CertificateOfLiveBirth() {
       PSA_CCR_CITIZENSHIP_REGISTRAR_MAP,
       2,
     );
-    const next16 = registrarCodeFromAutocompleteLabel(
+    const next16 = fallbackRegistrarCodeWhenUnmatched(
       form.fatherReligion,
-      PSA_REGION_RELIGION_REGISTRAR_MAP,
-      2,
+      registrarCodeFromAutocompleteLabel(
+        form.fatherReligion,
+        PSA_REGION_RELIGION_REGISTRAR_MAP,
+        2,
+      ),
     );
-    const next17 = registrarCodeFromAutocompleteLabel(
+    const next17 = fallbackRegistrarCodeWhenUnmatched(
       form.fatherOccupation,
-      PSA_OCCUPATION_REGISTRAR_MAP,
-      3,
+      registrarCodeFromAutocompleteLabel(
+        form.fatherOccupation,
+        PSA_OCCUPATION_REGISTRAR_MAP,
+        3,
+      ),
     );
-    const next19 = registrarResidenceCodeFromGeoPick(
+    const next19 = fallbackRegistrarCodeWhenUnmatched(
       form.fatherResidenceCity,
-      form.fatherResidenceProvince,
-      form.fatherResidenceCountry,
+      registrarResidenceCodeFromGeoPick(
+        form.fatherResidenceCity,
+        form.fatherResidenceProvince,
+        form.fatherResidenceCountry,
+      ),
     );
 
     setForm((prev) => {
