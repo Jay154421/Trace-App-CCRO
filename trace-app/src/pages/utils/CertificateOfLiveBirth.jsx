@@ -108,7 +108,7 @@ const DEFAULT_CERT = {
 
 const AUTO_SAVE_MS = 700;
 
-/** Fields 10a–10c, 12, 18: digits only, max length 2. */
+/** Fields 10a–10c, 12, 18; date month/day (3., 20a.): digits only, max length 2. */
 function normalizeTwoDigitNumericInput(raw) {
   const s = String(raw ?? '');
   const digitsOnly = s.replace(/\D/g, '');
@@ -116,6 +116,34 @@ function normalizeTwoDigitNumericInput(raw) {
   const exceededLength = digitsOnly.length > 2;
   const value = digitsOnly.slice(0, 2);
   return { value, hadNonDigit, exceededLength };
+}
+
+/** Date year (3., 20a.): digits only, max length 4. */
+function normalizeFourDigitNumericInput(raw) {
+  const s = String(raw ?? '');
+  const digitsOnly = s.replace(/\D/g, '');
+  const hadNonDigit = /\D/.test(s);
+  const exceededLength = digitsOnly.length > 4;
+  const value = digitsOnly.slice(0, 4);
+  return { value, hadNonDigit, exceededLength };
+}
+
+function padCertificateMonthDayPart(raw) {
+  const { value } = normalizeTwoDigitNumericInput(raw);
+  if (!value) return '';
+  const n = Number(value);
+  return Number.isInteger(n) && n >= 0 ? String(n).padStart(2, '0') : value;
+}
+
+function certificateYearDigitsOnly(raw) {
+  return normalizeFourDigitNumericInput(raw).value;
+}
+
+/** Used on DAY/MONTH blur: single digit 1–9 becomes 01–09 (does not alter 10–31 / 10–12 or empty). */
+function padLeadingZeroSingleDigitMonthDay(raw) {
+  const s = String(raw ?? '').trim();
+  if (s.length !== 1) return s;
+  return /^[1-9]$/.test(s) ? `0${s}` : s;
 }
 
 const RECEIVED_BY_OPTIONS = [
@@ -851,6 +879,7 @@ function FormCountrySelect({ value = '', onChange, className = '', width }) {
 function FormLine({
   value = '',
   onChange,
+  onBlur,
   placeholder,
   className = '',
   width,
@@ -866,6 +895,7 @@ function FormLine({
       <FormTextCombo
         value={value}
         onInputChange={onChange}
+        onBlur={onBlur}
         suggestionOptions={[]}
         placeholder={placeholder}
         className={className}
@@ -887,6 +917,7 @@ function FormLine({
       spellCheck={false}
       value={value}
       onChange={locked ? undefined : (e) => onChange(e.target.value.toUpperCase())}
+      onBlur={locked || !onBlur ? undefined : onBlur}
       readOnly={readOnly && !disabled}
       disabled={disabled}
       placeholder={placeholder}
@@ -1117,6 +1148,7 @@ function FormTextCombo({
   value = '',
   onInputChange,
   onOptionPick,
+  onBlur,
   suggestionOptions,
   idleFocusSuggestions,
   placeholder,
@@ -1229,6 +1261,7 @@ function FormTextCombo({
             applyItem(suggestions[activeIndex]);
           }
         }}
+        onBlur={onBlur}
         placeholder={placeholder}
         className="focus:outline-none focus:ring-0 min-h-[1.25rem] w-full"
         style={{
@@ -1364,6 +1397,9 @@ export function CertificateOfLiveBirth() {
         base.certificationPurpose = loadedPurpose || DEFAULT_CERTIFICATION_PURPOSE;
         base.sex = normalizeSexSelectValue(base.sex);
         base.attendantAmpm = normalizeAttendantAmpmValue(base.attendantAmpm);
+        base.marriageMonth = padCertificateMonthDayPart(base.marriageMonth);
+        base.marriageDay = padCertificateMonthDayPart(base.marriageDay);
+        base.marriageYear = certificateYearDigitsOnly(base.marriageYear);
         const fromChild = {
           province: base.province || DEFAULT_PROVINCE,
           cityMunicipality: base.cityMunicipality || DEFAULT_CITY_MUNICIPALITY,
@@ -1373,9 +1409,9 @@ export function CertificateOfLiveBirth() {
           childLast: String(data.last_name ?? '').toUpperCase(),
         };
         const { day, month, year } = parseDateOfBirth(data.date_of_birth);
-        fromChild.birthDay = day;
-        fromChild.birthMonth = month;
-        fromChild.birthYear = year;
+        fromChild.birthDay = padCertificateMonthDayPart(day);
+        fromChild.birthMonth = padCertificateMonthDayPart(month);
+        fromChild.birthYear = certificateYearDigitsOnly(year);
         const certHasSplitPlace = Boolean(base.placeOfBirthCity || base.placeOfBirthProvince);
         if (certHasSplitPlace) {
           fromChild.placeOfBirthName = base.placeOfBirthName;
@@ -1607,6 +1643,31 @@ export function CertificateOfLiveBirth() {
     }
     update(key, value);
   };
+  const updateNumericMaxFourDigits = (key, rawValue, fieldLabel) => {
+    const { value, hadNonDigit, exceededLength } = normalizeFourDigitNumericInput(rawValue);
+    if (hadNonDigit) {
+      toast.error(`${fieldLabel}: digits only (0–9), maximum 4 digits.`, { id: `cert-4dig-char-${key}` });
+    } else if (exceededLength) {
+      toast.error(`${fieldLabel}: maximum 4 digits.`, { id: `cert-4dig-len-${key}` });
+    }
+    update(key, value);
+  };
+  const updateDigitsOnly = (key, rawValue, fieldLabel) => {
+    const source = String(rawValue ?? '');
+    const value = source.replace(/\D/g, '');
+    if (source !== value) {
+      toast.error(`${fieldLabel}: digits only (0–9).`, { id: `cert-digits-only-${key}` });
+    }
+    update(key, value);
+  };
+  const commitPaddedMonthDayPart = (key) => {
+    setForm((prev) => {
+      const cur = String(prev[key] ?? '').trim();
+      const next = padLeadingZeroSingleDigitMonthDay(cur);
+      if (next === cur) return prev;
+      return { ...prev, [key]: next };
+    });
+  };
   const focusRegistrarInput = (key, index) => {
     const input = registrarInputRefs.current?.[`${key}-${index}`];
     if (input) input.focus();
@@ -1741,9 +1802,23 @@ export function CertificateOfLiveBirth() {
             <div>
               <label className="block mb-1 font-normal">3. DATE OF BIRTH</label>
               <div className="flex flex-wrap gap-2 items-center">
-                <FormLine value={form.birthDay} onChange={(v) => update('birthDay', v)} placeholder="(Day)" className="w-14" width="w-14" />
-                <FormLine value={form.birthMonth} onChange={(v) => update('birthMonth', v)} placeholder="(Month)" className="w-20" width="w-20" />
-                <FormLine value={form.birthYear} onChange={(v) => update('birthYear', v)} placeholder="(Year)" className="w-20" width="w-20" />
+                <FormLine
+                  value={form.birthDay}
+                  onChange={(v) => updateNumericMaxTwoDigits('birthDay', v, '3. DATE OF BIRTH (DAY)')}
+                  onBlur={() => commitPaddedMonthDayPart('birthDay')}
+                  placeholder="(Day)"
+                  className="w-14"
+                  width="w-14"
+                />
+                <FormLine
+                  value={form.birthMonth}
+                  onChange={(v) => updateNumericMaxTwoDigits('birthMonth', v, '3. DATE OF BIRTH (MONTH)')}
+                  onBlur={() => commitPaddedMonthDayPart('birthMonth')}
+                  placeholder="(Month)"
+                  className="w-20"
+                  width="w-20"
+                />
+                <FormLine value={form.birthYear} onChange={(v) => updateNumericMaxFourDigits('birthYear', v, '3. DATE OF BIRTH (YEAR)')} placeholder="(Year)" className="w-20" width="w-20" />
                 <CertificateDatePicker
                   pickerId="birth"
                   openPickerId={openPickerId}
@@ -1752,8 +1827,8 @@ export function CertificateOfLiveBirth() {
                   onPick={(d) => {
                     setForm((p) => ({
                       ...p,
-                      birthDay: String(d.getDate()),
-                      birthMonth: String(d.getMonth() + 1),
+                      birthDay: String(d.getDate()).padStart(2, '0'),
+                      birthMonth: String(d.getMonth() + 1).padStart(2, '0'),
                       birthYear: String(d.getFullYear()),
                     }));
                   }}
@@ -1808,7 +1883,7 @@ export function CertificateOfLiveBirth() {
             <div>
               <label className="block mb-1 font-normal">6. WEIGHT AT BIRTH</label>
               <div className="flex items-baseline gap-2">
-                <FormLine value={form.weightGrams} onChange={(v) => update('weightGrams', v)} placeholder="(e.g. 3200)" className="w-24" width="w-24" includeNotApplicable={false} />
+                <FormLine value={form.weightGrams} onChange={(v) => updateDigitsOnly('weightGrams', v, '6. WEIGHT AT BIRTH')} placeholder="(e.g. 3200)" className="w-24" width="w-24" includeNotApplicable={false} />
                 <span>grams</span>
               </div>
             </div>
@@ -2058,21 +2133,23 @@ export function CertificateOfLiveBirth() {
               <div className="flex flex-wrap items-center gap-2">
                 <FormLine
                   value={form.marriageMonth}
-                  onChange={(v) => update('marriageMonth', v)}
+                  onChange={(v) => updateNumericMaxTwoDigits('marriageMonth', v, '20a. DATE (MONTH)')}
+                  onBlur={() => commitPaddedMonthDayPart('marriageMonth')}
                   placeholder="(Month)"
                   className="w-28"
                   width="w-28"
                 />
                 <FormLine
                   value={form.marriageDay}
-                  onChange={(v) => update('marriageDay', v)}
+                  onChange={(v) => updateNumericMaxTwoDigits('marriageDay', v, '20a. DATE (DAY)')}
+                  onBlur={() => commitPaddedMonthDayPart('marriageDay')}
                   placeholder="(Day)"
                   className="w-14"
                   width="w-14"
                 />
                 <FormLine
                   value={form.marriageYear}
-                  onChange={(v) => update('marriageYear', v)}
+                  onChange={(v) => updateNumericMaxFourDigits('marriageYear', v, '20a. DATE (YEAR)')}
                   placeholder="(Year)"
                   className="w-20"
                   width="w-20"
@@ -2085,8 +2162,8 @@ export function CertificateOfLiveBirth() {
                   onPick={(d) => {
                     setForm((p) => ({
                       ...p,
-                      marriageMonth: String(d.getMonth() + 1),
-                      marriageDay: String(d.getDate()),
+                      marriageMonth: String(d.getMonth() + 1).padStart(2, '0'),
+                      marriageDay: String(d.getDate()).padStart(2, '0'),
                       marriageYear: String(d.getFullYear()),
                     }));
                   }}
@@ -2300,7 +2377,7 @@ export function CertificateOfLiveBirth() {
               <div>
                 <p className="mb-1" style={{ fontWeight: 400 }}>Date</p>
                 <div className="flex items-center gap-1">
-                  <FormLine value={form.informantDate} onChange={(v) => update('informantDate', v)} placeholder="(MM/DD/YYYY)" />
+                  <FormLine value={form.informantDate} onChange={(v) => update('informantDate', v)} placeholder="(MONTH DAY, YEAR)" />
                   <CertificateDatePicker
                     pickerId="informantDate"
                     openPickerId={openPickerId}
@@ -2344,7 +2421,7 @@ export function CertificateOfLiveBirth() {
               <div>
                 <p className="mb-1" style={{ fontWeight: 400 }}>Date</p>
                 <div className="flex items-center gap-1">
-                  <FormLine value={form.preparedByDate} onChange={(v) => update('preparedByDate', v)} placeholder="(MM/DD/YYYY)" />
+                  <FormLine value={form.preparedByDate} onChange={(v) => update('preparedByDate', v)} placeholder="(MONTH DAY, YEAR)" />
                   <CertificateDatePicker
                     pickerId="preparedByDate"
                     openPickerId={openPickerId}
@@ -2396,7 +2473,7 @@ export function CertificateOfLiveBirth() {
               <div>
                 <p className="mb-1" style={{ fontWeight: 400 }}>Date</p>
                 <div className="flex items-center gap-1">
-                  <FormLine value={form.receivedByDate} onChange={(v) => update('receivedByDate', v)} placeholder="(MM/DD/YYYY)" />
+                  <FormLine value={form.receivedByDate} onChange={(v) => update('receivedByDate', v)} placeholder="(MONTH DAY, YEAR)" />
                   <CertificateDatePicker
                     pickerId="receivedByDate"
                     openPickerId={openPickerId}
@@ -2445,7 +2522,7 @@ export function CertificateOfLiveBirth() {
               <div>
                 <p className="mb-1" style={{ fontWeight: 400 }}>Date</p>
                 <div className="flex items-center gap-1">
-                  <FormLine value={form.registeredByDate} onChange={(v) => update('registeredByDate', v)} placeholder="(MM/DD/YYYY)" />
+                  <FormLine value={form.registeredByDate} onChange={(v) => update('registeredByDate', v)} placeholder="(MONTH DAY, YEAR)" />
                   <CertificateDatePicker
                     pickerId="registeredByDate"
                     openPickerId={openPickerId}
