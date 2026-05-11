@@ -1,4 +1,4 @@
-import { useParams, Link, useLocation } from 'react-router-dom';
+import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import { applicantDetailPath, getApplicantBasePath } from '../../utils/applicantRoutes';
 import { useState, useEffect, useRef, useCallback, useMemo, memo, useId } from 'react';
 import toast from 'react-hot-toast';
@@ -154,7 +154,7 @@ const RECEIVED_BY_OPTIONS = [
 ];
 
 const LCRO_STAFF_MEMBERS = [
-  { name: 'ANGELINE T. PARAYDAY', title: 'LCRO STAFF' },
+  { name: 'ANGELENE T. PARAYDAY', title: 'LCRO STAFF' },
   { name: 'BUENA MAY G. MORALDE', title: 'LCRO STAFF' },
   { name: 'SHIRLEY L. DEMECILLO', title: 'LCRO STAFF' },
   { name: 'ULYNDA P. ZALSOS', title: 'LCRO STAFF' },
@@ -1345,6 +1345,7 @@ function SectionPanel({ title, children }) {
 export function CertificateOfLiveBirth() {
   const { id } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const basePath = getApplicantBasePath(location.pathname);
   const [child, setChild] = useState(null);
   const [form, setForm] = useState({ ...DEFAULT_CERT });
@@ -1692,6 +1693,31 @@ export function CertificateOfLiveBirth() {
     if (nextValue) setTimeout(() => focusRegistrarInput(key, nextIndex), 0);
   };
 
+  const handleKeyDown = useCallback((e) => {
+    // If Enter is pressed and it wasn't already handled (e.g. by a dropdown)
+    // and it's not a textarea where Enter should create a newline.
+    if (e.key === 'Enter' && !e.defaultPrevented && e.target.tagName !== 'TEXTAREA') {
+      const form = certContentRef.current;
+      if (!form) return;
+
+      // Find all focusable elements
+      const focusable = Array.from(
+        form.querySelectorAll('input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled])')
+      ).filter((el) => el.tabIndex >= 0 && el.offsetParent !== null);
+
+      const index = focusable.indexOf(e.target);
+      if (index > -1 && index < focusable.length - 1) {
+        focusable[index + 1].focus();
+      }
+    }
+  }, []);
+
+  const handleProceed = useCallback(() => {
+    save().then(() => {
+      navigate(applicantDetailPath(basePath, id));
+    });
+  }, [save, navigate, basePath, id]);
+
   if (loading) return <p className="text-slate-500">Loading…</p>;
   if (error) return <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">{error.message}</div>;
   if (!child) return null;
@@ -1703,11 +1729,20 @@ export function CertificateOfLiveBirth() {
         <span className="order-3 w-full truncate text-sm font-medium text-slate-700 sm:order-none sm:w-auto">
           {child.first_name} {child.last_name}
         </span>
-        {saving && <span className="text-sm text-emerald-600">Saving…</span>}
+        <div className="flex items-center gap-3">
+          {saving && <span className="text-sm text-emerald-600">Saving…</span>}
+          <button
+            onClick={handleProceed}
+            className="rounded-lg bg-emerald-600 px-4 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
+          >
+            Proceed
+          </button>
+        </div>
       </div>
 
       <div
         ref={certContentRef}
+        onKeyDown={handleKeyDown}
         className="certificate-of-live-birth-form mt-4 space-y-4"
         style={{
           fontFamily: FONT_FAMILY,
@@ -2653,6 +2688,12 @@ export function CertificateOfLiveBirth() {
         <span className="order-3 w-full truncate text-sm font-medium text-slate-700 sm:order-none sm:w-auto">
          Changes save automatically.
         </span>
+        <button
+          onClick={handleProceed}
+          className="rounded-lg bg-emerald-600 px-4 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
+        >
+          Proceed
+        </button>
       </div>
       </div>
     </div>
