@@ -155,8 +155,10 @@ function FormTextCombo({
             setActiveIndex((i) => Math.max(i - 1, 0));
             e.preventDefault();
           } else if (e.key === 'Enter') {
-            e.preventDefault();
-            applyItem(suggestions[activeIndex]);
+            if (showList) {
+              e.preventDefault();
+              applyItem(suggestions[activeIndex]);
+            }
           }
         }}
         placeholder={placeholder}
@@ -194,16 +196,16 @@ function FormTextCombo({
   );
 }
 
-function FormLine({ value = '', onChange, placeholder, width = 'flex-1', className = '' }) {
+function FormLine({ value = '', onChange, placeholder, width = 'flex-1', className = '', suggestionOptions = [], includeNotApplicable = true }) {
   return (
     <FormTextCombo
       value={value}
       onInputChange={onChange}
-      suggestionOptions={[]}
+      suggestionOptions={suggestionOptions}
       placeholder={placeholder}
       width={width}
       className={className}
-      includeNotApplicable
+      includeNotApplicable={includeNotApplicable}
       ariaLabel={placeholder || 'Text field'}
     />
   );
@@ -229,6 +231,7 @@ export function DelayedRegistrationAffidavit() {
   const basePath = getApplicantBasePath(location.pathname);
   const [child, setChild] = useState(null);
   const [loading, setLoading] = useState(true);
+  const formRef = useRef(null);
   const [form, setForm] = useState({
     affiantName: '',
     residence: '',
@@ -290,6 +293,27 @@ export function DelayedRegistrationAffidavit() {
   }, [form, id, loading]);
 
   const update = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
+
+  const handleKeyDown = useCallback((e) => {
+    if (e.key === 'Enter' && !e.defaultPrevented && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'BUTTON') {
+      const container = formRef.current;
+      if (!container) return;
+
+      const focusable = Array.from(
+        container.querySelectorAll('input:not([disabled]), select:not([disabled]), textarea:not([disabled])')
+      ).filter((el) => {
+        const isVisible = el.offsetWidth > 0 || el.offsetHeight > 0;
+        return el.tabIndex >= 0 && isVisible;
+      });
+
+      const index = focusable.indexOf(e.target);
+      if (index > -1 && index < focusable.length - 1) {
+        e.preventDefault();
+        focusable[index + 1].focus();
+      }
+    }
+  }, []);
+
   const cert = child?.certificate_of_live_birth && typeof child.certificate_of_live_birth === 'object'
     ? child.certificate_of_live_birth
     : {};
@@ -335,6 +359,7 @@ export function DelayedRegistrationAffidavit() {
     () => (registeredPositionSuggestion ? [registeredPositionSuggestion] : []),
     [registeredPositionSuggestion],
   );
+  const commonPlaceSuggestions = useMemo(() => ['ILIGAN CITY LANAO DEL NORTE'], []);
 
   if (loading) return <div className="p-8 text-center">Loading...</div>;
 
@@ -346,7 +371,10 @@ export function DelayedRegistrationAffidavit() {
         </Link>
       </div>
 
-      <div 
+      <form 
+        ref={formRef}
+        onKeyDown={handleKeyDown}
+        onSubmit={(e) => e.preventDefault()}
         className="bg-white p-8 shadow-lg border-[12px] border-emerald-600 relative overflow-hidden"
         style={{ fontFamily: FONT_FAMILY, minHeight: '13in' }}
       >
@@ -374,7 +402,13 @@ export function DelayedRegistrationAffidavit() {
 
           <div className="flex flex-wrap items-baseline gap-2">
             <span>residence and postal address at</span>
-            <FormLine value={form.residence} onChange={v => update('residence', v)} placeholder="(Residence and postal address)" width="flex-1" />
+            <FormLine
+              value={form.residence}
+              onChange={v => update('residence', v)}
+              placeholder="(Residence and postal address)"
+              width="flex-1"
+              suggestionOptions={commonPlaceSuggestions}
+            />
           </div>
 
           <p>after having been duly sworn in accordance with law, do hereby depose and say:</p>
@@ -480,7 +514,7 @@ export function DelayedRegistrationAffidavit() {
             <div className="flex flex-wrap items-baseline gap-2">
               <span className="font-bold">3.</span>
               <span>That I am/he/she is a citizen of</span>
-              <FormLine value={form.citizenship} onChange={v => update('citizenship', v)} placeholder="(Citizenship)" width="w-64" />
+              <FormLine value={form.citizenship} onChange={v => update('citizenship', v)} placeholder="(Citizenship)" width="w-64" suggestionOptions={['PHILIPPINES']} includeNotApplicable={false} />
               <span>.</span>
             </div>
 
@@ -547,7 +581,13 @@ export function DelayedRegistrationAffidavit() {
             </div>
             <div className="flex flex-wrap items-baseline gap-2">
               <span>at</span>
-              <FormLine value={form.affixedAt} onChange={v => update('affixedAt', v)} placeholder="(City / place)" width="w-80" />
+              <FormLine
+                value={form.affixedAt}
+                onChange={v => update('affixedAt', v)}
+                placeholder="(City / place)"
+                width="w-80"
+                suggestionOptions={commonPlaceSuggestions}
+              />
               <span>, Philippines.</span>
             </div>
           </div>
@@ -580,7 +620,13 @@ export function DelayedRegistrationAffidavit() {
               <span>at</span>
             </div>
             <div className="flex flex-wrap items-baseline gap-2">
-              <FormLine value={form.swornAt} onChange={v => update('swornAt', v)} placeholder="(City / place)" width="w-80" />
+              <FormLine
+                value={form.swornAt}
+                onChange={v => update('swornAt', v)}
+                placeholder="(City / place)"
+                width="w-80"
+                suggestionOptions={commonPlaceSuggestions}
+              />
               <span>, Philippines, affiant who exhibited to me his Community Tax Cert.</span>
             </div>
             <div className="flex flex-wrap items-baseline gap-2">
@@ -588,7 +634,13 @@ export function DelayedRegistrationAffidavit() {
               <span>issued on</span>
               <FormLine value={form.issuedOn} onChange={v => update('issuedOn', v)} placeholder="(Date issued)" width="w-48" />
               <span>at</span>
-              <FormLine value={form.issuedAt} onChange={v => update('issuedAt', v)} placeholder="(Place issued)" width="w-64" />
+              <FormLine
+                value={form.issuedAt}
+                onChange={v => update('issuedAt', v)}
+                placeholder="(Place issued)"
+                width="w-64"
+                suggestionOptions={commonPlaceSuggestions}
+              />
               <span>.</span>
             </div>
           </div>
@@ -634,6 +686,11 @@ export function DelayedRegistrationAffidavit() {
             </div>
           </div>
         </div>
+      </form>
+       <div className="mt-5 mb-6 flex items-center justify-between print:hidden">
+        <Link to={applicantDetailPath(basePath, id)} className="text-sm font-medium text-emerald-600">
+          ← Back to Applicant
+        </Link>
       </div>
     </div>
   );

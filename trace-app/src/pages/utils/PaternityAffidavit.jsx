@@ -152,8 +152,10 @@ function FormTextCombo({
             setActiveIndex((i) => Math.max(i - 1, 0));
             e.preventDefault();
           } else if (e.key === 'Enter') {
-            e.preventDefault();
-            applyItem(suggestions[activeIndex]);
+            if (showList) {
+              e.preventDefault();
+              applyItem(suggestions[activeIndex]);
+            }
           }
         }}
         placeholder={placeholder}
@@ -212,6 +214,7 @@ export function PaternityAffidavit() {
   const location = useLocation();
   const basePath = getApplicantBasePath(location.pathname);
   const [loading, setLoading] = useState(true);
+  const formRef = useRef(null);
   const [certificate, setCertificate] = useState(null);
   const [form, setForm] = useState({
     motherName: '',
@@ -312,6 +315,26 @@ export function PaternityAffidavit() {
 
   const update = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
 
+  const handleKeyDown = useCallback((e) => {
+    if (e.key === 'Enter' && !e.defaultPrevented && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'BUTTON') {
+      const container = formRef.current;
+      if (!container) return;
+
+      const focusable = Array.from(
+        container.querySelectorAll('input:not([disabled]), select:not([disabled]), textarea:not([disabled])')
+      ).filter((el) => {
+        const isVisible = el.offsetWidth > 0 || el.offsetHeight > 0;
+        return el.tabIndex >= 0 && isVisible;
+      });
+
+      const index = focusable.indexOf(e.target);
+      if (index > -1 && index < focusable.length - 1) {
+        e.preventDefault();
+        focusable[index + 1].focus();
+      }
+    }
+  }, []);
+
   if (loading) return <div className="p-8 text-center">Loading...</div>;
 
   return (
@@ -322,7 +345,10 @@ export function PaternityAffidavit() {
         </Link>
       </div>
 
-      <div 
+      <form 
+        ref={formRef}
+        onKeyDown={handleKeyDown}
+        onSubmit={(e) => e.preventDefault()}
         className="bg-white p-8 shadow-lg border-[12px] border-emerald-600 relative overflow-hidden"
         style={{ fontFamily: FONT_FAMILY, minHeight: '10.5in' }}
       >
@@ -513,6 +539,11 @@ export function PaternityAffidavit() {
             </div>
           </div>
         </div>
+      </form>
+       <div className="mt-5 mb-6 flex items-center justify-between print:hidden">
+        <Link to={applicantDetailPath(basePath, id)} className="text-sm font-medium text-emerald-600">
+          ← Back to Applicant
+        </Link>
       </div>
     </div>
   );
