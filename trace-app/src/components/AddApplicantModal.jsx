@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { childrenApi } from '../services/api';
-import { applicantInputPlaceholders, buildApplicantPayload } from '../utils/applicantForm';
+import { applicantInputPlaceholders, buildApplicantPayload, handleEnterKey } from '../utils/applicantForm';
 
 const emptyForm = {
   first_name: '',
@@ -108,6 +108,7 @@ export function AddApplicantModal({
                   placeholder={applicantInputPlaceholders.firstName}
                   autoComplete="given-name"
                   aria-required="true"
+                  onKeyDown={handleEnterKey}
                 />
               </label>
               <label className="block">
@@ -119,6 +120,7 @@ export function AddApplicantModal({
                   className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
                   placeholder={applicantInputPlaceholders.middleName}
                   autoComplete="additional-name"
+                  onKeyDown={handleEnterKey}
                 />
               </label>
               <label className="block">
@@ -132,6 +134,7 @@ export function AddApplicantModal({
                   placeholder={applicantInputPlaceholders.lastName}
                   autoComplete="family-name"
                   aria-required="true"
+                  onKeyDown={handleEnterKey}
                 />
               </label>
             </div>
@@ -148,6 +151,7 @@ export function AddApplicantModal({
                   className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
                   placeholder={applicantInputPlaceholders.dateOfBirth}
                   aria-required="true"
+                  onKeyDown={handleEnterKey}
                 />
               </label>
 
@@ -159,6 +163,7 @@ export function AddApplicantModal({
                   onChange={(e) => update('contact_no', e.target.value.toUpperCase())}
                   className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
                   placeholder={applicantInputPlaceholders.contactNo}
+                  onKeyDown={handleEnterKey}
                 />
               </label>
             </div>
@@ -171,6 +176,7 @@ export function AddApplicantModal({
                 onChange={(e) => update('place_of_birth', e.target.value.toUpperCase())}
                 className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
                 placeholder={applicantInputPlaceholders.placeOfBirth}
+                onKeyDown={handleEnterKey}
               />
             </label>
 

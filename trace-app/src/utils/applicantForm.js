@@ -21,7 +21,7 @@ export function isTruthyFlag(value) {
 /** Shared placeholders for applicant profile text/date inputs (modal + full-page form). */
 export const applicantInputPlaceholders = {
   firstName: 'Enter first name',
-  middleName: 'Middle name (optional)',
+  middleName: 'Enter middle name',
   lastName: 'Enter last name',
   dateOfBirth: 'dd/mm/yyyy',
   contactNo: '09XX XXX XXXX',
@@ -72,4 +72,33 @@ export function buildApplicantPayload(form) {
     out_of_town: form.out_of_town,
     has_marriage_certificate: form.has_marriage_certificate,
   };
+}
+
+/**
+ * Shared Enter key handler to move focus to the next input in the form.
+ * Useful for sequential data entry.
+ */
+export function handleEnterKey(e) {
+  if (e.key !== 'Enter') return;
+
+  // Don't intercept Enter on buttons or textareas (unless specifically needed)
+  if (e.target.tagName === 'BUTTON' || e.target.tagName === 'TEXTAREA') return;
+
+  // Find the parent form
+  const form = e.target.form;
+  if (!form) return;
+
+  // Get all focusable elements that aren't hidden or disabled
+  // We exclude buttons to avoid accidental submission while navigating
+  const elements = Array.from(form.elements).filter((el) => {
+    const isVisible = el.offsetWidth > 0 || el.offsetHeight > 0;
+    const isNotButton = el.tagName !== 'BUTTON' && el.type !== 'submit';
+    return isVisible && !el.disabled && el.tabIndex !== -1 && isNotButton;
+  });
+
+  const index = elements.indexOf(e.target);
+  if (index > -1 && index < elements.length - 1) {
+    e.preventDefault();
+    elements[index + 1].focus();
+  }
 }

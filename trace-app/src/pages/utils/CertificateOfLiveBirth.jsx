@@ -1696,17 +1696,21 @@ export function CertificateOfLiveBirth() {
   const handleKeyDown = useCallback((e) => {
     // If Enter is pressed and it wasn't already handled (e.g. by a dropdown)
     // and it's not a textarea where Enter should create a newline.
-    if (e.key === 'Enter' && !e.defaultPrevented && e.target.tagName !== 'TEXTAREA') {
-      const form = certContentRef.current;
-      if (!form) return;
+    if (e.key === 'Enter' && !e.defaultPrevented && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'BUTTON') {
+      const container = certContentRef.current;
+      if (!container) return;
 
-      // Find all focusable elements
+      // Find all focusable elements (inputs, selects) but skip buttons for sequential entry
       const focusable = Array.from(
-        form.querySelectorAll('input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled])')
-      ).filter((el) => el.tabIndex >= 0 && el.offsetParent !== null);
+        container.querySelectorAll('input:not([disabled]), select:not([disabled]), textarea:not([disabled])')
+      ).filter((el) => {
+        const isVisible = el.offsetWidth > 0 || el.offsetHeight > 0;
+        return el.tabIndex >= 0 && isVisible;
+      });
 
       const index = focusable.indexOf(e.target);
       if (index > -1 && index < focusable.length - 1) {
+        e.preventDefault();
         focusable[index + 1].focus();
       }
     }
@@ -1740,9 +1744,10 @@ export function CertificateOfLiveBirth() {
         </div>
       </div>
 
-      <div
+      <form
         ref={certContentRef}
         onKeyDown={handleKeyDown}
+        onSubmit={(e) => e.preventDefault()}
         className="certificate-of-live-birth-form mt-4 space-y-4"
         style={{
           fontFamily: FONT_FAMILY,
@@ -2296,7 +2301,7 @@ export function CertificateOfLiveBirth() {
             <p style={{ fontFamily: FONT_FAMILY, fontSize: '14px', color: COLORS.black, marginBottom: '8px' }}>
             I hereby certify that I attended the birth of the child who was born alive at
             <span className="inline-flex items-baseline gap-1 mx-1 align-middle">
-              {(() => {
+                {(() => {
                 const timeValue = String(form.attendantTime || '');
                 const validTime = /^\d{2}:\d{2}$/.test(timeValue) ? timeValue : '01:00';
                 const [hourValue, minuteValue] = validTime.split(':');
@@ -2695,7 +2700,7 @@ export function CertificateOfLiveBirth() {
           Proceed
         </button>
       </div>
-      </div>
+      </form>
     </div>
   );
 }

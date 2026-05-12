@@ -1,4 +1,4 @@
-import { applicantInputPlaceholders as placeholders } from '../../utils/applicantForm';
+import { applicantInputPlaceholders as placeholders, handleEnterKey } from '../../utils/applicantForm';
 
 const inputClassName = 'mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200';
 const checkboxClassName = 'mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500';
@@ -33,6 +33,7 @@ export function ApplicantFormFields({
                 placeholder={placeholders.firstName}
                 autoComplete="given-name"
                 aria-required="true"
+                onKeyDown={handleEnterKey}
               />
             </label>
             <label className="block">
@@ -44,6 +45,7 @@ export function ApplicantFormFields({
                 className={inputClassName}
                 placeholder={placeholders.middleName}
                 autoComplete="additional-name"
+                onKeyDown={handleEnterKey}
               />
             </label>
             <label className="block">
@@ -57,6 +59,7 @@ export function ApplicantFormFields({
                 placeholder={placeholders.lastName}
                 autoComplete="family-name"
                 aria-required="true"
+                onKeyDown={handleEnterKey}
               />
             </label>
           </div>
@@ -75,6 +78,7 @@ export function ApplicantFormFields({
               className={inputClassName}
               placeholder={placeholders.dateOfBirth}
               aria-required="true"
+              onKeyDown={handleEnterKey}
             />
           </label>
         ) : null}
@@ -87,6 +91,7 @@ export function ApplicantFormFields({
             onChange={(e) => onFieldChange('contact_no', e.target.value.toUpperCase())}
             className={inputClassName}
             placeholder={placeholders.contactNo}
+            onKeyDown={handleEnterKey}
           />
         </label>
       </div>
@@ -100,6 +105,7 @@ export function ApplicantFormFields({
             onChange={(e) => onFieldChange('place_of_birth', e.target.value.toUpperCase())}
             className={inputClassName}
             placeholder={placeholders.placeOfBirth}
+            onKeyDown={handleEnterKey}
           />
         </label>
       ) : null}
