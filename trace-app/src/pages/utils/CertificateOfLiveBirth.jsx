@@ -162,6 +162,17 @@ const LCRO_STAFF_MEMBERS = [
   { name: 'ATTY. YUSSIF DON JUSTIN F. MARTIL', title: 'CITY CIVIL REGISTRAR' },
 ];
 const LCRO_STAFF_MEMBER_NAMES = LCRO_STAFF_MEMBERS.map((member) => member.name);
+const RECEIVED_BY_NAMES = RECEIVED_BY_OPTIONS.map((o) => o.name);
+
+const TYPE_OF_BIRTH_OPTIONS = ['SINGLE', 'TWIN', 'TRIPLE', 'QUADRUPLE', 'QUINTUPLE'];
+const ORDINAL_NUMBERS_OPTIONS = [
+  'FIRST', 'SECOND', 'THIRD', 'FOURTH', 'FIFTH', 'SIXTH', 'SEVENTH', 'EIGHTH', 'NINTH', 'TENTH',
+  'ELEVENTH', 'TWELFTH', 'THIRTEENTH', 'FOURTEENTH', 'FIFTEENTH', 'SIXTEENTH', 'SEVENTEENTH', 'EIGHTEENTH', 'NINETEENTH', 'TWENTIETH'
+];
+const SEX_OPTIONS = ['MALE', 'FEMALE'];
+
+
+
 
 
 const FALLBACK_COUNTRY_OPTIONS = [
@@ -1123,6 +1134,57 @@ function FormCitizenshipLine({ value = '', onChange, placeholder, className = ''
   );
 }
 
+function FormTypeOfBirthLine({ value = '', onChange, placeholder, className = '', width, ariaLabel }) {
+  return (
+    <FormTextCombo
+      value={value}
+      onInputChange={onChange}
+      suggestionOptions={TYPE_OF_BIRTH_OPTIONS}
+      idleFocusSuggestions={TYPE_OF_BIRTH_OPTIONS}
+      placeholder={placeholder}
+      ariaLabel={ariaLabel || placeholder || 'Type of Birth'}
+      className={className}
+      width={width || 'flex-1 min-w-0'}
+      includeNotApplicable={false}
+    />
+  );
+}
+
+function FormOrdinalNumbersLine({ value = '', onChange, placeholder, className = '', width, ariaLabel }) {
+  return (
+    <FormTextCombo
+      value={value}
+      onInputChange={onChange}
+      suggestionOptions={ORDINAL_NUMBERS_OPTIONS}
+      idleFocusSuggestions={ORDINAL_NUMBERS_OPTIONS}
+      placeholder={placeholder}
+      ariaLabel={ariaLabel || placeholder || 'Order'}
+      className={className}
+      width={width || 'flex-1 min-w-0'}
+      includeNotApplicable={false}
+    />
+  );
+}
+
+function FormSexLine({ value = '', onChange, placeholder, className = '', width, ariaLabel }) {
+  return (
+    <FormTextCombo
+      value={value}
+      onInputChange={onChange}
+      suggestionOptions={SEX_OPTIONS}
+      idleFocusSuggestions={SEX_OPTIONS}
+      placeholder={placeholder}
+      ariaLabel={ariaLabel || placeholder || 'Sex'}
+      className={className}
+      width={width || 'flex-1 min-w-0'}
+      includeNotApplicable={false}
+    />
+  );
+}
+
+
+
+
 function getAutocompleteLabelSuggestions(query, suggestionOptions, maxRows = 40, includeNotApplicable = true) {
   const q = query.trim().toUpperCase();
   if (!q) return [];
@@ -1818,26 +1880,13 @@ export function CertificateOfLiveBirth() {
             </div>
             <div>
               <label className="block mb-1 font-normal">2. SEX (Male/Female)</label>
-              <select
-                aria-label="Sex"
+              <FormSexLine
                 value={form.sex}
-                onChange={(e) => update('sex', e.target.value.toUpperCase())}
-                className="focus:outline-none focus:ring-0 min-h-[1.25rem] cursor-pointer appearance-none bg-no-repeat bg-[length:12px] bg-[right_4px_center] w-28"
-                style={{
-                  fontFamily: FONT_FAMILY,
-                  fontSize: '16px',
-                  backgroundColor: COLORS.white,
-                  border: 'none',
-                  borderBottom: `1px solid ${COLORS.accentGreen}`,
-                  borderRadius: 0,
-                  padding: '2px 22px 2px 4px',
-                  color: COLORS.black,
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%23666' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
-                }}
-              >
-                <option value="MALE">MALE</option>
-                <option value="FEMALE">FEMALE</option>
-              </select>
+                onChange={(v) => update('sex', v)}
+                placeholder="(Male/Female)"
+                className="w-28"
+                width="w-28"
+              />
             </div>
             <div>
               <label className="block mb-1 font-normal">3. DATE OF BIRTH</label>
@@ -1909,16 +1958,16 @@ export function CertificateOfLiveBirth() {
             </div>
             <div>
               <label className="block mb-1 font-normal">5a. TYPE OF BIRTH</label>
-              <FormLine value={form.typeOfBirth} onChange={(v) => update('typeOfBirth', v)} placeholder="(Single, Twin, Triplet, etc.)" className="w-full" />
+              <FormTypeOfBirthLine value={form.typeOfBirth} onChange={(v) => update('typeOfBirth', v)} placeholder="(Single, Twin, Triplet, etc.)" className="w-full" />
             </div>
             <div>
               <label className="block mb-1 font-normal">5b. IF MULTIPLE BIRTH, CHILD WAS</label>
-              <FormLine value={form.multipleBirthOrder} onChange={(v) => update('multipleBirthOrder', v)} placeholder="(First, Second, Third, etc.)" className="w-full" />
+              <FormOrdinalNumbersLine value={form.multipleBirthOrder} onChange={(v) => update('multipleBirthOrder', v)} placeholder="(First, Second, Third, etc.)" className="w-full" />
             </div>
             <div className="md:col-span-2">
               <label className="block mb-1 font-normal">5c. BIRTH ORDER</label>
               <p className="mb-1 text-slate-600" style={{ fontSize: '14px' }}>(Order of this birth to previous live births including fetal death)</p>
-              <FormLine value={form.birthOrder} onChange={(v) => update('birthOrder', v)} placeholder="(First, Second, Third, etc.)" className="w-full max-w-xs" />
+              <FormOrdinalNumbersLine value={form.birthOrder} onChange={(v) => update('birthOrder', v)} placeholder="(First, Second, Third, etc.)" className="w-full max-w-xs" />
             </div>
             <div>
               <label className="block mb-1 font-normal">6. WEIGHT AT BIRTH</label>
@@ -2485,29 +2534,24 @@ export function CertificateOfLiveBirth() {
               
               <div>
                 <p className="mb-1" style={{ fontWeight: 400 }}>Name in Print</p>
-                <select
+                <FormTextCombo
                   value={form.receivedByName}
-                  onChange={(e) => {
-                    const chosen = RECEIVED_BY_OPTIONS.find((o) => o.name === e.target.value);
-                    update('receivedByName', e.target.value);
-                    update('receivedByTitle', chosen ? chosen.title : '');
+                  onInputChange={(v) => {
+                    update('receivedByName', v);
+                    const chosen = RECEIVED_BY_OPTIONS.find((o) => o.name === v);
+                    if (chosen) update('receivedByTitle', chosen.title);
                   }}
-                  className="w-full min-h-[1.25rem] focus:outline-none focus:ring-0"
-                  style={{
-                    fontFamily: FONT_FAMILY,
-                    fontSize: '16px',
-                    backgroundColor: COLORS.white,
-                    border: `1px solid ${COLORS.borderGray}`,
-                    borderRadius: 0,
-                    padding: '2px 4px',
-                    color: COLORS.black,
+                  onOptionPick={(pickedName) => {
+                    const chosen = RECEIVED_BY_OPTIONS.find((o) => o.name === pickedName);
+                    if (chosen) update('receivedByTitle', chosen.title);
                   }}
-                >
-                  <option value="">Select name...</option>
-                  {RECEIVED_BY_OPTIONS.map((o) => (
-                    <option key={o.name} value={o.name}>{o.name}</option>
-                  ))}
-                </select>
+                  suggestionOptions={RECEIVED_BY_NAMES}
+                  placeholder="(Name in print)"
+                  ariaLabel="Received by name in print"
+                  className="w-full"
+                  width="w-full"
+                  includeNotApplicable={false}
+                />
               </div>
               <div><p className="mb-1" style={{ fontWeight: 400 }}>Title or Position</p><FormLine value={form.receivedByTitle} onChange={(v) => update('receivedByTitle', v)} placeholder="(Title or position)" /></div>
               <div>
@@ -2534,29 +2578,24 @@ export function CertificateOfLiveBirth() {
               
               <div>
                 <p className="mb-1" style={{ fontWeight: 400 }}>Name in Print</p>
-                <select
+                <FormTextCombo
                   value={form.registeredByName}
-                  onChange={(e) => {
-                    const chosen = RECEIVED_BY_OPTIONS.find((o) => o.name === e.target.value);
-                    update('registeredByName', e.target.value);
-                    update('registeredByTitle', chosen ? chosen.title : '');
+                  onInputChange={(v) => {
+                    update('registeredByName', v);
+                    const chosen = RECEIVED_BY_OPTIONS.find((o) => o.name === v);
+                    if (chosen) update('registeredByTitle', chosen.title);
                   }}
-                  className="w-full min-h-[1.25rem] focus:outline-none focus:ring-0"
-                  style={{
-                    fontFamily: FONT_FAMILY,
-                    fontSize: '16px',
-                    backgroundColor: COLORS.white,
-                    border: `1px solid ${COLORS.borderGray}`,
-                    borderRadius: 0,
-                    padding: '2px 4px',
-                    color: COLORS.black,
+                  onOptionPick={(pickedName) => {
+                    const chosen = RECEIVED_BY_OPTIONS.find((o) => o.name === pickedName);
+                    if (chosen) update('registeredByTitle', chosen.title);
                   }}
-                >
-                  <option value="">Select name...</option>
-                  {RECEIVED_BY_OPTIONS.map((o) => (
-                    <option key={o.name} value={o.name}>{o.name}</option>
-                  ))}
-                </select>
+                  suggestionOptions={RECEIVED_BY_NAMES}
+                  placeholder="(Name in print)"
+                  ariaLabel="Registered by name in print"
+                  className="w-full"
+                  width="w-full"
+                  includeNotApplicable={false}
+                />
               </div>
               <div><p className="mb-1" style={{ fontWeight: 400 }}>Title or Position</p><FormLine value={form.registeredByTitle} onChange={(v) => update('registeredByTitle', v)} placeholder="(Title or position)" /></div>
               <div>
