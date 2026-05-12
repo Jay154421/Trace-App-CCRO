@@ -166,8 +166,8 @@ function create(data) {
   const age_group = application_type === APPLICATION_COLB_BRAP ? null : getAgeGroup(age);
   const db = getDb();
   const stmt = db.prepare(`
-    INSERT INTO children (first_name, middle_name, last_name, date_of_birth, place_of_birth, contact_no, age_group, registrant_deceased, hilot_deceased, parent_foreigner, out_of_town, has_marriage_certificate, application_type)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO children (first_name, middle_name, last_name, date_of_birth, place_of_birth, contact_no, age_group, registrant_deceased, hilot_deceased, parent_foreigner, out_of_town, has_marriage_certificate, colb_requires_parent_id, has_muslim_attachment, application_type)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const result = stmt.run(
     data.first_name,
@@ -182,6 +182,8 @@ function create(data) {
     data.parent_foreigner ? 1 : 0,
     data.out_of_town ? 1 : 0,
     data.has_marriage_certificate ? 1 : 0,
+    data.colb_requires_parent_id ? 1 : 0,
+    data.has_muslim_attachment ? 1 : 0,
     application_type
   );
   db.close();
@@ -211,12 +213,21 @@ function update(id, data) {
     data.has_marriage_certificate !== undefined
       ? (data.has_marriage_certificate ? 1 : 0)
       : (existing.has_marriage_certificate ? 1 : 0);
+  const colbRequiresParentId =
+    data.colb_requires_parent_id !== undefined
+      ? (data.colb_requires_parent_id ? 1 : 0)
+      : (existing.colb_requires_parent_id ? 1 : 0);
+  const hasMuslimAttachment =
+    data.has_muslim_attachment !== undefined
+      ? (data.has_muslim_attachment ? 1 : 0)
+      : (existing.has_muslim_attachment ? 1 : 0);
   const stmt = db.prepare(`
     UPDATE children SET
       first_name = ?, middle_name = ?, last_name = ?,
       date_of_birth = ?, place_of_birth = ?, contact_no = ?,
       age_group = ?,
       registrant_deceased = ?, hilot_deceased = ?, parent_foreigner = ?, out_of_town = ?, has_marriage_certificate = ?,
+      colb_requires_parent_id = ?, has_muslim_attachment = ?,
       updated_at = datetime('now')
     WHERE id = ?
   `);
@@ -233,6 +244,8 @@ function update(id, data) {
     parentForeigner,
     outOfTown,
     hasMarriageCertificate,
+    colbRequiresParentId,
+    hasMuslimAttachment,
     id
   );
   db.close();

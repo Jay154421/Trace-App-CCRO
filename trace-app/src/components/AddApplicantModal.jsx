@@ -16,6 +16,8 @@ const emptyForm = {
   parent_foreigner: false,
   out_of_town: false,
   has_marriage_certificate: false,
+  colb_requires_parent_id: false,
+  has_muslim_attachment: false,
 };
 
 export function AddApplicantModal({
@@ -47,6 +49,8 @@ export function AddApplicantModal({
       parent_foreigner: isColbBrap ? false : base.parent_foreigner,
       out_of_town: isColbBrap ? false : base.out_of_town,
       has_marriage_certificate: isColbBrap ? form.has_marriage_certificate : false,
+      colb_requires_parent_id: isColbBrap ? base.colb_requires_parent_id : false,
+      has_muslim_attachment: isColbBrap ? base.has_muslim_attachment : false,
       application_type: isColbBrap ? 'colb_brap' : 'applicant',
     };
     childrenApi
@@ -192,7 +196,7 @@ export function AddApplicantModal({
                       onChange={(e) => update('out_of_town', e.target.checked)}
                       className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                     />
-                    <span className="text-sm text-slate-700">Out of Town</span>
+                    <span className="text-sm text-slate-700">Out of Town (attach Affidavit w/ Corroboration for Out-of-Town Applicant (Legal Office))</span>
                   </label>
                   <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 transition hover:border-emerald-200 hover:bg-emerald-50/50">
                     <input
@@ -218,16 +222,38 @@ export function AddApplicantModal({
             {isColbBrap ? (
               <fieldset className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
                 <legend className="px-1 text-sm font-semibold text-slate-700">COLB BRAP conditional requirement</legend>
-                <p className="mb-4 mt-2 text-sm text-slate-500">Check this if the applicant has a marriage certificate.</p>
-                <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 transition hover:border-emerald-200 hover:bg-emerald-50/50">
-                  <input
-                    type="checkbox"
-                    checked={form.has_marriage_certificate}
-                    onChange={(e) => update('has_marriage_certificate', e.target.checked)}
-                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                  />
-                  <span className="text-sm text-slate-700">Has Marriage Certificate</span>
-                </label>
+                <p className="mb-4 mt-2 text-sm text-slate-500">
+                  Choose all that apply. Checked items are added to the document checklist.
+                </p>
+                <div className="space-y-2">
+                  <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 transition hover:border-emerald-200 hover:bg-emerald-50/50">
+                    <input
+                      type="checkbox"
+                      checked={form.has_marriage_certificate}
+                      onChange={(e) => update('has_marriage_certificate', e.target.checked)}
+                      className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <span className="text-sm text-slate-700">Parents are married (attach marriage contract)</span>
+                  </label>
+                  <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 transition hover:border-emerald-200 hover:bg-emerald-50/50">
+                    <input
+                      type="checkbox"
+                      checked={form.colb_requires_parent_id}
+                      onChange={(e) => update('colb_requires_parent_id', e.target.checked)}
+                      className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <span className="text-sm text-slate-700">Registrant is a child (attach parent/s or guardian valid I.D.)</span>
+                  </label>
+                  <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 transition hover:border-emerald-200 hover:bg-emerald-50/50">
+                    <input
+                      type="checkbox"
+                      checked={form.has_muslim_attachment}
+                      onChange={(e) => update('has_muslim_attachment', e.target.checked)}
+                      className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <span className="text-sm text-slate-700">When the registrant is Muslim (attach applicable Muslim attachment)</span>
+                  </label>
+                </div>
               </fieldset>
             ) : null}
             </div>

@@ -122,7 +122,7 @@ export function ApplicantFormFields({
                 onChange={(e) => onFieldChange('out_of_town', e.target.checked)}
                 className={checkboxClassName}
               />
-              <span className="text-sm text-slate-700">Out of Town</span>
+              <span className="text-sm text-slate-700">Out of Town (attach Affidavit w/ Corroboration for Out-of-Town Applicant (Legal Office))</span>
             </label>
             <label className={checkboxWrapperClassName}>
               <input
@@ -150,17 +150,37 @@ export function ApplicantFormFields({
         <fieldset className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
           <legend className="px-1 text-sm font-semibold text-slate-700">COLB BRAP conditional requirement</legend>
           <p className="mb-4 mt-2 text-sm text-slate-500">
-            Check this if the applicant has a marriage certificate so it is added to the document checklist.
+            Choose all that apply. Checked items are added to the document checklist.
           </p>
-          <label className={checkboxWrapperClassName}>
-            <input
-              type="checkbox"
-              checked={form.has_marriage_certificate}
-              onChange={(e) => onFieldChange('has_marriage_certificate', e.target.checked)}
-              className={checkboxClassName}
-            />
-            <span className="text-sm text-slate-700">Has Marriage Certificate</span>
-          </label>
+          <div className="space-y-2">
+            <label className={checkboxWrapperClassName}>
+              <input
+                type="checkbox"
+                checked={form.has_marriage_certificate}
+                onChange={(e) => onFieldChange('has_marriage_certificate', e.target.checked)}
+                className={checkboxClassName}
+              />
+              <span className="text-sm text-slate-700">Parents are married (attach marriage contract)</span>
+            </label>
+            <label className={checkboxWrapperClassName}>
+              <input
+                type="checkbox"
+                checked={form.colb_requires_parent_id}
+                onChange={(e) => onFieldChange('colb_requires_parent_id', e.target.checked)}
+                className={checkboxClassName}
+              />
+              <span className="text-sm text-slate-700">Registrant is a child (attach parent/s or guardian valid I.D.)</span>
+            </label>
+            <label className={checkboxWrapperClassName}>
+              <input
+                type="checkbox"
+                checked={form.has_muslim_attachment}
+                onChange={(e) => onFieldChange('has_muslim_attachment', e.target.checked)}
+                className={checkboxClassName}
+              />
+              <span className="text-sm text-slate-700">When the registrant is Muslim (attach applicable Muslim attachment)</span>
+            </label>
+          </div>
         </fieldset>
       ) : null}
     </>

@@ -81,6 +81,14 @@ function isMarriageCertificateRequirement(requirement) {
   return requirement?.id === 'marriage_certificate' || label === 'marriage certificate';
 }
 
+function isColbParentIdRequirement(requirement) {
+  return requirement?.id === 'colb_parent_id';
+}
+
+function isMuslimAttachmentRequirement(requirement) {
+  return requirement?.id === 'muslim_attachment';
+}
+
 function buildPhotoFilename(child) {
   const firstName = toSafeFilenamePart(child?.first_name);
   const middleName = toSafeFilenamePart(child?.middle_name);
@@ -142,6 +150,8 @@ function buildChecklist(requirements, existing = [], child = null) {
   const allRequirements = Array.isArray(requirements?.all) ? requirements.all : [];
   const normalizedOutOfTown = isTruthyFlag(child?.out_of_town);
   const normalizedHasMarriageCertificate = isTruthyFlag(child?.has_marriage_certificate);
+  const normalizedColbParentId = isTruthyFlag(child?.colb_requires_parent_id);
+  const normalizedMuslimAttachment = isTruthyFlag(child?.has_muslim_attachment);
   const hasOutOfTownAffidavit = allRequirements.some((requirement) => isOutOfTownAffidavitRequirement(requirement));
   const filteredRequirements = allRequirements.filter((requirement) => {
     if (isOutOfTownAffidavitRequirement(requirement)) {
@@ -150,12 +160,20 @@ function buildChecklist(requirements, existing = [], child = null) {
     if (isMarriageCertificateRequirement(requirement)) {
       return normalizedHasMarriageCertificate;
     }
+    if (isColbParentIdRequirement(requirement)) {
+      return normalizedColbParentId;
+    }
+    if (isMuslimAttachmentRequirement(requirement)) {
+      return normalizedMuslimAttachment;
+    }
     return true;
   });
   const missingExistingRequirements = existing.filter((item) => {
     if (!item?.label || !item?.category) return false;
     if (!normalizedOutOfTown && isOutOfTownAffidavitRequirement(item)) return false;
     if (!normalizedHasMarriageCertificate && isMarriageCertificateRequirement(item)) return false;
+    if (!normalizedColbParentId && isColbParentIdRequirement(item)) return false;
+    if (!normalizedMuslimAttachment && isMuslimAttachmentRequirement(item)) return false;
     return !filteredRequirements.some((requirement) => (
       requirement?.label === item.label && requirement?.category === item.category
     ));

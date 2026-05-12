@@ -22,6 +22,8 @@ const childCreate = [
   body('parent_foreigner').optional().isBoolean().toBoolean(),
   body('out_of_town').optional().isBoolean().toBoolean(),
   body('has_marriage_certificate').optional().isBoolean().toBoolean(),
+  body('colb_requires_parent_id').optional().isBoolean().toBoolean(),
+  body('has_muslim_attachment').optional().isBoolean().toBoolean(),
 ];
 
 const childUpdate = [
@@ -37,6 +39,8 @@ const childUpdate = [
   body('parent_foreigner').optional().isBoolean().toBoolean(),
   body('out_of_town').optional().isBoolean().toBoolean(),
   body('has_marriage_certificate').optional().isBoolean().toBoolean(),
+  body('colb_requires_parent_id').optional().isBoolean().toBoolean(),
+  body('has_muslim_attachment').optional().isBoolean().toBoolean(),
 ];
 
 const idParam = [param('id').isInt({ min: 1 })];

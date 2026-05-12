@@ -40,6 +40,8 @@ export const emptyApplicantForm = {
   parent_foreigner: false,
   out_of_town: false,
   has_marriage_certificate: false,
+  colb_requires_parent_id: false,
+  has_muslim_attachment: false,
 };
 
 export function mapApplicantToForm(data) {
@@ -55,6 +57,8 @@ export function mapApplicantToForm(data) {
     parent_foreigner: isTruthyFlag(data?.parent_foreigner),
     out_of_town: isTruthyFlag(data?.out_of_town),
     has_marriage_certificate: isTruthyFlag(data?.has_marriage_certificate),
+    colb_requires_parent_id: isTruthyFlag(data?.colb_requires_parent_id),
+    has_muslim_attachment: isTruthyFlag(data?.has_muslim_attachment),
   };
 }
 
@@ -71,6 +75,8 @@ export function buildApplicantPayload(form) {
     parent_foreigner: form.parent_foreigner,
     out_of_town: form.out_of_town,
     has_marriage_certificate: form.has_marriage_certificate,
+    colb_requires_parent_id: !!form.colb_requires_parent_id,
+    has_muslim_attachment: !!form.has_muslim_attachment,
   };
 }
 
@@ -95,7 +101,7 @@ export function handleEnterKey(e) {
     const isNotButton = el.tagName !== 'BUTTON' && el.type !== 'submit';
     return isVisible && !el.disabled && el.tabIndex !== -1 && isNotButton;
   });
-
+  
   const index = elements.indexOf(e.target);
   if (index > -1 && index < elements.length - 1) {
     e.preventDefault();

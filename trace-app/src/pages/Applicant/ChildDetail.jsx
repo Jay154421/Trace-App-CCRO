@@ -178,8 +178,9 @@ export function ChildDetail() {
   const hasParentForeigner = isTruthyFlag(child.parent_foreigner);
   const hasOutOfTown = isTruthyFlag(child.out_of_town);
   const hasMarriageCertificate = isTruthyFlag(child.has_marriage_certificate);
+  const colbRequiresParentId = isTruthyFlag(child.colb_requires_parent_id);
+  const hasMuslimAttachment = isTruthyFlag(child.has_muslim_attachment);
   const isColbBrap = String(child.application_type || '').toLowerCase() === 'colb_brap';
-
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
@@ -295,6 +296,14 @@ export function ChildDetail() {
             <div>
               <dt className="text-sm text-slate-500">Marriage certificate</dt>
               <dd className="mt-0.5 font-medium text-slate-800">{hasMarriageCertificate ? 'Yes' : 'No'}</dd>
+            </div>
+            <div>
+              <dt className="text-sm text-slate-500">Parent / guardian I.D.</dt>
+              <dd className="mt-0.5 font-medium text-slate-800">{colbRequiresParentId ? 'Yes' : 'No'}</dd>
+            </div>
+            <div>
+              <dt className="text-sm text-slate-500">Muslim attachment</dt>
+              <dd className="mt-0.5 font-medium text-slate-800">{hasMuslimAttachment ? 'Yes' : 'No'}</dd>
             </div>
             {child.created_at ? (
               <div>
