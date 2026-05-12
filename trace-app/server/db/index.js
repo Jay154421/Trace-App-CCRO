@@ -116,6 +116,11 @@ async function init() {
     if (!/duplicate column name/i.test(e.message)) throw e;
   }
   try {
+    db.exec(`ALTER TABLE children ADD COLUMN gender TEXT`);
+  } catch (e) {
+    if (!/duplicate column name/i.test(e.message)) throw e;
+  }
+  try {
     db.exec(`UPDATE children SET application_type = 'applicant' WHERE application_type IS NULL OR application_type = ''`);
   } catch (e) {
     /* ignore if column missing in very old state */

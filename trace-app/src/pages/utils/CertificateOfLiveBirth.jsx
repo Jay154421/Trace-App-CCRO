@@ -1463,6 +1463,7 @@ export function CertificateOfLiveBirth() {
         base.marriageMonth = padCertificateMonthDayPart(base.marriageMonth);
         base.marriageDay = padCertificateMonthDayPart(base.marriageDay);
         base.marriageYear = certificateYearDigitsOnly(base.marriageYear);
+        const savedSex = trimStr(normalizeSexSelectValue(base.sex));
         const fromChild = {
           province: base.province || DEFAULT_PROVINCE,
           cityMunicipality: base.cityMunicipality || DEFAULT_CITY_MUNICIPALITY,
@@ -1470,6 +1471,8 @@ export function CertificateOfLiveBirth() {
           childFirst: String(data.first_name ?? '').toUpperCase(),
           childMiddle: String(data.middle_name ?? '').toUpperCase(),
           childLast: String(data.last_name ?? '').toUpperCase(),
+          // 2. SEX: use saved certificate if present; otherwise applicant profile gender.
+          sex: savedSex || normalizeSexSelectValue(data.gender),
         };
         const { day, month, year } = parseDateOfBirth(data.date_of_birth);
         fromChild.birthDay = padCertificateMonthDayPart(day);
@@ -1569,6 +1572,13 @@ export function CertificateOfLiveBirth() {
       if (nextLast && nextLast !== trimStr(child?.last_name)) applicantPatch.last_name = nextLast;
       if (nextMiddle !== trimStr(child?.middle_name)) applicantPatch.middle_name = nextMiddle;
       if (dobIso && dobIso !== childDob) applicantPatch.date_of_birth = dobIso;
+
+      const certSex = trimStr(normalizeSexSelectValue(payload.sex));
+      const currentGender = String(child?.gender || '').trim().toLowerCase();
+      if (certSex === 'MALE' || certSex === 'FEMALE') {
+        const nextGender = certSex === 'MALE' ? 'male' : 'female';
+        if (nextGender !== currentGender) applicantPatch.gender = nextGender;
+      }
 
       if (Object.keys(applicantPatch).length > 0) {
         await childrenApi.update(id, applicantPatch);

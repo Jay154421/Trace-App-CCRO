@@ -8,6 +8,7 @@ const emptyForm = {
   first_name: '',
   middle_name: '',
   last_name: '',
+  gender: '',
   date_of_birth: '',
   place_of_birth: '',
   contact_no: '',
@@ -144,7 +145,7 @@ export function AddApplicantModal({
             </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-3">
               <label className="block">
                 <span className="text-sm font-medium text-slate-700">Date of birth *</span>
                 <input
@@ -157,6 +158,21 @@ export function AddApplicantModal({
                   aria-required="true"
                   onKeyDown={handleEnterKey}
                 />
+              </label>
+
+              <label className="block">
+                <span className="text-sm font-medium text-slate-700">Gender</span>
+                <select
+                  value={form.gender}
+                  onChange={(e) => update('gender', e.target.value)}
+                  className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
+                  aria-label="Gender"
+                  onKeyDown={handleEnterKey}
+                >
+                  <option value="">Select…</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                </select>
               </label>
 
               <label className="block">

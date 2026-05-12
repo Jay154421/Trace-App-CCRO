@@ -28,6 +28,12 @@ function calculateAge(dob) {
   return age;
 }
 
+function normalizeGender(value) {
+  if (value == null || value === '') return null;
+  const g = String(value).trim().toLowerCase();
+  return g === 'male' || g === 'female' ? g : null;
+}
+
 function all() {
   const db = getDb();
   const rows = db.prepare('SELECT * FROM children ORDER BY updated_at DESC').all();
@@ -166,8 +172,8 @@ function create(data) {
   const age_group = application_type === APPLICATION_COLB_BRAP ? null : getAgeGroup(age);
   const db = getDb();
   const stmt = db.prepare(`
-    INSERT INTO children (first_name, middle_name, last_name, date_of_birth, place_of_birth, contact_no, age_group, registrant_deceased, hilot_deceased, parent_foreigner, out_of_town, has_marriage_certificate, colb_requires_parent_id, has_muslim_attachment, application_type)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO children (first_name, middle_name, last_name, date_of_birth, place_of_birth, contact_no, gender, age_group, registrant_deceased, hilot_deceased, parent_foreigner, out_of_town, has_marriage_certificate, colb_requires_parent_id, has_muslim_attachment, application_type)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const result = stmt.run(
     data.first_name,
@@ -176,6 +182,7 @@ function create(data) {
     data.date_of_birth,
     data.place_of_birth || null,
     data.contact_no || null,
+    normalizeGender(data.gender),
     age_group,
     data.registrant_deceased ? 1 : 0,
     data.hilot_deceased ? 1 : 0,
@@ -221,10 +228,12 @@ function update(id, data) {
     data.has_muslim_attachment !== undefined
       ? (data.has_muslim_attachment ? 1 : 0)
       : (existing.has_muslim_attachment ? 1 : 0);
+  const gender =
+    data.gender !== undefined ? normalizeGender(data.gender) : existing.gender ?? null;
   const stmt = db.prepare(`
     UPDATE children SET
       first_name = ?, middle_name = ?, last_name = ?,
-      date_of_birth = ?, place_of_birth = ?, contact_no = ?,
+      date_of_birth = ?, place_of_birth = ?, contact_no = ?, gender = ?,
       age_group = ?,
       registrant_deceased = ?, hilot_deceased = ?, parent_foreigner = ?, out_of_town = ?, has_marriage_certificate = ?,
       colb_requires_parent_id = ?, has_muslim_attachment = ?,
@@ -238,6 +247,7 @@ function update(id, data) {
     data.date_of_birth ?? existing.date_of_birth,
     data.place_of_birth !== undefined ? data.place_of_birth : existing.place_of_birth,
     data.contact_no !== undefined ? data.contact_no : existing.contact_no,
+    gender,
     age_group,
     registrantDeceased,
     hilotDeceased,

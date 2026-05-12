@@ -17,7 +17,13 @@ import {
 } from '../utils/FieldPositionBack';
 import { ApplicantFormFields } from '../../components/applicant/ApplicantFormFields';
 import { ApplicantStaffStatusPanel } from '../../components/ApplicantStaffStatusPanel';
-import { emptyApplicantForm, mapApplicantToForm, buildApplicantPayload, isTruthyFlag } from '../../utils/applicantForm';
+import {
+  emptyApplicantForm,
+  mapApplicantToForm,
+  buildApplicantPayload,
+  isTruthyFlag,
+  formatApplicantGenderLabel,
+} from '../../utils/applicantForm';
 
 export function ChildDetail() {
   const { id } = useParams();
@@ -35,12 +41,23 @@ export function ChildDetail() {
   const [staffStatusUpdating, setStaffStatusUpdating] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
     childrenApi
       .get(id)
-      .then(setChild)
-      .catch(setError)
-      .finally(() => setLoading(false));
-  }, [id]);
+      .then((data) => {
+        if (!cancelled) setChild(data);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [id, location.key]);
 
   useEffect(() => {
     if (!child || !id) return;
@@ -282,6 +299,10 @@ export function ChildDetail() {
               <dd className="mt-0.5 font-medium text-slate-800">{formatDateDDMMYYYY(child.date_of_birth)}</dd>
             </div>
             <div>
+              <dt className="text-sm text-slate-500">Gender</dt>
+              <dd className="mt-0.5 font-medium text-slate-800">{formatApplicantGenderLabel(child.gender) || '—'}</dd>
+            </div>
+            <div>
               <dt className="text-sm text-slate-500">Age</dt>
               <dd className="mt-0.5 font-medium text-slate-800">{child.age} years</dd>
             </div>
@@ -367,6 +388,10 @@ export function ChildDetail() {
             <div>
               <dt className="text-sm text-slate-500">Date of birth</dt>
               <dd className="font-medium text-slate-800">{formatDateDDMMYYYY(child.date_of_birth)}</dd>
+            </div>
+            <div>
+              <dt className="text-sm text-slate-500">Gender</dt>
+              <dd className="font-medium text-slate-800">{formatApplicantGenderLabel(child.gender) || '—'}</dd>
             </div>
             <div>
               <dt className="text-sm text-slate-500">Age</dt>

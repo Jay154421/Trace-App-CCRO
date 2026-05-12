@@ -66,7 +66,7 @@ export function ApplicantFormFields({
         ) : null}
       </div>
 
-      <div className={`grid gap-4 ${hideCoreIdentityFields ? '' : 'sm:grid-cols-2'}`}>
+      <div className={`grid gap-4 ${hideCoreIdentityFields ? 'sm:grid-cols-1' : 'sm:grid-cols-2'}`}>
         {!hideCoreIdentityFields ? (
           <label className="block">
             <span className="text-sm font-medium text-slate-700">Date of birth *</span>
@@ -79,7 +79,7 @@ export function ApplicantFormFields({
               placeholder={placeholders.dateOfBirth}
               aria-required="true"
               onKeyDown={handleEnterKey}
-            />
+            />  
           </label>
         ) : null}
 

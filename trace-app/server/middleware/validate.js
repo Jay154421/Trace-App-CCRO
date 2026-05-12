@@ -15,6 +15,9 @@ const childCreate = [
   body('date_of_birth').isISO8601(),
   body('place_of_birth').optional({ values: 'falsy' }).trim().isLength({ max: 500 }).escape(),
   body('contact_no').optional({ values: 'falsy' }).trim().isLength({ max: 50 }).escape(),
+  body('gender')
+    .optional()
+    .custom((v) => v === '' || v === null || v === undefined || ['male', 'female'].includes(String(v).trim().toLowerCase())),
   body('application_type').optional().isIn(['applicant', 'colb_brap']),
   body('applicationType').optional().isIn(['applicant', 'colb_brap']),
   body('registrant_deceased').optional().isBoolean().toBoolean(),
@@ -34,6 +37,9 @@ const childUpdate = [
   body('date_of_birth').optional().isISO8601(),
   body('place_of_birth').optional({ values: 'falsy' }).trim().isLength({ max: 500 }).escape(),
   body('contact_no').optional({ values: 'falsy' }).trim().isLength({ max: 50 }).escape(),
+  body('gender')
+    .optional()
+    .custom((v) => v === '' || v === null || v === undefined || ['male', 'female'].includes(String(v).trim().toLowerCase())),
   body('registrant_deceased').optional().isBoolean().toBoolean(),
   body('hilot_deceased').optional().isBoolean().toBoolean(),
   body('parent_foreigner').optional().isBoolean().toBoolean(),

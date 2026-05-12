@@ -136,12 +136,12 @@ async function importDatabase(req, res) {
 
         const inserted = db.prepare(
           `INSERT INTO children (
-            first_name, middle_name, last_name, date_of_birth, place_of_birth, contact_no, age_group,
+            first_name, middle_name, last_name, date_of_birth, place_of_birth, contact_no, gender, age_group,
             registrant_deceased, hilot_deceased, parent_foreigner, out_of_town, has_marriage_certificate,
             colb_requires_parent_id, has_muslim_attachment, certificate_of_live_birth,
             paternity_affidavit, delayed_registration_affidavit,
             staff_process_status, created_at, updated_at, application_type
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
         ).run(
           normalizedChild.first_name,
           normalizedChild.middle_name,
@@ -149,6 +149,7 @@ async function importDatabase(req, res) {
           normalizedChild.date_of_birth,
           normalizedChild.place_of_birth,
           normalizedChild.contact_no,
+          normalizedChild.gender,
           normalizedChild.age_group,
           normalizedChild.registrant_deceased,
           normalizedChild.hilot_deceased,
@@ -299,6 +300,11 @@ function normalizeRequiredText(value, fallback = '') {
   return str.length > 0 ? str : fallback;
 }
 
+function normalizeImportGender(value) {
+  const g = String(value ?? '').trim().toLowerCase();
+  return g === 'male' || g === 'female' ? g : null;
+}
+
 function normalizeImportChildRow(child) {
   const firstName = normalizeRequiredText(child.first_name);
   const lastName = normalizeRequiredText(child.last_name);
@@ -319,6 +325,7 @@ function normalizeImportChildRow(child) {
     date_of_birth: dateOfBirth,
     place_of_birth: normalizeOptionalText(child.place_of_birth),
     contact_no: normalizeOptionalText(child.contact_no),
+    gender: normalizeImportGender(child.gender),
     age_group,
     registrant_deceased: toIntBool(child.registrant_deceased),
     hilot_deceased: toIntBool(child.hilot_deceased),

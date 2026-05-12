@@ -28,10 +28,25 @@ export const applicantInputPlaceholders = {
   placeOfBirth: '(Name of Hospital/Clinic/Institution/House No., St., Barangay)',
 };
 
+/** Normalizes API/DB gender to form select value: '' | 'male' | 'female'. */
+export function normalizeApplicantGender(value) {
+  const g = String(value ?? '').trim().toLowerCase();
+  return g === 'male' || g === 'female' ? g : '';
+}
+
+/** Label for read-only display (detail page, lists). */
+export function formatApplicantGenderLabel(value) {
+  const g = normalizeApplicantGender(value);
+  if (g === 'male') return 'Male';
+  if (g === 'female') return 'Female';
+  return '';
+}
+
 export const emptyApplicantForm = {
   first_name: '',
   middle_name: '',
   last_name: '',
+  gender: '',
   date_of_birth: '',
   place_of_birth: '',
   contact_no: '',
@@ -49,6 +64,7 @@ export function mapApplicantToForm(data) {
     first_name: toUpperCaseTrimmed(data?.first_name ?? ''),
     middle_name: toUpperCaseTrimmed(data?.middle_name ?? ''),
     last_name: toUpperCaseTrimmed(data?.last_name ?? ''),
+    gender: normalizeApplicantGender(data?.gender),
     date_of_birth: data?.date_of_birth ?? '',
     place_of_birth: toUpperCaseTrimmed(data?.place_of_birth ?? ''),
     contact_no: toUpperCaseTrimmed(data?.contact_no ?? ''),
@@ -67,6 +83,7 @@ export function buildApplicantPayload(form) {
     first_name: toUpperCaseTrimmed(form.first_name),
     middle_name: toUpperCaseTrimmed(form.middle_name) || undefined,
     last_name: toUpperCaseTrimmed(form.last_name),
+    gender: normalizeApplicantGender(form.gender),
     date_of_birth: form.date_of_birth,
     place_of_birth: toUpperCaseTrimmed(form.place_of_birth) || undefined,
     contact_no: toUpperCaseTrimmed(form.contact_no) || undefined,
@@ -101,7 +118,7 @@ export function handleEnterKey(e) {
     const isNotButton = el.tagName !== 'BUTTON' && el.type !== 'submit';
     return isVisible && !el.disabled && el.tabIndex !== -1 && isNotButton;
   });
-  
+
   const index = elements.indexOf(e.target);
   if (index > -1 && index < elements.length - 1) {
     e.preventDefault();
