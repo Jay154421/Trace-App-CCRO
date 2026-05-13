@@ -542,29 +542,32 @@ export function DelayedRegistrationAffidavit() {
                 </div>
               </div>
             </div>
-
-            <div className="flex flex-wrap items-baseline gap-2">
-              <span className="font-bold">2.</span>
-              <span>That I/he/she was attended at birth by</span>
-              <FormTextCombo
-                value={form.attendedBy}
-                onInputChange={v => update('attendedBy', v)}
-                suggestionOptions={attendedBySuggestions}
-                placeholder="(Name of attendant)"
-                width="w-80"
-                includeNotApplicable={false}
-                ariaLabel="Attended by"
-              />
-              <span>who resides at</span>
-              <FormTextCombo
-                value={form.attendantAddress}
-                onInputChange={v => update('attendantAddress', v)}
-                suggestionOptions={attendantAddressSuggestions}
-                placeholder="(Address)"
-                width="flex-1"
-                includeNotApplicable={false}
-                ariaLabel="Attendant address"
-              />
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-baseline gap-2">
+                <span className="font-bold">2.</span>
+                <span>That I/he/she was attended at birth by</span>
+                <FormTextCombo
+                  value={form.attendedBy}
+                  onInputChange={v => update('attendedBy', v)}
+                  suggestionOptions={attendedBySuggestions}
+                  placeholder="(Name of attendant)"
+                  width="w-80"
+                  includeNotApplicable={false}
+                  ariaLabel="Attended by"
+                />
+              </div>
+              <div className="pl-8 flex flex-wrap items-baseline gap-2 w-full min-w-0">
+                <span className="shrink-0">who resides at</span>
+                <FormTextCombo
+                  value={form.attendantAddress}
+                  onInputChange={v => update('attendantAddress', v)}
+                  suggestionOptions={attendantAddressSuggestions}
+                  placeholder="(Address)"
+                  width="flex-1 min-w-[12rem]"
+                  includeNotApplicable={false}
+                  ariaLabel="Attendant address"
+                />
+              </div>
             </div>
 
             <div className="flex flex-wrap items-baseline gap-2">
@@ -588,13 +591,15 @@ export function DelayedRegistrationAffidavit() {
                   includeNotApplicable={false}
                   ariaLabel="Marriage date"
                 />
-                <span>at</span>
+              </div>
+              <div className="pl-8 flex flex-wrap items-baseline gap-2 w-full min-w-0">
+                <span className="shrink-0">at</span>
                 <FormTextCombo
                   value={form.marriagePlace}
                   onInputChange={v => update('marriagePlace', v)}
                   suggestionOptions={certMarriagePlaceSuggestions}
                   placeholder="(Place of marriage)"
-                  width="w-48"
+                  width="flex-1 min-w-[12rem]"
                   includeNotApplicable={false}
                   ariaLabel="Place of marriage"
                 />

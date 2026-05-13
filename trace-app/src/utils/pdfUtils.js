@@ -39,6 +39,33 @@ export const ATTENDANT_RADIO_CHECK_MARK = {
 /** Extent factors for the two-segment check shape (matches line endpoint offsets). */
 export const RADIO_CHECK_SHAPE_EXTENT = { horizontal: 0.95, vertical: 0.7 };
 
+/** "TO BE FILLED-UP AT THE OFFICE OF THE CIVIL REGISTRAR" digit boxes (must match FieldPosition.jsx / CertificateOfLiveBirth). */
+const REGISTRAR_BOX_Y = 3947;
+const REGISTRAR_BOX_COORDINATES = [
+  { label: '8', valueKey: 'registrarBox8', xs: [306, 375] },
+  { label: '9', valueKey: 'registrarBox9', xs: [435, 495] },
+  { label: '11', valueKey: 'registrarBox11', xs: [576, 636, 708] },
+  { label: '13', valueKey: 'registrarBox13', xs: [789, 849, 921, 978, 1050, 1110, 1179, 1239] },
+  { label: '15', valueKey: 'registrarBox15', xs: [1320, 1380] },
+  { label: '16', valueKey: 'registrarBox16', xs: [1464, 1533] },
+  { label: '17', valueKey: 'registrarBox17', xs: [1641, 1686, 1770] },
+  { label: '19', valueKey: 'registrarBox19', xs: [1854, 1911, 1971, 2043, 2112, 2172, 2244, 2301] },
+];
+
+const REGISTRAR_BOX_FIELD_POSITIONS = REGISTRAR_BOX_COORDINATES.reduce((acc, group) => {
+  group.xs.forEach((x, idx) => {
+    acc[`registrar_${group.label}_${idx}`] = { x, y: REGISTRAR_BOX_Y };
+  });
+  return acc;
+}, {});
+
+const REGISTRAR_BOX_VALUE_MAP = REGISTRAR_BOX_COORDINATES.flatMap((group) =>
+  group.xs.map((_, idx) => ({
+    key: `registrar_${group.label}_${idx}`,
+    getValue: (getVal) => String(getVal(group.valueKey) ?? '').charAt(idx),
+  })),
+);
+
 // Field position coordinates (layout pixels)
 export const FIELD_POSITIONS = {
   province: { x: 600, y: 447 },
@@ -115,6 +142,7 @@ export const FIELD_POSITIONS = {
   registered_by_title: { x: 1665, y: 3375 },
   registered_by_date: { x: 1665, y: 3447 },
   remarks: { x: 246, y: 3600, width: 2292, height: 210 },
+  ...REGISTRAR_BOX_FIELD_POSITIONS,
 };
 
 /** Space between form columns to prevent text bleeding into next box */
@@ -434,6 +462,7 @@ export const FIELD_VALUE_MAP = [
   { key: 'registered_by_title', valueKey: 'registeredByTitle' },
   { key: 'registered_by_date', valueKey: 'registeredByDate' },
   { key: 'remarks', valueKey: 'remarks' },
+  ...REGISTRAR_BOX_VALUE_MAP,
 ];
 
 // ============================================================================
