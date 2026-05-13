@@ -1851,6 +1851,12 @@ export function CertificateOfLiveBirth() {
     return s ? [s] : [];
   }, [form.childLast]);
 
+  /** Mother residence line 1 → suggest same for father (shared household). */
+  const fatherResidenceLine1FromMotherOptions = useMemo(() => {
+    const s = String(form.motherResidenceLine1 ?? '').trim().toUpperCase();
+    return s ? [s] : [];
+  }, [form.motherResidenceLine1]);
+
   if (loading) return <p className="text-slate-500">Loading…</p>;
   if (error) return <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">{error.message}</div>;
   if (!child) return null;
@@ -2248,7 +2254,16 @@ export function CertificateOfLiveBirth() {
             <div className="md:col-span-2">
               <label className="block mb-1 font-normal">19. RESIDENCE</label>
               <div className="space-y-2 w-full">
-                <FormLine value={form.fatherResidenceLine1} onChange={(v) => update('fatherResidenceLine1', v)} placeholder="(House No., St., Barangay)" className="w-full" width="w-full" />
+                <FormTextCombo
+                  value={form.fatherResidenceLine1}
+                  onInputChange={(v) => update('fatherResidenceLine1', v)}
+                  suggestionOptions={fatherResidenceLine1FromMotherOptions}
+                  idleFocusSuggestions={fatherResidenceLine1FromMotherOptions}
+                  placeholder="(House No., St., Barangay)"
+                  className="w-full"
+                  width="w-full"
+                  ariaLabel="Father residence house number street barangay"
+                />
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <FormPhCityCombo
                     cityValue={form.fatherResidenceCity}
