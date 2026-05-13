@@ -13,9 +13,6 @@ const MARITAL_STATUS_OPTIONS = ['SINGLE', 'MARRIED', 'DIVORCED', 'WIDOW', 'WIDOW
 /** Subject pronoun in items 2–5 (I = self; HE/SHE = child/registrant as third person). Stored uppercase. */
 const AFFIANT_PRONOUN_OPTIONS = ['I', 'HE', 'SHE'];
 
-/** Item 3 “That ___ a citizen of” — stored uppercase; stays aligned with `affiantPronoun` when either is set from suggestions. */
-const AFFIANT_CITIZEN_PHRASE_OPTIONS = ['I AM', 'HE IS', 'SHE IS'];
-
 function pronounWas(subject) {
   const u = asUpper(subject);
   if (u === 'I' || u === 'HE' || u === 'SHE') return u;
@@ -35,14 +32,6 @@ function pronounPossessive(subject) {
   if (u === 'I') return 'MY';
   if (u === 'HE') return 'HIS';
   if (u === 'SHE') return 'HER';
-  return '';
-}
-
-function citizenPhraseToPronoun(phrase) {
-  const u = asUpper(phrase);
-  if (u === 'I AM') return 'I';
-  if (u === 'HE IS') return 'HE';
-  if (u === 'SHE IS') return 'SHE';
   return '';
 }
 
@@ -323,7 +312,6 @@ export function DelayedRegistrationAffidavit() {
   const [form, setForm] = useState({
     affiantName: '',
     affiantPronoun: '',
-    affiantCitizenPhrase: '',
     maritalStatus: '',
     residence: '',
     isSelfBirth: false,
@@ -367,14 +355,7 @@ export function DelayedRegistrationAffidavit() {
       .then(data => {
         setChild(data);
         const stored = data.delayed_registration_affidavit || {};
-        setForm((prev) => {
-          const merged = { ...prev, ...stored };
-          if (merged.affiantPronoun && !merged.affiantCitizenPhrase) {
-            const c = pronounToBeCitizen(merged.affiantPronoun);
-            if (c) merged.affiantCitizenPhrase = c;
-          }
-          return merged;
-        });
+        setForm((prev) => ({ ...prev, ...stored }));
       })
       .catch(() => toast.error('Failed to load child data'))
       .finally(() => setLoading(false));
@@ -393,21 +374,7 @@ export function DelayedRegistrationAffidavit() {
   const update = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
 
   const updateAffiantPronoun = useCallback((v) => {
-    setForm((prev) => {
-      const next = { ...prev, affiantPronoun: v };
-      const c = pronounToBeCitizen(v);
-      if (c) next.affiantCitizenPhrase = c;
-      return next;
-    });
-  }, []);
-
-  const updateAffiantCitizenPhrase = useCallback((v) => {
-    setForm((prev) => {
-      const sub = citizenPhraseToPronoun(v);
-      const next = { ...prev, affiantCitizenPhrase: v };
-      if (sub) next.affiantPronoun = sub;
-      return next;
-    });
+    setForm((prev) => ({ ...prev, affiantPronoun: v }));
   }, []);
 
   const handleKeyDown = useCallback((e) => {
@@ -668,17 +635,7 @@ export function DelayedRegistrationAffidavit() {
 
             <div className="flex flex-wrap items-baseline gap-2">
               <span className="font-bold">3.</span>
-              <span>That</span>
-              <FormTextCombo
-                value={form.affiantCitizenPhrase}
-                onInputChange={updateAffiantCitizenPhrase}
-                suggestionOptions={AFFIANT_CITIZEN_PHRASE_OPTIONS}
-                placeholder="(I am/he/she is)"
-                width="w-32"
-                includeNotApplicable={false}
-                ariaLabel="I am, he is, or she is (citizenship clause)"
-              />
-              <span>a citizen of</span>
+              <span>That {pronounToBeCitizen(form.affiantPronoun) || 'I am/he/she is'} a citizen of</span>
               <FormLine value={form.citizenship} onChange={v => update('citizenship', v)} placeholder="(Citizenship)" width="w-64" suggestionOptions={['PHILIPPINES']} includeNotApplicable={false} />
               <span>.</span>
             </div>
