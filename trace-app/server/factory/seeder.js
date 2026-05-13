@@ -199,7 +199,16 @@ function buildFakeDelayedRegistrationAffidavit(applicant, cert) {
   const fatherFull = joinName(cert.fatherFirst, cert.fatherMiddle, cert.fatherLast);
   const childFull = joinName(applicant.first_name, applicant.middle_name, applicant.last_name);
   const isMarried = faker.datatype.boolean({ probability: 0.72 });
-  const marriageDate = `${cert.marriageYear}-${String(cert.marriageMonth).padStart(2, '0')}-${String(cert.marriageDay).padStart(2, '0')}`;
+  const yi = Number(cert.marriageYear);
+  const mi = Number(cert.marriageMonth);
+  const di = Number(cert.marriageDay);
+  let marriageDate = '';
+  if (Number.isInteger(yi) && yi >= 1000 && yi <= 9999 && Number.isInteger(mi) && mi >= 1 && mi <= 12 && Number.isInteger(di) && di >= 1 && di <= 31) {
+    const dt = new Date(yi, mi - 1, di);
+    if (dt.getFullYear() === yi && dt.getMonth() === mi - 1 && dt.getDate() === di) {
+      marriageDate = dt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase();
+    }
+  }
   const marriagePlace = `${cert.marriagePlaceCity}, ${cert.marriagePlaceProvince}`;
   const sworn = swornPartsFromIso(applicant.date_of_birth);
   const officer = faker.helpers.arrayElement(RECEIVED_BY_OPTIONS);

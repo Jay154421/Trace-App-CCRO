@@ -44,6 +44,46 @@ function toUpperLongDate(rawDate) {
   }).toUpperCase();
 }
 
+/** Long uppercase date from COLB 20a parts (e.g. APRIL 10, 2026) for retrieve-data suggestions on the affidavit. */
+function formatSuggestionFromCertMarriageDate(cert) {
+  if (!cert || typeof cert !== 'object') return '';
+  const y = String(cert.marriageYear || '').trim();
+  const m = String(cert.marriageMonth || '').trim();
+  const d = String(cert.marriageDay || '').trim();
+  if (!y || !m || !d) return '';
+  const yi = Number(y);
+  const mi = Number(m);
+  const di = Number(d);
+  if (!Number.isInteger(yi) || yi < 1000 || yi > 9999) return '';
+  if (!Number.isInteger(mi) || mi < 1 || mi > 12) return '';
+  if (!Number.isInteger(di) || di < 1 || di > 31) return '';
+  const date = new Date(yi, mi - 1, di);
+  if (date.getFullYear() !== yi || date.getMonth() !== mi - 1 || date.getDate() !== di) return '';
+  return date.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  }).toUpperCase();
+}
+
+/** City and province for suggestions (e.g. ILIGAN CITY, LANAO DEL NORTE). */
+function formatCityProvinceComma(city, province) {
+  const c = asUpper(city);
+  const p = asUpper(province);
+  if (!c && !p) return '';
+  if (!p) return c;
+  if (!c) return p;
+  return `${c}, ${p}`;
+}
+
+/** COLB 20b city and province only (matches affidavit marriage place line). */
+function formatSuggestionFromCertMarriagePlace(cert) {
+  if (!cert || typeof cert !== 'object') return '';
+  const city = String(cert.marriagePlaceCity || '').trim();
+  const province = String(cert.marriagePlaceProvince || '').trim();
+  return formatCityProvinceComma(city, province);
+}
+
 function getAutocompleteLabelSuggestions(query, suggestionOptions, maxRows = 40, includeNotApplicable = true) {
   const q = String(query || '').trim().toUpperCase();
   const base = Array.isArray(suggestionOptions) ? suggestionOptions : [];
@@ -328,7 +368,7 @@ export function DelayedRegistrationAffidavit() {
   const childBirthDate = useMemo(() => toUpperLongDate(child?.date_of_birth), [child]);
   const childCityProvince = useMemo(() => parseChildCityProvince(child), [child]);
   const childPlace = useMemo(
-    () => joinUpper([childCityProvince.city, childCityProvince.province]),
+    () => formatCityProvinceComma(childCityProvince.city, childCityProvince.province),
     [childCityProvince],
   );
   const attendedBySuggestion = useMemo(() => asUpper(cert?.attendantName), [cert]);
@@ -359,7 +399,23 @@ export function DelayedRegistrationAffidavit() {
     () => (registeredPositionSuggestion ? [registeredPositionSuggestion] : []),
     [registeredPositionSuggestion],
   );
-  const commonPlaceSuggestions = useMemo(() => ['ILIGAN CITY LANAO DEL NORTE'], []);
+  const commonPlaceSuggestions = useMemo(() => ['ILIGAN CITY, LANAO DEL NORTE'], []);
+  const certMarriageDateSuggestions = useMemo(() => {
+    const c =
+      child?.certificate_of_live_birth && typeof child.certificate_of_live_birth === 'object'
+        ? child.certificate_of_live_birth
+        : null;
+    const s = formatSuggestionFromCertMarriageDate(c || {});
+    return s ? [s] : [];
+  }, [child?.certificate_of_live_birth]);
+  const certMarriagePlaceSuggestions = useMemo(() => {
+    const c =
+      child?.certificate_of_live_birth && typeof child.certificate_of_live_birth === 'object'
+        ? child.certificate_of_live_birth
+        : null;
+    const s = formatSuggestionFromCertMarriagePlace(c || {});
+    return s ? [s] : [];
+  }, [child?.certificate_of_live_birth]);
 
   if (loading) return <div className="p-8 text-center">Loading...</div>;
 
@@ -523,9 +579,25 @@ export function DelayedRegistrationAffidavit() {
                 <span className="font-bold">4.</span>
                 <span>That my/his/her parents were</span>
                 <Checkbox checked={form.isMarried} onChange={v => update('isMarried', v)} label="married on" />
-                <FormLine value={form.marriageDate} onChange={v => update('marriageDate', v)} placeholder="(Marriage date)" width="w-40" />
+                <FormTextCombo
+                  value={form.marriageDate}
+                  onInputChange={v => update('marriageDate', v)}
+                  suggestionOptions={certMarriageDateSuggestions}
+                  placeholder="(Marriage date)"
+                  width="w-56"
+                  includeNotApplicable={false}
+                  ariaLabel="Marriage date"
+                />
                 <span>at</span>
-                <FormLine value={form.marriagePlace} onChange={v => update('marriagePlace', v)} placeholder="(Place of marriage)" width="w-48" />
+                <FormTextCombo
+                  value={form.marriagePlace}
+                  onInputChange={v => update('marriagePlace', v)}
+                  suggestionOptions={certMarriagePlaceSuggestions}
+                  placeholder="(Place of marriage)"
+                  width="w-48"
+                  includeNotApplicable={false}
+                  ariaLabel="Place of marriage"
+                />
               </div>
               <div className="flex flex-wrap items-start gap-4 pl-8">
                 <Checkbox checked={form.isNotMarried} onChange={v => update('isNotMarried', v)} />

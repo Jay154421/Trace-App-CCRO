@@ -1741,6 +1741,7 @@ export function CertificateOfLiveBirth() {
       return { ...prev, [key]: next };
     });
   };
+
   const focusRegistrarInput = (key, index) => {
     const input = registrarInputRefs.current?.[`${key}-${index}`];
     if (input) input.focus();
