@@ -303,6 +303,8 @@ export function PaternityAffidavit() {
     };
   }, [certificate]);
 
+  const commonPlaceSuggestions = useMemo(() => ['ILIGAN CITY, LANAO DEL NORTE'], []);
+
   useEffect(() => {
     if (loading || !id) return;
     const timeout = setTimeout(() => {
@@ -495,7 +497,14 @@ export function PaternityAffidavit() {
             </div>
 
             <div className="flex items-baseline gap-2">
-              <FormLine value={form.issuedAt} onChange={v => update('issuedAt', v)} placeholder="(Place issued)" width="w-80" />
+              <FormTextCombo
+                value={form.issuedAt}
+                onInputChange={(v) => update('issuedAt', v)}
+                suggestionOptions={commonPlaceSuggestions}
+                placeholder="(Place issued)"
+                width="w-80"
+                ariaLabel="Place CTC or valid ID was issued"
+              />
               <span>.</span>
             </div>
           </div>
@@ -533,7 +542,15 @@ export function PaternityAffidavit() {
                 <p className="text-xs border-t border-green-600 pt-1">Position / Title / Designation</p>
               </div>
               <div className="text-center">
-                <FormLine value={form.address} onChange={v => update('address', v)} placeholder="(Address)" width="w-full" className="text-center" />
+                <FormTextCombo
+                  value={form.address}
+                  onInputChange={(v) => update('address', v)}
+                  suggestionOptions={commonPlaceSuggestions}
+                  placeholder="(Address)"
+                  width="w-full"
+                  className="text-center"
+                  ariaLabel="Administering officer address"
+                />
                 <p className="text-xs border-t border-green-600 pt-1">Address</p>
               </div>
             </div>

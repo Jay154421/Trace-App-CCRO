@@ -236,7 +236,16 @@ function FormTextCombo({
   );
 }
 
-function FormLine({ value = '', onChange, placeholder, width = 'flex-1', className = '', suggestionOptions = [], includeNotApplicable = true }) {
+function FormLine({
+  value = '',
+  onChange,
+  placeholder,
+  width = 'flex-1',
+  className = '',
+  suggestionOptions = [],
+  includeNotApplicable = true,
+  ariaLabel,
+}) {
   return (
     <FormTextCombo
       value={value}
@@ -246,7 +255,7 @@ function FormLine({ value = '', onChange, placeholder, width = 'flex-1', classNa
       width={width}
       className={className}
       includeNotApplicable={includeNotApplicable}
-      ariaLabel={placeholder || 'Text field'}
+      ariaLabel={ariaLabel || placeholder || 'Text field'}
     />
   );
 }
@@ -757,7 +766,15 @@ export function DelayedRegistrationAffidavit() {
                 <p className="text-xs border-t border-green-600 pt-1">Position / Title / Designation</p>
               </div>
               <div className="text-center">
-                <FormLine value={form.address} onChange={v => update('address', v)} placeholder="(Address)" width="w-full" className="text-center" />
+                <FormLine
+                  value={form.address}
+                  onChange={v => update('address', v)}
+                  placeholder="(Address)"
+                  width="w-full"
+                  className="text-center"
+                  suggestionOptions={commonPlaceSuggestions}
+                  ariaLabel="Administering officer address"
+                />
                 <p className="text-xs border-t border-green-600 pt-1">Address</p>
               </div>
             </div>
