@@ -71,6 +71,7 @@ const FIELD_POSITIONS = {
 
     // --- AFFIDAVIT FOR DELAYED REGISTRATION OF BIRTH ---
     dra_affiant_name: { x: 314, y: 1617, width: 921 },
+    dra_marital_status: { x: 1248, y: 1617, width: 480 },
     dra_residence: { x: 744, y: 1705, width: 1521 },
     dra_self_birth_place: { x: 732, y: 1928, width: 885 },
     dra_self_birth_date: { x: 1794, y: 1928, width: 534 },
@@ -378,6 +379,7 @@ const FIELD_VALUE_MAP = [
 
     // Delayed Registration Affidavit
     { key: 'dra_affiant_name', getValue: (getVal) => getVal('delayed_registration_affidavit')?.affiantName || '' },
+    { key: 'dra_marital_status', getValue: (getVal) => getVal('delayed_registration_affidavit')?.maritalStatus || '' },
     { key: 'dra_residence', getValue: (getVal) => getVal('delayed_registration_affidavit')?.residence || '' },
     { key: 'dra_self_birth_place', getValue: (getVal) => getVal('delayed_registration_affidavit')?.selfBirthPlace || '' },
     { key: 'dra_self_birth_date', getValue: (getVal) => getVal('delayed_registration_affidavit')?.selfBirthDate || '' },
@@ -1270,6 +1272,7 @@ export function FieldPositionBack() {
 
                     {/* Delayed Registration Affidavit Fields */}
                     <PositionedValue fieldKey="dra_affiant_name" value={getVal('delayed_registration_affidavit')?.affiantName} />
+                    <PositionedValue fieldKey="dra_marital_status" value={getVal('delayed_registration_affidavit')?.maritalStatus} />
                     <PositionedValue fieldKey="dra_residence" value={getVal('delayed_registration_affidavit')?.residence} />
                     <PositionedValue fieldKey="dra_self_birth_place" value={getVal('delayed_registration_affidavit')?.selfBirthPlace} />
                     <PositionedValue fieldKey="dra_self_birth_date" value={getVal('delayed_registration_affidavit')?.selfBirthDate} />
