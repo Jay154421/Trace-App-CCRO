@@ -1839,6 +1839,18 @@ export function CertificateOfLiveBirth() {
     });
   }, [save, navigate, basePath, id]);
 
+  /** Child middle → suggest mother maiden surname (PH naming). */
+  const motherLastNameLinkedOptions = useMemo(() => {
+    const s = String(form.childMiddle ?? '').trim().toUpperCase();
+    return s ? [s] : [];
+  }, [form.childMiddle]);
+
+  /** Child last → suggest father surname. */
+  const fatherLastNameLinkedOptions = useMemo(() => {
+    const s = String(form.childLast ?? '').trim().toUpperCase();
+    return s ? [s] : [];
+  }, [form.childLast]);
+
   if (loading) return <p className="text-slate-500">Loading…</p>;
   if (error) return <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">{error.message}</div>;
   if (!child) return null;
@@ -2045,7 +2057,16 @@ export function CertificateOfLiveBirth() {
               <div className="flex flex-wrap gap-2 items-baseline">
                 <FormLine value={form.motherFirst} onChange={(v) => update('motherFirst', v)} placeholder="(First)" className="flex-1 min-w-[80px]" />
                 <FormLine value={form.motherMiddle} onChange={(v) => update('motherMiddle', v)} placeholder="(Middle)" className="flex-1 min-w-[80px]" />
-                <FormLine value={form.motherLast} onChange={(v) => update('motherLast', v)} placeholder="(Last)" className="flex-1 min-w-[80px]" />
+                <FormTextCombo
+                  value={form.motherLast}
+                  onInputChange={(v) => update('motherLast', v)}
+                  suggestionOptions={motherLastNameLinkedOptions}
+                  idleFocusSuggestions={motherLastNameLinkedOptions}
+                  placeholder="(Last)"
+                  className="flex-1 min-w-[80px]"
+                  width="flex-1 min-w-[80px]"
+                  ariaLabel="Mother maiden last name"
+                />
               </div>
             </div>
             <div>
@@ -2179,7 +2200,16 @@ export function CertificateOfLiveBirth() {
               <div className="flex flex-wrap gap-2 items-baseline">
                 <FormLine value={form.fatherFirst} onChange={(v) => update('fatherFirst', v)} placeholder="(First)" className="flex-1 min-w-[80px]" />
                 <FormLine value={form.fatherMiddle} onChange={(v) => update('fatherMiddle', v)} placeholder="(Middle)" className="flex-1 min-w-[80px]" />
-                <FormLine value={form.fatherLast} onChange={(v) => update('fatherLast', v)} placeholder="(Last)" className="flex-1 min-w-[80px]" />
+                <FormTextCombo
+                  value={form.fatherLast}
+                  onInputChange={(v) => update('fatherLast', v)}
+                  suggestionOptions={fatherLastNameLinkedOptions}
+                  idleFocusSuggestions={fatherLastNameLinkedOptions}
+                  placeholder="(Last)"
+                  className="flex-1 min-w-[80px]"
+                  width="flex-1 min-w-[80px]"
+                  ariaLabel="Father last name"
+                />
               </div>
             </div>
             <div>
