@@ -132,6 +132,7 @@ const FIELD_POSITIONS = {
   attendant_address: { x: 1500, y: 2505, width: 905 },
   attendant_date: { x: 1512, y: 2643 },
   attendant_time: { x: 1533, y: 2409 },
+  attendant_signature: { x: 471, y: 2490, width: 732 },
   informant_signature: { x: 483, y: 2916, width: 768 },
   informant_relation: { x: 612, y: 3000 },
   informant_address: { x: 399, y: 3057, width: 864 },

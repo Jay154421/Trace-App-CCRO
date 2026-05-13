@@ -78,6 +78,7 @@ const DEFAULT_CERT = {
   attendantTime: '',
   attendantAmpm: 'AM',
   attendantName: '',
+  attendantSignature: '',
   attendantAddress: '',
   attendantTitle: '',
   attendantDate: '',
@@ -2421,7 +2422,15 @@ export function CertificateOfLiveBirth() {
             className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4"
             style={{ fontSize: '14px' }}
           >
-           
+            <div className="sm:col-span-2">
+              <p className="mb-1" style={{ fontWeight: 400 }}>Signature</p>
+              <FormLine
+                value={form.attendantSignature}
+                onChange={(v) => update('attendantSignature', v)}
+                placeholder="(Signature)"
+                className="w-full"
+              />
+            </div>
             <div>
               <p className="mb-1" style={{ fontWeight: 400 }}>Address</p>
               <FormLine value={form.attendantAddress} onChange={(v) => update('attendantAddress', v)} placeholder="(Address)" className="w-full" />
