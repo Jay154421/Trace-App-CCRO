@@ -357,18 +357,12 @@ function getPhCityPickerSuggestions(query, maxRows = 40) {
   );
   const out = [];
   for (const { r } of scored) {
+    const province = String(r.province ?? '').trim();
+    if (!province) continue;
     out.push({
-      key: `${r.code}-short`,
-      label: `${r.city} | ${r.country}`,
+      key: `${r.code}`,
+      label: `${r.city}, ${province}, ${r.country}`,
       record: r,
-      /** Short line: fill city/country/code only; leave province blank. */
-      omitProvince: true,
-    });
-    out.push({
-      key: `${r.code}-full`,
-      label: `${r.city} | ${r.province} | ${r.country}`,
-      record: r,
-      omitProvince: false,
     });
     if (out.length >= maxRows) break;
   }
@@ -952,8 +946,9 @@ function FormLine({
 }
 
 /**
- * PSA city picker: dropdown lines like `CITY | COUNTRY` and `CITY | PROVINCE | COUNTRY`.
- * Short line clears province; full line sets province from the PSA row.
+ * PSA city picker: dropdown lines `CITY, PROVINCE, COUNTRY` only.
+ * When this field is empty, focusing it can open suggestions using `crossFieldSeedRef`
+ * (last city typed or picked elsewhere on the certificate).
  */
 function FormPhCityCombo({
   cityValue = '',
@@ -965,27 +960,39 @@ function FormPhCityCombo({
   width,
   ariaLabel,
   maxSuggestionRows = 40,
+  crossFieldSeedRef,
 }) {
   const listboxBaseId = useId();
   const listboxId = `${listboxBaseId}-listbox`;
 
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [pendingCrossFieldSeed, setPendingCrossFieldSeed] = useState('');
   const wrapRef = useRef(null);
 
+  const trimmedCity = String(cityValue ?? '').trim();
+  const effectiveQuery = trimmedCity || pendingCrossFieldSeed;
+
   const suggestions = useMemo(
-    () => getPhCityPickerSuggestions(cityValue, maxSuggestionRows),
-    [cityValue, maxSuggestionRows],
+    () => getPhCityPickerSuggestions(effectiveQuery, maxSuggestionRows),
+    [effectiveQuery, maxSuggestionRows],
   );
 
   useEffect(() => {
     setActiveIndex(0);
-  }, [cityValue]);
+  }, [effectiveQuery]);
+
+  useEffect(() => {
+    if (trimmedCity) setPendingCrossFieldSeed('');
+  }, [trimmedCity]);
 
   useEffect(() => {
     if (!open) return;
     const onDocDown = (e) => {
-      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) {
+        setOpen(false);
+        setPendingCrossFieldSeed('');
+      }
     };
     document.addEventListener('mousedown', onDocDown);
     return () => document.removeEventListener('mousedown', onDocDown);
@@ -994,14 +1001,13 @@ function FormPhCityCombo({
   const applyItem = useCallback(
     (item) => {
       if (!item) return;
-      const { record, omitProvince } = item;
-      onGeoPick({
-        ...record,
-        province: omitProvince ? '' : record.province,
-      });
+      const { record } = item;
+      if (crossFieldSeedRef && record.city) crossFieldSeedRef.current = record.city;
+      onGeoPick({ ...record });
       setOpen(false);
+      setPendingCrossFieldSeed('');
     },
-    [onGeoPick],
+    [crossFieldSeedRef, onGeoPick],
   );
 
   const borderColor = COLORS.accentGreen;
@@ -1023,16 +1029,32 @@ function FormPhCityCombo({
           const v = e.target.value.toUpperCase();
           onCityInputChange(v);
           if (!v.trim() && onCityEmptied) onCityEmptied();
+          if (crossFieldSeedRef && v.trim()) crossFieldSeedRef.current = v.trim();
+          setPendingCrossFieldSeed('');
           setOpen(true);
         }}
         onFocus={() => {
-          if (suggestions.length) setOpen(true);
+          if (trimmedCity) {
+            const sug = getPhCityPickerSuggestions(trimmedCity, maxSuggestionRows);
+            if (sug.length) setOpen(true);
+            return;
+          }
+          const seed = String(crossFieldSeedRef?.current ?? '').trim().toUpperCase();
+          if (seed) {
+            setPendingCrossFieldSeed(seed);
+            const sug = getPhCityPickerSuggestions(seed, maxSuggestionRows);
+            if (sug.length) setOpen(true);
+          }
+        }}
+        onBlur={() => {
+          setPendingCrossFieldSeed('');
         }}
         onKeyDown={(e) => {
           if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && suggestions.length) setOpen(true);
           if (!showList) return;
           if (e.key === 'Escape') {
             setOpen(false);
+            setPendingCrossFieldSeed('');
             e.preventDefault();
           } else if (e.key === 'ArrowDown') {
             setActiveIndex((i) => Math.min(i + 1, suggestions.length - 1));
@@ -1419,9 +1441,12 @@ export function CertificateOfLiveBirth() {
   const lastSavedRef = useRef(null);
   const certContentRef = useRef(null);
   const registrarInputRefs = useRef({});
+  /** Latest PSA city substring from any certificate city field (for empty-field focus suggestions). */
+  const phCityCrossSeedRef = useRef('');
   const [openPickerId, setOpenPickerId] = useState(null);
 
   useEffect(() => {
+    phCityCrossSeedRef.current = '';
     childrenApi
       .get(id)
       .then((data) => {
@@ -1490,7 +1515,25 @@ export function CertificateOfLiveBirth() {
           fromChild.placeOfBirthCity = parsedPlace.city;
           fromChild.placeOfBirthProvince = parsedPlace.province;
         }
-        setForm({ ...base, ...fromChild });
+        const merged = { ...base, ...fromChild };
+        setForm(merged);
+        const phCitySeedKeys = [
+          'cityMunicipality',
+          'placeOfBirthCity',
+          'motherResidenceCity',
+          'fatherResidenceCity',
+          'marriagePlaceCity',
+        ];
+        let seeded = false;
+        for (const k of phCitySeedKeys) {
+          const v = String(merged[k] || '').trim();
+          if (v) {
+            phCityCrossSeedRef.current = v.toUpperCase();
+            seeded = true;
+            break;
+          }
+        }
+        if (!seeded) phCityCrossSeedRef.current = '';
       })
       .catch(setError)
       .finally(() => setLoading(false));
@@ -1868,6 +1911,7 @@ export function CertificateOfLiveBirth() {
                   placeholder="(City/Municipality)"
                   width="w-full"
                   ariaLabel="Certificate city or municipality"
+                  crossFieldSeedRef={phCityCrossSeedRef}
                 />
               </div>
               <div className="flex flex-col min-w-0">
@@ -1956,6 +2000,7 @@ export function CertificateOfLiveBirth() {
                     placeholder="(City/Municipality)"
                     width="w-full"
                     ariaLabel="Place of birth city or municipality"
+                    crossFieldSeedRef={phCityCrossSeedRef}
                   />
                   <FormLine
                     value={form.placeOfBirthProvince}
@@ -2094,6 +2139,7 @@ export function CertificateOfLiveBirth() {
                     className="w-full"
                     width="w-full"
                     ariaLabel="Mother residence city or municipality"
+                    crossFieldSeedRef={phCityCrossSeedRef}
                   />
                   <FormLine
                     value={form.motherResidenceProvince}
@@ -2192,6 +2238,7 @@ export function CertificateOfLiveBirth() {
                     className="w-full"
                     width="w-full"
                     ariaLabel="Father residence city or municipality"
+                    crossFieldSeedRef={phCityCrossSeedRef}
                   />
                   <FormLine
                     value={form.fatherResidenceProvince}
@@ -2291,6 +2338,7 @@ export function CertificateOfLiveBirth() {
                   className="w-full"
                   width="w-full"
                   ariaLabel="Parents marriage place city or municipality"
+                  crossFieldSeedRef={phCityCrossSeedRef}
                 />
                 <FormLine
                   value={form.marriagePlaceProvince}
