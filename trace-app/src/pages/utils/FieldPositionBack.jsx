@@ -45,6 +45,12 @@ const ATTENDANT_RADIO_CHECK_MARK = {
 /** Extent factors for the two-segment check shape (matches line endpoint offsets). */
 const RADIO_CHECK_SHAPE_EXTENT = { horizontal: 0.95, vertical: 0.7 };
 
+/** DRA template marks: one horizontal stroke (not a checkmark), PDF units inches */
+const DRA_STRAIGHT_MARK = {
+    lengthIn: 0.1 / 2.54, // 0.3 inches
+    lineWidthIn: 0.03 / 2.54
+};
+
 // Field position coordinates (layout pixels)
 // Field position coordinates (layout pixels) for BACK SIDE (Affidavits)
 const FIELD_POSITIONS = {
@@ -71,7 +77,6 @@ const FIELD_POSITIONS = {
 
     // --- AFFIDAVIT FOR DELAYED REGISTRATION OF BIRTH ---
     dra_affiant_name: { x: 314, y: 1617, width: 921 },
-    dra_marital_status: { x: 1248, y: 1617, width: 480 },
     dra_residence: { x: 744, y: 1705, width: 1521 },
     dra_self_birth_place: { x: 732, y: 1928, width: 885 },
     dra_self_birth_date: { x: 1794, y: 1928, width: 534 },
@@ -79,7 +84,7 @@ const FIELD_POSITIONS = {
     dra_other_birth_place: { x: 1794, y: 2001, width: 495 },
     dra_other_birth_date: { x: 1191, y: 2088, width: 567 },
     dra_attended_by: { x: 1086, y: 2172, width: 945 },
-    dra_attendant_address: { x: 435, y: 2220, width: 1620 },
+    dra_attendant_address: { x: 435, y: 2245, width: 1620 },
     dra_citizenship: { x: 1062, y: 2313, width: 852 },
     dra_marriage_date: { x: 1261, y: 2405, width: 483 },
     dra_marriage_place: { x: 1854, y: 2405, width: 411 },
@@ -108,7 +113,40 @@ const FIELD_POSITIONS = {
     dra_chk_other_birth: { x: 411, y: 2001 },
     dra_chk_married: { x: 966, y: 2401 },
     dra_chk_not_married: { x: 966, y: 2542 },
+
+    // DRA template radio marks (civil status, pronoun columns, not-married ack, delay line)
+    dra_rad_marital_single: { x: 1569, y: 1653 },
+    dra_rad_marital_married: { x: 1710, y: 1653 },
+    dra_rad_marital_divorced: { x: 1875, y: 1653 },
+    dra_rad_marital_widow: { x: 2007, y: 1653 },
+    dra_rad_marital_widower: { x: 2136, y: 1653 },
+    dra_rad_attended_i: { x: 495, y: 2208 },
+    dra_rad_attended_he: { x: 531, y: 2208 },
+    dra_rad_attended_she: { x: 570, y: 2208 },
+    dra_rad_citizen_i: { x: 531, y: 2349 },
+    dra_rad_citizen_he: { x: 588, y: 2349 },
+    dra_rad_citizen_she: { x: 648, y: 2349 },
+    dra_rad_parents_my: { x: 483, y: 2490 },
+    dra_rad_parents_his: { x: 555, y: 2490 },
+    dra_rad_parents_her: { x: 624, y: 2490 },
+    dra_rad_nm_ack_my: { x: 1311, y: 2586 },
+    dra_rad_nm_ack_his: { x: 1344, y: 2586 },
+    dra_rad_nm_ack_her: { x: 1416, y: 2586 },
+    dra_rad_nm_nack_my: { x: 2124, y: 2586 },
+    dra_rad_nm_nack_his: { x: 2172, y: 2586 },
+    dra_rad_nm_nack_her: { x: 2220, y: 2586 },
+    dra_rad_delay_my: { x: 1143, y: 2727 },
+    dra_rad_delay_his: { x: 1191, y: 2727 },
+    dra_rad_delay_her: { x: 1263, y: 2727 },
 };
+
+/** Only these four DRA positions use the PDF checkmark; other DRA marks use a straight line. */
+const DRA_CHECKMARK_FIELD_KEYS = new Set([
+    'dra_chk_self_birth',
+    'dra_chk_other_birth',
+    'dra_chk_married',
+    'dra_chk_not_married',
+]);
 
 /** Space between form columns to prevent text bleeding into next box */
 const PDF_COLUMN_GUTTER_PX = 20;
@@ -505,6 +543,89 @@ function drawRadioMark(doc, x, y) {
     doc.line(x - wX * 0.02, y + wY * 0.42, x + wX * 0.55, y - wY * 0.28);
 }
 
+/** Single horizontal line for Delayed Registration Affidavit marks (PDF). */
+function drawDraStraightMark(doc, x, y) {
+    const { lengthIn, lineWidthIn } = DRA_STRAIGHT_MARK;
+    const half = lengthIn / 2;
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(lineWidthIn);
+    doc.setLineCap('round');
+    doc.line(x - half, y, x + half, y);
+}
+
+/** Normalize DRA string fields for radio matching */
+function draNormUpper(v) {
+    return String(v ?? '').trim().toUpperCase();
+}
+
+/**
+ * Delayed Registration Affidavit marks: checkbox keys + template radio positions.
+ * @param {object} dra merged.delayed_registration_affidavit
+ * @returns {{ show: boolean, key: string }[]}
+ */
+function getDraRadioMarkEntries(dra) {
+    const d = dra && typeof dra === 'object' ? dra : {};
+    const entries = [
+        { show: !!d.isSelfBirth, key: 'dra_chk_self_birth' },
+        { show: !!d.isOtherBirth, key: 'dra_chk_other_birth' },
+        { show: !!d.isMarried, key: 'dra_chk_married' },
+        { show: !!d.isNotMarried, key: 'dra_chk_not_married' },
+    ];
+
+    const maritalKeyByStatus = {
+        SINGLE: 'dra_rad_marital_single',
+        MARRIED: 'dra_rad_marital_married',
+        DIVORCED: 'dra_rad_marital_divorced',
+        WIDOW: 'dra_rad_marital_widow',
+        WIDOWER: 'dra_rad_marital_widower',
+    };
+    const ms = draNormUpper(d.maritalStatus);
+    const maritalKey = maritalKeyByStatus[ms];
+    if (maritalKey) entries.push({ show: true, key: maritalKey });
+
+    const pn = draNormUpper(d.affiantPronoun);
+    const attended = { I: 'dra_rad_attended_i', HE: 'dra_rad_attended_he', SHE: 'dra_rad_attended_she' };
+    const citizen = { I: 'dra_rad_citizen_i', HE: 'dra_rad_citizen_he', SHE: 'dra_rad_citizen_she' };
+    const parents = { I: 'dra_rad_parents_my', HE: 'dra_rad_parents_his', SHE: 'dra_rad_parents_her' };
+    const delay = { I: 'dra_rad_delay_my', HE: 'dra_rad_delay_his', SHE: 'dra_rad_delay_her' };
+    const nmAck = { I: 'dra_rad_nm_ack_my', HE: 'dra_rad_nm_ack_his', SHE: 'dra_rad_nm_ack_her' };
+    const nmNack = { I: 'dra_rad_nm_nack_my', HE: 'dra_rad_nm_nack_his', SHE: 'dra_rad_nm_nack_her' };
+
+    if (attended[pn]) entries.push({ show: true, key: attended[pn] });
+    if (citizen[pn]) entries.push({ show: true, key: citizen[pn] });
+    if (parents[pn]) entries.push({ show: true, key: parents[pn] });
+
+    if (String(d.delayReason || '').trim() && delay[pn]) {
+        entries.push({ show: true, key: delay[pn] });
+    }
+
+    if (d.isNotMarried && d.notMarriedAcknowledged === true && nmAck[pn]) {
+        entries.push({ show: true, key: nmAck[pn] });
+    }
+    if (d.isNotMarried && d.notMarriedAcknowledged === false && nmNack[pn]) {
+        entries.push({ show: true, key: nmNack[pn] });
+    }
+
+    return entries;
+}
+
+function drawDraRadioMarks(doc, merged) {
+    const dra = merged.delayed_registration_affidavit || {};
+    const { width: docWidth, height: docHeight, pageWidthInches, pageHeightInches } = PDF_LAYOUT.document;
+    getDraRadioMarkEntries(dra).forEach(({ show, key }) => {
+        if (!show) return;
+        const pos = FIELD_POSITIONS[key];
+        if (!pos) return;
+        const xIn = (pos.x / docWidth) * pageWidthInches;
+        const yIn = ((pos.y + 10) / docHeight) * pageHeightInches;
+        if (DRA_CHECKMARK_FIELD_KEYS.has(key)) {
+            drawRadioMark(doc, xIn, yIn);
+        } else {
+            drawDraStraightMark(doc, xIn, yIn);
+        }
+    });
+}
+
 /**
  * Build PDF as base64 data URI
  */
@@ -572,39 +693,7 @@ export function buildFieldPositionPdfBase64(merged) {
         }
     }
 
-    // // Draw attendant type radio button marks
-    // const radioPositions = {
-    //     physician: { x: 282, y: 2227 },
-    //     nurse: { x: 600, y: 2277 },
-    //     midwife: { x: 875, y: 2277 },
-    //     hilot: { x: 1179, y: 2277 },
-    //     other: { x: 1794, y: 2277 },
-    // };
-
-    // if (attendantType && radioPositions[attendantType]) {
-    //     const pos = radioPositions[attendantType];
-    //     const xIn = (pos.x / docWidth) * pageWidthInches;
-    //     const yIn = ((pos.y + 10) / docHeight) * pageHeightInches;
-    //     drawRadioMark(doc, xIn, yIn);
-    // }
-
-    // Draw DRA checkboxes
-    const dra = merged.delayed_registration_affidavit || {};
-    const draCheckboxes = [
-        { show: dra.isSelfBirth, key: 'dra_chk_self_birth' },
-        { show: dra.isOtherBirth, key: 'dra_chk_other_birth' },
-        { show: dra.isMarried, key: 'dra_chk_married' },
-        { show: dra.isNotMarried, key: 'dra_chk_not_married' },
-    ];
-
-    draCheckboxes.forEach(cb => {
-        if (cb.show && FIELD_POSITIONS[cb.key]) {
-            const pos = FIELD_POSITIONS[cb.key];
-            const xIn = (pos.x / docWidth) * pageWidthInches;
-            const yIn = ((pos.y + 10) / docHeight) * pageHeightInches;
-            drawRadioMark(doc, xIn, yIn);
-        }
-    });
+    drawDraRadioMarks(doc, merged);
 
     // Draw "other" specify text if applicable
     if (attendantType === 'other') {
@@ -825,23 +914,7 @@ function buildCombinedPdfBase64(merged) {
     //     drawRadioMark(doc, xIn, yIn);
     // }
 
-    // Draw DRA checkboxes
-    const dra = merged.delayed_registration_affidavit || {};
-    const draCheckboxes = [
-        { show: dra.isSelfBirth, key: 'dra_chk_self_birth' },
-        { show: dra.isOtherBirth, key: 'dra_chk_other_birth' },
-        { show: dra.isMarried, key: 'dra_chk_married' },
-        { show: dra.isNotMarried, key: 'dra_chk_not_married' },
-    ];
-
-    draCheckboxes.forEach(cb => {
-        if (cb.show && FIELD_POSITIONS[cb.key]) {
-            const pos = FIELD_POSITIONS[cb.key];
-            const xIn = (pos.x / docWidth) * pageWidthInches;
-            const yIn = ((pos.y + 10) / docHeight) * pageHeightInches;
-            drawRadioMark(doc, xIn, yIn);
-        }
-    });
+    drawDraRadioMarks(doc, merged);
 
     // Draw "other" specify text if applicable
     if (attendantType === 'other') {
@@ -911,10 +984,8 @@ function buildCombinedPdfBase64(merged) {
     return dataUri.indexOf(',') >= 0 ? dataUri.split(',')[1] : '';
 }
 
-/**
- * Radio button mark component for attendant type selection
- */
-function RadioMark({ x, y, show }) {
+/** DRA overlay: checkmark for the four `dra_chk_*` boxes; straight stroke for template radios. */
+function RadioMark({ x, y, show, checkmark }) {
     return (
         <span
             className="absolute"
@@ -926,14 +997,28 @@ function RadioMark({ x, y, show }) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontFamily: FONT_FAMILY,
-                fontSize: '14px',
+                fontFamily: checkmark ? FONT_FAMILY : undefined,
+                fontSize: checkmark ? '14px' : undefined,
                 color: COLORS.black,
                 WebkitPrintColorAdjust: 'exact',
                 printColorAdjust: 'exact',
             }}
         >
-            {show ? '✓' : ''}
+            {show ? (
+                checkmark ? (
+                    '✓'
+                ) : (
+                    <span
+                        style={{
+                            display: 'block',
+                            width: 14,
+                            height: 2,
+                            backgroundColor: COLORS.black,
+                            borderRadius: 1,
+                        }}
+                    />
+                )
+            ) : null}
         </span>
     );
 }
@@ -1243,11 +1328,22 @@ export function FieldPositionBack() {
                         color: COLORS.black,
                     }}
                 >
-                    {/* DRA Checkboxes */}
-                    <RadioMark x={500} y={2500} show={getVal('delayed_registration_affidavit')?.isSelfBirth} />
-                    <RadioMark x={500} y={2600} show={getVal('delayed_registration_affidavit')?.isOtherBirth} />
-                    <RadioMark x={1400} y={3000} show={getVal('delayed_registration_affidavit')?.isMarried} />
-                    <RadioMark x={500} y={3100} show={getVal('delayed_registration_affidavit')?.isNotMarried} />
+                    {/* DRA checkboxes + template radio marks (same positions as PDF) */}
+                    {getDraRadioMarkEntries(getVal('delayed_registration_affidavit') || {})
+                        .filter((e) => e.show)
+                        .map(({ key }) => {
+                            const pos = FIELD_POSITIONS[key];
+                            if (!pos) return null;
+                            return (
+                                <RadioMark
+                                    key={key}
+                                    x={pos.x}
+                                    y={pos.y}
+                                    show
+                                    checkmark={DRA_CHECKMARK_FIELD_KEYS.has(key)}
+                                />
+                            );
+                        })}
 
                     {/* Paternity Affidavit Fields */}
                     <PositionedValue fieldKey="pa_mother_name" value={getVal('paternity_affidavit')?.motherName} />

@@ -328,6 +328,8 @@ export function DelayedRegistrationAffidavit() {
     marriageDate: '',
     marriagePlace: '',
     isNotMarried: false,
+    /** When isNotMarried: true = acknowledged column on form, false = not acknowledged, null = unset */
+    notMarriedAcknowledged: null,
     fatherName: '',
     delayReason: '',
     spouseName: '',
@@ -644,7 +646,17 @@ export function DelayedRegistrationAffidavit() {
               <div className="flex flex-wrap items-baseline gap-4">
                 <span className="font-bold">4.</span>
                 <span>That {pronounPossessive(form.affiantPronoun) || 'my/his/her'} parents were</span>
-                <Checkbox checked={form.isMarried} onChange={v => update('isMarried', v)} label="married on" />
+                <Checkbox
+                  checked={form.isMarried}
+                  onChange={(v) => {
+                    setForm((prev) => ({
+                      ...prev,
+                      isMarried: v,
+                      ...(v ? { isNotMarried: false, notMarriedAcknowledged: null } : {}),
+                    }));
+                  }}
+                  label="married on"
+                />
                 <FormTextCombo
                   value={form.marriageDate}
                   onInputChange={v => update('marriageDate', v)}
@@ -668,7 +680,17 @@ export function DelayedRegistrationAffidavit() {
                 />
               </div>
               <div className="flex flex-wrap items-start gap-4 pl-8">
-                <Checkbox checked={form.isNotMarried} onChange={v => update('isNotMarried', v)} />
+                <Checkbox
+                  checked={form.isNotMarried}
+                  onChange={(v) => {
+                    setForm((prev) => ({
+                      ...prev,
+                      isNotMarried: v,
+                      ...(!v ? { notMarriedAcknowledged: null } : {}),
+                      ...(v ? { isMarried: false, marriageDate: '', marriagePlace: '' } : {}),
+                    }));
+                  }}
+                />
                 <div className="flex-1 flex flex-wrap items-baseline gap-2">
                   <span>
                     not married but {pronounWas(form.affiantPronoun) || 'I/he/she'} was acknowledged/not acknowledged by{' '}
@@ -676,6 +698,34 @@ export function DelayedRegistrationAffidavit() {
                   </span>
                 </div>
               </div>
+              {form.isNotMarried ? (
+                <div
+                  className="pl-14 flex flex-wrap items-center gap-6 py-1"
+                  role="radiogroup"
+                  aria-label="Father acknowledgment"
+                >
+                  <label className="flex cursor-pointer items-center gap-2 text-sm">
+                    <input
+                      type="radio"
+                      name="dra-not-married-ack"
+                      checked={form.notMarriedAcknowledged === true}
+                      onChange={() => update('notMarriedAcknowledged', true)}
+                      className="border-green-600 text-green-600 focus:ring-green-500"
+                    />
+                    <span>Acknowledged</span>
+                  </label>
+                  <label className="flex cursor-pointer items-center gap-2 text-sm">
+                    <input
+                      type="radio"
+                      name="dra-not-married-ack"
+                      checked={form.notMarriedAcknowledged === false}
+                      onChange={() => update('notMarriedAcknowledged', false)}
+                      className="border-green-600 text-green-600 focus:ring-green-500"
+                    />
+                    <span>Not acknowledged</span>
+                  </label>
+                </div>
+              ) : null}
               <div className="pl-14 flex flex-wrap items-baseline gap-2">
                 <span>father whose name is</span>
                 <FormTextCombo

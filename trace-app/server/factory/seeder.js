@@ -214,8 +214,12 @@ function buildFakeDelayedRegistrationAffidavit(applicant, cert) {
   const officer = faker.helpers.arrayElement(RECEIVED_BY_OPTIONS);
   const affixed = swornPartsFromIso(applicant.date_of_birth);
 
+  const affiantPronoun = applicant.sex === 'Male' ? 'HE' : 'SHE';
+
   return {
     affiantName: motherFull,
+    affiantPronoun,
+    maritalStatus: isMarried ? 'MARRIED' : 'SINGLE',
     residence: faker.location.streetAddress({ useFullAddress: true }),
     isSelfBirth: false,
     selfBirthPlace: '',
@@ -231,6 +235,7 @@ function buildFakeDelayedRegistrationAffidavit(applicant, cert) {
     marriageDate: isMarried ? marriageDate : '',
     marriagePlace: isMarried ? marriagePlace : '',
     isNotMarried: !isMarried,
+    notMarriedAcknowledged: !isMarried ? faker.datatype.boolean() : null,
     fatherName: fatherFull,
     delayReason: faker.helpers.arrayElement([
       'Late filing due to migration and incomplete documents at the time of birth.',
