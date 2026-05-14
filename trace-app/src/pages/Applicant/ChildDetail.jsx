@@ -8,6 +8,7 @@ import {
 import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { childrenApi } from '../../services/api';
+import { usePdfPreviewUrl } from '../../hooks/usePdfPreviewUrl';
 import { formatDateDDMMYYYY } from '../../utils/date';
 import { buildFieldPositionPdfBase64, buildMergedCertData, buildPdfFilename } from '../../utils/pdfUtils';
 import {
@@ -38,7 +39,15 @@ export function ChildDetail() {
   const [editSaving, setEditSaving] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteDeleting, setDeleteDeleting] = useState(false);
+  const [frontPdfMenuOpen, setFrontPdfMenuOpen] = useState(false);
+  const [frontPdfSaving, setFrontPdfSaving] = useState(false);
+  const [backPdfMenuOpen, setBackPdfMenuOpen] = useState(false);
+  const [backPdfSaving, setBackPdfSaving] = useState(false);
   const [staffStatusUpdating, setStaffStatusUpdating] = useState(false);
+  const { url: frontPdfPreviewUrl, isOpen: frontPdfPreviewOpen, openPreview: openFrontPdfPreview, closePreview: closeFrontPdfPreview } =
+    usePdfPreviewUrl();
+  const { url: backPdfPreviewUrl, isOpen: backPdfPreviewOpen, openPreview: openBackPdfPreview, closePreview: closeBackPdfPreview } =
+    usePdfPreviewUrl();
 
   useEffect(() => {
     let cancelled = false;
@@ -135,10 +144,10 @@ export function ChildDetail() {
 
     if (!isChecklistComplete) {
       toast.error('Complete the document checklist before saving PDF.');
-      return;
+      return false;
     }
 
-    if (!window.electron?.saveFieldPositionPdf) return;
+    if (!window.electron?.saveFieldPositionPdf) return false;
     try {
       const cert = child?.certificate_of_live_birth && typeof child.certificate_of_live_birth === 'object'
         ? child.certificate_of_live_birth
@@ -149,14 +158,18 @@ export function ChildDetail() {
       const result = await window.electron.saveFieldPositionPdf(base64, suggestedFilename);
       if (result?.ok) {
         toast.success('PDF saved.');
+        return true;
       }
+      return false;
     } catch (err) {
       toast.error(err?.message || 'Failed to save PDF.');
+      return false;
     }
   }, [child]);
 
-  const handleSavePdfBack = useCallback(async () => {
-    const checklist = child?.checklist ?? [];
+  const handlePreviewPdfFront = useCallback(() => {
+    if (!child) return;
+    const checklist = child.checklist ?? [];
     const checklistTotal = checklist.length;
     const checklistChecked = checklist.filter((item) => item.checked).length;
     const isChecklistComplete = checklistTotal > 0 && checklistChecked === checklistTotal;
@@ -166,7 +179,31 @@ export function ChildDetail() {
       return;
     }
 
-    if (!window.electron?.saveFieldPositionPdf) return;
+    const cert =
+      child.certificate_of_live_birth && typeof child.certificate_of_live_birth === 'object'
+        ? child.certificate_of_live_birth
+        : {};
+    const merged = buildMergedCertData(child, cert);
+    const base64 = buildFieldPositionPdfBase64(merged);
+    if (!base64) {
+      toast.error('Could not generate PDF.');
+      return;
+    }
+    openFrontPdfPreview(base64);
+  }, [child, openFrontPdfPreview]);
+
+  const handleSavePdfBack = useCallback(async () => {
+    const checklist = child?.checklist ?? [];
+    const checklistTotal = checklist.length;
+    const checklistChecked = checklist.filter((item) => item.checked).length;
+    const isChecklistComplete = checklistTotal > 0 && checklistChecked === checklistTotal;
+
+    if (!isChecklistComplete) {
+      toast.error('Complete the document checklist before saving PDF.');
+      return false;
+    }
+
+    if (!window.electron?.saveFieldPositionPdf) return false;
     try {
       const cert = child?.certificate_of_live_birth && typeof child.certificate_of_live_birth === 'object'
         ? child.certificate_of_live_birth
@@ -177,11 +214,39 @@ export function ChildDetail() {
       const result = await window.electron.saveFieldPositionPdf(base64, suggestedFilename);
       if (result?.ok) {
         toast.success('Back PDF saved.');
+        return true;
       }
+      return false;
     } catch (err) {
       toast.error(err?.message || 'Failed to save back PDF.');
+      return false;
     }
   }, [child]);
+
+  const handlePreviewPdfBack = useCallback(() => {
+    if (!child) return;
+    const checklist = child.checklist ?? [];
+    const checklistTotal = checklist.length;
+    const checklistChecked = checklist.filter((item) => item.checked).length;
+    const isChecklistComplete = checklistTotal > 0 && checklistChecked === checklistTotal;
+
+    if (!isChecklistComplete) {
+      toast.error('Complete the document checklist before saving PDF.');
+      return;
+    }
+
+    const cert =
+      child.certificate_of_live_birth && typeof child.certificate_of_live_birth === 'object'
+        ? child.certificate_of_live_birth
+        : {};
+    const merged = buildMergedBackCertData(child, cert);
+    const base64 = buildFieldPositionBackPdfBase64(merged);
+    if (!base64) {
+      toast.error('Could not generate PDF.');
+      return;
+    }
+    openBackPdfPreview(base64);
+  }, [child, openBackPdfPreview]);
 
   if (loading) return <p className="text-slate-500">Loading…</p>;
   if (error) return <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">{error.message}</div>;
@@ -200,6 +265,76 @@ export function ChildDetail() {
   const isColbBrap = String(child.application_type || '').toLowerCase() === 'colb_brap';
   return (
     <div>
+      {frontPdfPreviewOpen && frontPdfPreviewUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="child-detail-front-pdf-preview-title"
+        >
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/50"
+            onClick={closeFrontPdfPreview}
+            aria-label="Close PDF preview"
+          />
+          <div className="relative z-10 flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+            <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-3">
+              <h2 id="child-detail-front-pdf-preview-title" className="text-sm font-semibold text-slate-800">
+                PDF preview
+              </h2>
+              <button
+                type="button"
+                onClick={closeFrontPdfPreview}
+                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Close
+              </button>
+            </div>
+            <iframe
+              src={frontPdfPreviewUrl}
+              title="Field position PDF preview"
+              className="min-h-[70vh] w-full flex-1 border-0 bg-slate-100"
+            />
+          </div>
+        </div>
+      )}
+
+      {backPdfPreviewOpen && backPdfPreviewUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="child-detail-back-pdf-preview-title"
+        >
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/50"
+            onClick={closeBackPdfPreview}
+            aria-label="Close back PDF preview"
+          />
+          <div className="relative z-10 flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+            <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-3">
+              <h2 id="child-detail-back-pdf-preview-title" className="text-sm font-semibold text-slate-800">
+                Back PDF preview
+              </h2>
+              <button
+                type="button"
+                onClick={closeBackPdfPreview}
+                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Close
+              </button>
+            </div>
+            <iframe
+              src={backPdfPreviewUrl}
+              title="Back field position PDF preview"
+              className="min-h-[70vh] w-full flex-1 border-0 bg-slate-100"
+            />
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <h1 className="text-2xl font-semibold text-slate-800">
           {child.last_name}, {child.first_name} {child.middle_name || ''}
@@ -235,27 +370,27 @@ export function ChildDetail() {
           >
             Print certification
           </Link>
-          <Link hiddento={`${basePath}/${id}/field-position`} className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">here
+          <Link hidden to={`${basePath}/${id}/field-position`} className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">here
           </Link>
-          <Link to={`${basePath}/${id}/field-position-back`} className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">here back
+          <Link hidden to={`${basePath}/${id}/field-position-back`} className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">here back
           </Link>
           <button
             type="button"
-            onClick={handleSavePdf}
+            onClick={() => setFrontPdfMenuOpen(true)}
             disabled={!isChecklistComplete}
             title={!isChecklistComplete ? 'Complete the document checklist first' : undefined}
             className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white"
           >
-            Save Front as PDF
+            Front PDF
           </button>
           <button
             type="button"
-            onClick={handleSavePdfBack}
+            onClick={() => setBackPdfMenuOpen(true)}
             disabled={!isChecklistComplete}
             title={!isChecklistComplete ? 'Complete the document checklist first' : undefined}
             className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white"
           >
-            Save Back as PDF
+            Back PDF
           </button>
           <button
             type="button"
@@ -519,6 +654,136 @@ export function ChildDetail() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {frontPdfMenuOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50"
+          onClick={() => !frontPdfSaving && setFrontPdfMenuOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="front-pdf-menu-title"
+        >
+          <div
+            className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="border-b border-slate-200 px-6 py-4">
+              <h2 id="front-pdf-menu-title" className="text-lg font-semibold text-slate-800">
+                Front PDF
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Preview and print in the browser, or save a PDF file.
+              </p>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    handlePreviewPdfFront();
+                    setFrontPdfMenuOpen(false);
+                  }}
+                  disabled={frontPdfSaving}
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Print Front
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setFrontPdfSaving(true);
+                    try {
+                      const ok = await handleSavePdf();
+                      if (ok) setFrontPdfMenuOpen(false);
+                    } finally {
+                      setFrontPdfSaving(false);
+                    }
+                  }}
+                  disabled={frontPdfSaving}
+                  className="w-full rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 disabled:opacity-50"
+                >
+                  {frontPdfSaving ? 'Saving…' : 'Save Front as PDF'}
+                </button>
+              </div>
+            </div>
+            <div className="flex justify-end border-t border-slate-200 bg-slate-50/60 px-6 py-4">
+              <button
+                type="button"
+                onClick={() => !frontPdfSaving && setFrontPdfMenuOpen(false)}
+                disabled={frontPdfSaving}
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {backPdfMenuOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50"
+          onClick={() => !backPdfSaving && setBackPdfMenuOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="back-pdf-menu-title"
+        >
+          <div
+            className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="border-b border-slate-200 px-6 py-4">
+              <h2 id="back-pdf-menu-title" className="text-lg font-semibold text-slate-800">
+                Back PDF
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Preview and print in the browser, or save a PDF file.
+              </p>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    handlePreviewPdfBack();
+                    setBackPdfMenuOpen(false);
+                  }}
+                  disabled={backPdfSaving}
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Print Back
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setBackPdfSaving(true);
+                    try {
+                      const ok = await handleSavePdfBack();
+                      if (ok) setBackPdfMenuOpen(false);
+                    } finally {
+                      setBackPdfSaving(false);
+                    }
+                  }}
+                  disabled={backPdfSaving}
+                  className="w-full rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 disabled:opacity-50"
+                >
+                  {backPdfSaving ? 'Saving…' : 'Save Back as PDF'}
+                </button>
+              </div>
+            </div>
+            <div className="flex justify-end border-t border-slate-200 bg-slate-50/60 px-6 py-4">
+              <button
+                type="button"
+                onClick={() => !backPdfSaving && setBackPdfMenuOpen(false)}
+                disabled={backPdfSaving}
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}

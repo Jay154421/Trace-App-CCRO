@@ -29,6 +29,7 @@ export function PrintCertificate() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [savingPurpose, setSavingPurpose] = useState(false);
+  const [savingPdf, setSavingPdf] = useState(false);
   const {
     url: pdfPreviewUrl,
     isOpen: pdfPreviewOpen,
@@ -179,6 +180,44 @@ export function PrintCertificate() {
     }
   }, [child, cert, paperSize, openPreview]);
 
+  const handleSavePdf = useCallback(async () => {
+    if (!child) {
+      toast.error("Applicant data is not loaded.");
+      return;
+    }
+    if (!window.electron?.saveFieldPositionPdf) {
+      toast.error("Save PDF is available in the desktop app.");
+      return;
+    }
+    setSavingPdf(true);
+    try {
+      const base64 = await buildCertificationLetterPdfBase64(child, cert, {
+        format: paperSize,
+      });
+      if (!base64) {
+        toast.error("Could not generate PDF.");
+        return;
+      }
+      const parts = [child.last_name, child.first_name, child.middle_name].filter(
+        (p) => p && String(p).trim(),
+      );
+      const rawName = parts.join(" ");
+      const sanitized =
+        rawName.replace(/[\\/:*?"<>|]/g, "").replace(/\s+/g, " ").trim().slice(0, 120) || "Applicant";
+      const formatLabel =
+        paperSize === CERTIFICATION_PDF_PAGE_FORMAT.A4 ? "A4" : "Long";
+      const suggestedFilename = `Certification-${sanitized}-${formatLabel}.pdf`;
+      const result = await window.electron.saveFieldPositionPdf(base64, suggestedFilename);
+      if (result?.ok) {
+        toast.success("PDF saved.");
+      }
+    } catch (err) {
+      toast.error(err?.message || "Failed to save PDF.");
+    } finally {
+      setSavingPdf(false);
+    }
+  }, [child, cert, paperSize]);
+
   if (loading) return <p className="text-slate-500 p-4">Loading…</p>;
   if (error)
     return (
@@ -229,7 +268,7 @@ export function PrintCertificate() {
             </div>
             <iframe
               src={pdfPreviewUrl}
-              title="Field position PDF preview"
+              title="Certification letter PDF preview"
               className="min-h-[70vh] w-full flex-1 border-0 bg-slate-100"
             />
           </div>
@@ -277,6 +316,14 @@ export function PrintCertificate() {
               className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
             >
               Preview PDF
+            </button>
+            <button
+              type="button"
+              onClick={handleSavePdf}
+              disabled={savingPdf}
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {savingPdf ? "Saving…" : "Save PDF"}
             </button>
           </div>
         </div>
