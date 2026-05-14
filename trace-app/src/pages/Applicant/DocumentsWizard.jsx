@@ -26,6 +26,9 @@ const DOCUMENT_LANDSCAPE_ASPECT = 16 / 10;
 /** How long the red loading toast stays visible before auto-dismiss. */
 const REMOVE_ATTACHMENT_LOADING_MS = 5000;
 
+/** Pause (ms) after the last checklist edit before auto-save runs. */
+const AUTO_SAVE_DEBOUNCE_MS = 1500;
+
 /** Custom red loading toast with animated spinner (auto-dismisses). */
 function showRemoveAttachmentLoadingToast() {
   return toast.custom(
@@ -61,6 +64,36 @@ function parseAttachments(attachment) {
 
 function hasAnyAttachments(item) {
   return (item.attachmentFiles?.length ?? 0) > 0 || (item.attachmentFilenames?.length ?? 0) > 0;
+}
+
+/**
+ * After a save, re-apply edits made while the request was in flight.
+ * `uploadedFromSnapshot` is the checklist state at save start: same File references must not be
+ * re-staged (React state still holds them until setState), or auto-save would stay "dirty" forever.
+ */
+function mergeServerRebuiltWithLocalEdits(rebuilt, local, uploadedFromSnapshot) {
+  const snapByKey = new Map(
+    (uploadedFromSnapshot || []).map((c) => [`${c.category}:${c.label}`, c])
+  );
+  const localByKey = new Map((local || []).map((c) => [`${c.category}:${c.label}`, c]));
+  return rebuilt.map((item) => {
+    const key = `${item.category}:${item.label}`;
+    const loc = localByKey.get(key);
+    if (!loc) return item;
+    const snapFiles = snapByKey.get(key)?.attachmentFiles || [];
+    const staged = (loc.attachmentFiles || []).filter((file) => !snapFiles.includes(file));
+    const notes =
+      loc.notes !== undefined && String(loc.notes) !== String(item.notes ?? '')
+        ? loc.notes
+        : item.notes;
+    if (staged.length === 0 && notes === item.notes) return item;
+    const next = { ...item, notes };
+    if (staged.length > 0) {
+      next.attachmentFiles = staged;
+      next.checked = hasAnyAttachments(next) ? 1 : 0;
+    }
+    return next;
+  });
 }
 
 function toSafeFilenamePart(value) {
@@ -402,6 +435,8 @@ export function DocumentsWizard() {
   /** Pending confirmation before removing an attachment (pending upload or saved file). */
   const [removeAttachmentModal, setRemoveAttachmentModal] = useState(null);
   const [initialChecklist, setInitialChecklist] = useState(null);
+  const checklistRef = useRef(checklist);
+  checklistRef.current = checklist;
   const [cameraOpen, setCameraOpen] = useState(false);
   const [cameraBusy, setCameraBusy] = useState(false);
   const [cameraError, setCameraError] = useState('');
@@ -573,53 +608,70 @@ export function DocumentsWizard() {
     }
   };
 
-  const save = async () => {
-    if (!id) {
-      toast.error('Missing applicant ID.');
-      return;
-    }
-    setSaving(true);
-    const items = await Promise.all(
-      checklist.map(async (c) => {
-        const item = {
-          category: c.category || 'general',
-          label: c.label || '',
-          required: Boolean(c.required),
-          checked: hasAnyAttachments(c),
-          notes: c.notes ?? '',
-          attachmentFilenames: c.attachmentFilenames || [],
-        };
-        const newFiles = c.attachmentFiles || [];
-        if (newFiles.length > 0) {
-          item.attachments = await Promise.all(
-            newFiles.map(async (file) => ({
-              attachmentBase64: await fileToBase64(file),
-              attachmentFilename: file.name,
-            }))
-          );
-        }
-        return item;
-      })
-    );
-    return childrenApi
-      .updateChecklist(id, items)
-      .then(async () => {
+  const persistChecklist = useCallback(
+    async ({ silent = false } = {}) => {
+      if (!id) {
+        if (!silent) toast.error('Missing applicant ID.');
+        return;
+      }
+      const snapshot = checklistRef.current;
+      setSaving(true);
+      try {
+        const items = await Promise.all(
+          snapshot.map(async (c) => {
+            const item = {
+              category: c.category || 'general',
+              label: c.label || '',
+              required: Boolean(c.required),
+              checked: hasAnyAttachments(c),
+              notes: c.notes ?? '',
+              attachmentFilenames: c.attachmentFilenames || [],
+            };
+            const newFiles = c.attachmentFiles || [];
+            if (newFiles.length > 0) {
+              item.attachments = await Promise.all(
+                newFiles.map(async (file) => ({
+                  attachmentBase64: await fileToBase64(file),
+                  attachmentFilename: file.name,
+                }))
+              );
+            }
+            return item;
+          })
+        );
+        await childrenApi.updateChecklist(id, items);
         const refreshed = await childrenApi.get(id);
         setChild(refreshed);
-        const rebuilt = buildChecklist(refreshed.requirements || { all: [] }, refreshed.checklist || [], refreshed);
-        setChecklist(rebuilt);
+        const rebuilt = buildChecklist(
+          refreshed.requirements || { all: [] },
+          refreshed.checklist || [],
+          refreshed
+        );
+        const merged = mergeServerRebuiltWithLocalEdits(rebuilt, checklistRef.current, snapshot);
+        setChecklist(merged);
         setInitialChecklist(rebuilt);
-        toast.success('Checklist saved.');
-      })
-      .catch((err) => {
+        if (!silent) toast.success('Checklist saved.');
+      } catch (err) {
         toast.error(err?.message || 'Failed to save checklist.');
         throw err;
-      })
-      .finally(() => setSaving(false));
-  };
+      } finally {
+        setSaving(false);
+      }
+    },
+    [id]
+  );
+
+  useEffect(() => {
+    if (loading || !id || !initialChecklist || saving) return undefined;
+    if (!hasUnsavedChanges) return undefined;
+    const timer = window.setTimeout(() => {
+      void persistChecklist({ silent: true }).catch(() => {});
+    }, AUTO_SAVE_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [checklist, loading, id, initialChecklist, hasUnsavedChanges, persistChecklist, saving]);
 
   const saveAndLeave = () => {
-    save().then(() => {
+    persistChecklist({ silent: false }).then(() => {
       if (blocker.state === 'blocked') {
         blocker.proceed();
       }
@@ -1288,15 +1340,7 @@ export function DocumentsWizard() {
         </ul>
       </section>
 
-      <div className="mt-6 flex gap-3">
-        <button
-          type="button"
-          onClick={save}
-          disabled={saving}
-          className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
-        >
-          {saving ? 'Saving…' : 'Save checklist'}
-        </button>
+      <div className="mt-6 flex flex-wrap items-center gap-3">
         <button
           type="button"
           onClick={handleBackClick}
@@ -1304,7 +1348,15 @@ export function DocumentsWizard() {
         >
           Back to applicant
         </button>
+        {saving ? (
+          <span className="text-sm text-slate-500" role="status" aria-live="polite">
+            Saving…
+          </span>
+        ) : null}
       </div>
+      <p className="mt-2 text-sm text-slate-500 max-w-xl">
+        Edits save automatically about {AUTO_SAVE_DEBOUNCE_MS / 1000} seconds after you stop changing the checklist.
+      </p>
 
       {removeAttachmentModal && (
         <div
@@ -1324,8 +1376,8 @@ export function DocumentsWizard() {
             <p className="mt-2 text-sm text-slate-600">
               <span className="font-medium text-slate-800">{removeAttachmentModal.displayName}</span>
               {removeAttachmentModal.kind === 'pending'
-                ? ' will be removed from this requirement. It is not saved until you save the checklist.'
-                : ' will be removed from this requirement. Save the checklist to apply this change permanently.'}
+                ? ' will be removed from this requirement. Changes apply on the next save (including automatic save after you pause editing).'
+                : ' will be removed from this requirement on the next save (including automatic save after you pause editing).'}
             </p>
             <div className="mt-5 flex flex-wrap justify-end gap-2">
               <button
@@ -1363,7 +1415,7 @@ export function DocumentsWizard() {
               Save changes?
             </h2>
             <p className="mt-2 text-sm text-slate-600">
-              You are leaving the page without saving your changes.
+              You are leaving while the checklist still has changes that have not finished saving. Wait a moment for saving to finish, or choose whether to discard.
             </p>
             <div className="flex flex-col gap-3 mt-5">
               <button
@@ -1371,7 +1423,7 @@ export function DocumentsWizard() {
                 onClick={() => saveAndLeave()}
                 className="w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
               >
-                Save Changes
+                Save and leave
               </button>
               <button
                 type="button"
