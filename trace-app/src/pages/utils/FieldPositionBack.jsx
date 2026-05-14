@@ -88,7 +88,7 @@ const FIELD_POSITIONS = {
     dra_citizenship: { x: 1062, y: 2313, width: 852 },
     dra_marriage_date: { x: 1261, y: 2405, width: 483 },
     dra_marriage_place: { x: 1854, y: 2405, width: 411 },
-    dra_father_name: { x: 1521, y: 2610, width: 723 },
+    dra_father_name: { x: 1521, y: 2630, width: 723 },
     dra_delay_reason: { x: 1488, y: 2706, width: 777 },
     dra_spouse_name: { x: 1192, y: 2848, width: 732 },
     dra_relationship: { x: 1521, y: 2938, width: 402 },
@@ -120,21 +120,24 @@ const FIELD_POSITIONS = {
     dra_rad_marital_divorced: { x: 1875, y: 1653 },
     dra_rad_marital_widow: { x: 2007, y: 1653 },
     dra_rad_marital_widower: { x: 2136, y: 1653 },
-    dra_rad_attended_i: { x: 495, y: 2208 },
+    dra_rad_attended_i: { x: 481, y: 2208 },
     dra_rad_attended_he: { x: 531, y: 2208 },
     dra_rad_attended_she: { x: 570, y: 2208 },
     dra_rad_citizen_i: { x: 531, y: 2349 },
     dra_rad_citizen_he: { x: 588, y: 2349 },
     dra_rad_citizen_she: { x: 648, y: 2349 },
-    dra_rad_parents_my: { x: 483, y: 2490 },
-    dra_rad_parents_his: { x: 555, y: 2490 },
-    dra_rad_parents_her: { x: 624, y: 2490 },
+    dra_rad_parents_my: { x: 483, y: 2442 },
+    dra_rad_parents_his: { x: 555, y: 2442 },
+    dra_rad_parents_her: { x: 624, y: 2442 },
     dra_rad_nm_ack_my: { x: 1311, y: 2586 },
     dra_rad_nm_ack_his: { x: 1344, y: 2586 },
     dra_rad_nm_ack_her: { x: 1416, y: 2586 },
     dra_rad_nm_nack_my: { x: 2124, y: 2586 },
     dra_rad_nm_nack_his: { x: 2172, y: 2586 },
     dra_rad_nm_nack_her: { x: 2220, y: 2586 },
+    /** Underline for “acknowledged” / “not acknowledged” (not married row) */
+    dra_rad_not_married_acknowledged: { x: 1593, y: 2586 },
+    dra_rad_not_married_not_acknowledged: { x: 1911, y: 2586 },
     dra_rad_delay_my: { x: 1143, y: 2727 },
     dra_rad_delay_his: { x: 1191, y: 2727 },
     dra_rad_delay_her: { x: 1263, y: 2727 },
@@ -599,11 +602,16 @@ function getDraRadioMarkEntries(dra) {
         entries.push({ show: true, key: delay[pn] });
     }
 
-    if (d.isNotMarried && d.notMarriedAcknowledged === true && nmAck[pn]) {
+    // Not-married row: PDF shows three strokes — left/right possessive blanks plus chosen ack/nack.
+    if (d.isNotMarried && d.notMarriedAcknowledged === true && nmAck[pn] && nmNack[pn]) {
         entries.push({ show: true, key: nmAck[pn] });
-    }
-    if (d.isNotMarried && d.notMarriedAcknowledged === false && nmNack[pn]) {
         entries.push({ show: true, key: nmNack[pn] });
+        entries.push({ show: true, key: 'dra_rad_not_married_acknowledged' });
+    }
+    if (d.isNotMarried && d.notMarriedAcknowledged === false && nmAck[pn] && nmNack[pn]) {
+        entries.push({ show: true, key: nmAck[pn] });
+        entries.push({ show: true, key: nmNack[pn] });
+        entries.push({ show: true, key: 'dra_rad_not_married_not_acknowledged' });
     }
 
     return entries;
