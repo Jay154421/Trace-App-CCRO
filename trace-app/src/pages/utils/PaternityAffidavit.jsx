@@ -36,6 +36,25 @@ function formatLongUpperDate(yi, mi, di) {
   return `${month} ${di}, ${yi}`;
 }
 
+/** e.g. APRIL 14, 2026 — from ISO (YYYY-MM-DD) or parseable date strings. */
+function toUpperLongDate(rawDate) {
+  if (!rawDate) return '';
+  const trimmed = String(rawDate).trim();
+  if (/^[A-Z]+\s+\d{1,2},\s+\d{4}$/.test(trimmed)) return trimmed;
+
+  const isoMatch = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(trimmed);
+  if (isoMatch) {
+    const yi = Number(isoMatch[1]);
+    const mi = Number(isoMatch[2]);
+    const di = Number(isoMatch[3]);
+    return formatLongUpperDate(yi, mi, di);
+  }
+
+  const date = new Date(trimmed);
+  if (Number.isNaN(date.getTime())) return '';
+  return formatLongUpperDate(date.getFullYear(), date.getMonth() + 1, date.getDate());
+}
+
 function getAutocompleteLabelSuggestions(query, suggestionOptions, maxRows = 40, includeNotApplicable = true) {
   const q = String(query || '').trim().toUpperCase();
   const base = Array.isArray(suggestionOptions) ? suggestionOptions : [];
@@ -247,7 +266,12 @@ export function PaternityAffidavit() {
           ? data.certificate_of_live_birth
           : null;
         setCertificate(cert);
-        setForm(prev => ({ ...prev, ...stored }));
+        setForm((prev) => {
+          const merged = { ...prev, ...stored };
+          const dob = toUpperLongDate(merged.dob) || merged.dob;
+          const issuedOn = toUpperLongDate(merged.issuedOn) || merged.issuedOn;
+          return { ...merged, dob, issuedOn };
+        });
       })
       .catch(() => toast.error('Failed to load child data'))
       .finally(() => setLoading(false));
@@ -401,8 +425,8 @@ export function PaternityAffidavit() {
           <div className="flex flex-wrap items-baseline gap-2">
             <span>born on</span>
             <FormTextCombo
-              value={form.dob}
-              onInputChange={(v) => update('dob', v)}
+              value={toUpperLongDate(form.dob) || form.dob}
+              onInputChange={(v) => update('dob', toUpperLongDate(v) || v)}
               suggestionOptions={dropdownOptions.dob}
               placeholder="(Date of birth)"
               width="w-48"
@@ -492,7 +516,12 @@ export function PaternityAffidavit() {
               <span>CTC/Valid ID -</span>
               <FormLine value={form.ctcNo} onChange={v => update('ctcNo', v)} placeholder="(CTC / Valid ID no.)" width="w-48" />
               <span>issued on</span>
-              <FormLine value={form.issuedOn} onChange={v => update('issuedOn', v)} placeholder="(Date issued)" width="w-48" />
+              <FormLine
+                value={toUpperLongDate(form.issuedOn) || form.issuedOn}
+                onChange={v => update('issuedOn', toUpperLongDate(v) || v)}
+                placeholder="(Date issued)"
+                width="w-48"
+              />
               <span>at</span>
             </div>
 

@@ -1,6 +1,56 @@
 const { app, BrowserWindow, ipcMain, dialog, nativeImage, Menu } = require('electron');
+const { execFile } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+
+function findEdgeExecutable() {
+  const localAppData = process.env.LOCALAPPDATA;
+  const candidates = [
+    localAppData && path.join(localAppData, 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
+    'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+    'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
+  ].filter(Boolean);
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) return candidate;
+  }
+  return null;
+}
+
+/** Open a local PDF in Microsoft Edge (Windows `start` is most reliable). */
+function openPdfInEdge(filePath) {
+  return new Promise((resolve) => {
+    if (typeof filePath !== 'string' || !filePath.trim()) {
+      resolve({ ok: false, error: 'No file path provided.' });
+      return;
+    }
+    const normalized = path.normalize(filePath.trim());
+    if (!fs.existsSync(normalized)) {
+      resolve({ ok: false, error: 'PDF file not found.' });
+      return;
+    }
+    const edge = findEdgeExecutable();
+    if (!edge) {
+      resolve({ ok: false, error: 'Microsoft Edge was not found on this computer.' });
+      return;
+    }
+    // `start "" "msedge.exe" "file.pdf"` — works with paths that contain spaces
+    execFile('cmd.exe', ['/c', 'start', '', edge, normalized], { windowsHide: true }, (err) => {
+      if (err) {
+        execFile(edge, [normalized], { windowsHide: true }, (err2) => {
+          resolve(
+            err2
+              ? { ok: false, error: err2.message || 'Could not open in Microsoft Edge.' }
+              : { ok: true }
+          );
+        });
+        return;
+      }
+      resolve({ ok: true });
+    });
+  });
+}
+
+ipcMain.handle('open-pdf-in-edge', (_event, filePath) => openPdfInEdge(filePath));
 
 const isDev = process.env.ELECTRON_DEV === '1' || !app.isPackaged;
 

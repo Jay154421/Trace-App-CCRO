@@ -61,9 +61,27 @@ function parseChildCityProvince(child) {
   return { city: '', province: '' };
 }
 
+/** e.g. APRIL 12, 2026 — from ISO (YYYY-MM-DD) or parseable date strings. */
 function toUpperLongDate(rawDate) {
   if (!rawDate) return '';
-  const date = new Date(rawDate);
+  const trimmed = String(rawDate).trim();
+  if (/^[A-Z]+\s+\d{1,2},\s+\d{4}$/.test(trimmed)) return trimmed;
+
+  const isoMatch = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(trimmed);
+  if (isoMatch) {
+    const yi = Number(isoMatch[1]);
+    const mi = Number(isoMatch[2]);
+    const di = Number(isoMatch[3]);
+    const date = new Date(yi, mi - 1, di);
+    if (date.getFullYear() !== yi || date.getMonth() !== mi - 1 || date.getDate() !== di) return '';
+    return date.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    }).toUpperCase();
+  }
+
+  const date = new Date(trimmed);
   if (Number.isNaN(date.getTime())) return '';
   return date.toLocaleDateString('en-US', {
     month: 'long',
@@ -357,7 +375,12 @@ export function DelayedRegistrationAffidavit() {
       .then(data => {
         setChild(data);
         const stored = data.delayed_registration_affidavit || {};
-        setForm((prev) => ({ ...prev, ...stored }));
+        setForm((prev) => {
+          const merged = { ...prev, ...stored };
+          const selfBirthDate = toUpperLongDate(merged.selfBirthDate) || merged.selfBirthDate;
+          const otherBirthDate = toUpperLongDate(merged.otherBirthDate) || merged.otherBirthDate;
+          return { ...merged, selfBirthDate, otherBirthDate };
+        });
       })
       .catch(() => toast.error('Failed to load child data'))
       .finally(() => setLoading(false));
@@ -546,8 +569,8 @@ export function DelayedRegistrationAffidavit() {
                     />
                     <span>on</span>
                     <FormTextCombo
-                      value={form.selfBirthDate}
-                      onInputChange={v => update('selfBirthDate', v)}
+                      value={toUpperLongDate(form.selfBirthDate) || form.selfBirthDate}
+                      onInputChange={v => update('selfBirthDate', toUpperLongDate(v) || v)}
                       suggestionOptions={childDateSuggestions}
                       placeholder="(Date of birth)"
                       width="w-40"
@@ -585,8 +608,8 @@ export function DelayedRegistrationAffidavit() {
                   <div className="flex-1 flex flex-wrap items-baseline gap-2">
                     <span>on</span>
                     <FormTextCombo
-                      value={form.otherBirthDate}
-                      onInputChange={v => update('otherBirthDate', v)}
+                      value={toUpperLongDate(form.otherBirthDate) || form.otherBirthDate}
+                      onInputChange={v => update('otherBirthDate', toUpperLongDate(v) || v)}
                       suggestionOptions={childDateSuggestions}
                       placeholder="(Date of birth)"
                       width="w-40"

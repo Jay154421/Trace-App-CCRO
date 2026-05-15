@@ -26,6 +26,55 @@ import {
   formatApplicantGenderLabel,
 } from '../../utils/applicantForm';
 
+async function openSavedPdfInEdge(filePath) {
+  if (!window.electron?.openPdfInEdge) {
+    return { ok: false, error: 'Open in Edge is available in the desktop app.' };
+  }
+  try {
+    return await window.electron.openPdfInEdge(filePath);
+  } catch (err) {
+    return { ok: false, error: err?.message || 'Could not open in Microsoft Edge.' };
+  }
+}
+
+function showPdfOpenEdgeRetryToast(filePath, label) {
+  toast.custom(
+    (t) => (
+      <div
+        role="button"
+        tabIndex={0}
+        className={`flex max-w-md cursor-pointer items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900 shadow-lg transition-opacity duration-300 ease-out ${t.visible ? 'opacity-100' : 'opacity-0'}`}
+        onClick={async () => {
+          toast.dismiss(t.id);
+          const result = await openSavedPdfInEdge(filePath);
+          if (!result?.ok) {
+            toast.error(result?.error || 'Could not open in Microsoft Edge.');
+          }
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            e.currentTarget.click();
+          }
+        }}
+      >
+        {label} saved. Click here to open in Microsoft Edge.
+      </div>
+    ),
+    { duration: 12000 }
+  );
+}
+
+async function onPdfSavedOpenInEdge(filePath, label) {
+  const openResult = await openSavedPdfInEdge(filePath);
+  if (openResult?.ok) {
+    toast.success(`${label} saved and opened in Microsoft Edge.`, { duration: 5000 });
+    return;
+  }
+  toast.error(openResult?.error || 'PDF saved but could not open in Microsoft Edge.');
+  showPdfOpenEdgeRetryToast(filePath, label);
+}
+
 export function ChildDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -157,7 +206,7 @@ export function ChildDetail() {
       const suggestedFilename = buildPdfFilename(child, cert);
       const result = await window.electron.saveFieldPositionPdf(base64, suggestedFilename);
       if (result?.ok) {
-        toast.success('PDF saved.');
+        await onPdfSavedOpenInEdge(result.filePath, 'Front PDF');
         return true;
       }
       return false;
@@ -213,7 +262,7 @@ export function ChildDetail() {
       const suggestedFilename = `BACK-${buildBackPdfFilename(child, cert)}`;
       const result = await window.electron.saveFieldPositionPdf(base64, suggestedFilename);
       if (result?.ok) {
-        toast.success('Back PDF saved.');
+        await onPdfSavedOpenInEdge(result.filePath, 'Back PDF');
         return true;
       }
       return false;
