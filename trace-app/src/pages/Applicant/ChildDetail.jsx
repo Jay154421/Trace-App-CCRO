@@ -426,6 +426,27 @@ export function ChildDetail() {
             Delayed Birth Affidavit
           </Link>
           <Link
+            to={`${basePath}/${id}/ausf-0-6`}
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            title="Affidavit to Use Surname of the Father — child 0–6 years (data from Certificate of Live Birth)"
+          >
+            AUSF (0–6)
+          </Link>
+          <Link
+            to={`${basePath}/${id}/ausf-07-17`}
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            title="Affidavit to Use Surname of the Father — minor 7–17 years (data from Certificate of Live Birth)"
+          >
+            AUSF (7–17)
+          </Link>
+          <Link
+            to={`${basePath}/${id}/ausf-only`}
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            title="Affidavit to Use Surname of the Father — adult / self (data from Certificate of Live Birth)"
+          >
+            AUSF (Adult)
+          </Link>
+          <Link
             to={`${basePath}/${id}/print-certificate`}
             className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >

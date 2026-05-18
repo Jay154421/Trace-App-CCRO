@@ -10,3 +10,41 @@ body {
 *:focus-visible {
   @apply outline-2 outline-offset-2 outline-emerald-500;
 }
+
+/* AUSF print documents (long bond) */
+.fill-blank {
+  @apply inline-block border-b border-black align-baseline;
+}
+
+.affiant-name-bold-underline .affiant-name-inner {
+  @apply font-bold underline decoration-1 underline-offset-2;
+}
+
+.empty-blank:empty::before {
+  content: '\00a0';
+}
+
+@media print {
+  @page {
+    size: 8.5in 13in;
+    margin: 0.35in;
+  }
+
+  aside[aria-label='Main navigation'] {
+    display: none !important;
+  }
+
+  .ausf-print-page > header {
+    display: none !important;
+  }
+
+  .print-doc {
+    box-shadow: none !important;
+  }
+
+  /* Keep AUSF on one sheet; avoid splitting the form across pages when possible */
+  .ausf-print-page .ausf-doc.print-doc {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}

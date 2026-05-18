@@ -17,6 +17,10 @@ import { FieldPositionBack } from './pages/utils/FieldPositionBack';
 import { PaternityAffidavit } from './pages/utils/PaternityAffidavit';
 import { DelayedRegistrationAffidavit } from './pages/utils/DelayedRegistrationAffidavit';
 import { PrintCertificate } from './pages/utils/PrintCertificate';
+import { AusfPrint } from './pages/utils/AusfPrint';
+import { AUSF_06_PRINT_TYPE } from './pages/utils/ausf1';
+import { AUSF_0717_PRINT_TYPE } from './pages/utils/ausf2';
+import { AUSF_ONLY_PRINT_TYPE } from './pages/utils/ausf3';
 import { Login } from './pages/Login';
 
 function RequireAuth({ children }) {
@@ -50,6 +54,9 @@ export const router = createBrowserRouter(
         <Route path="/children/:id/paternity-affidavit" element={<PaternityAffidavit />} />
         <Route path="/children/:id/delayed-registration-affidavit" element={<DelayedRegistrationAffidavit />} />
         <Route path="/children/:id/print-certificate" element={<PrintCertificate />} />
+        <Route path="/children/:id/ausf-0-6" element={<AusfPrint variant={AUSF_06_PRINT_TYPE} />} />
+        <Route path="/children/:id/ausf-07-17" element={<AusfPrint variant={AUSF_0717_PRINT_TYPE} />} />
+        <Route path="/children/:id/ausf-only" element={<AusfPrint variant={AUSF_ONLY_PRINT_TYPE} />} />
         <Route path="/colb-brap" element={<ChildList />} />
         <Route path="/colb-brap/new" element={<ChildForm />} />
         <Route path="/colb-brap/:id" element={<ChildDetail />} />
@@ -61,6 +68,9 @@ export const router = createBrowserRouter(
         <Route path="/colb-brap/:id/paternity-affidavit" element={<PaternityAffidavit />} />
         <Route path="/colb-brap/:id/delayed-registration-affidavit" element={<DelayedRegistrationAffidavit />} />
         <Route path="/colb-brap/:id/print-certificate" element={<PrintCertificate />} />
+        <Route path="/colb-brap/:id/ausf-0-6" element={<AusfPrint variant={AUSF_06_PRINT_TYPE} />} />
+        <Route path="/colb-brap/:id/ausf-07-17" element={<AusfPrint variant={AUSF_0717_PRINT_TYPE} />} />
+        <Route path="/colb-brap/:id/ausf-only" element={<AusfPrint variant={AUSF_ONLY_PRINT_TYPE} />} />
       </Route>
     </>
   )

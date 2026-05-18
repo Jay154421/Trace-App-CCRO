@@ -389,9 +389,9 @@ export function DelayedRegistrationAffidavit() {
   useEffect(() => {
     if (loading || !id) return;
     const timeout = setTimeout(() => {
-      childrenApi.updateDelayedRegistrationAffidavit(id, form)
-        .then(() => toast.success('Saved', { id: 'delayed-save' }))
-        .catch(() => {});
+      childrenApi.updateDelayedRegistrationAffidavit(id, form).catch((err) => {
+        toast.error(err?.message || 'Failed to save affidavit.');
+      });
     }, 1000);
     return () => clearTimeout(timeout);
   }, [form, id, loading]);
@@ -408,10 +408,14 @@ export function DelayedRegistrationAffidavit() {
       if (!container) return;
 
       const focusable = Array.from(
-        container.querySelectorAll('input:not([disabled]), select:not([disabled]), textarea:not([disabled])')
+        container.querySelectorAll(
+          'input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled])',
+        ),
       ).filter((el) => {
-        const isVisible = el.offsetWidth > 0 || el.offsetHeight > 0;
-        return el.tabIndex >= 0 && isVisible;
+        if (el.getAttribute('tabindex') === '-1') return false;
+        const style = window.getComputedStyle(el);
+        if (style.display === 'none' || style.visibility === 'hidden') return false;
+        return el.offsetWidth > 0 || el.offsetHeight > 0 || el === document.activeElement;
       });
 
       const index = focusable.indexOf(e.target);
