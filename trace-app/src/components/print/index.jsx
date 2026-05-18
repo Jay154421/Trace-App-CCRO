@@ -34,16 +34,14 @@ export function DocumentHeader({ registryNo, juratBlock }) {
   );
 }
 
-export function DocumentFooter({ contactPhone, contactEmail }) {
-  const phone = String(contactPhone || '(063) 228-1311').trim();
-  const email = String(contactEmail || 'civilregistrar.iligan@gmail.com').trim();
+export function DocumentFooter() {
 
   return (
     <footer className="print-doc-footer mt-3 flex flex-wrap items-end justify-between gap-3 border-t border-black pt-2 text-[10pt] leading-snug">
       <div>
         <p className="m-0 font-bold">CONTACT DETAILS:</p>
-        <p className="m-0">Telephone No.: {phone}</p>
-        <p className="m-0">Email: {email}</p>
+        <p className="m-0">Telephone No.: (063) 228-1311</p>
+        <p className="m-0">Email: civilregistrar.iligan@gmail.com</p>
       </div>
       <div className="text-right italic text-blue-700">
         <p className="m-0">Births, Marriages and Deaths matter,</p>

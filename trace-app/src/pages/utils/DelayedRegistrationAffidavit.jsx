@@ -13,6 +13,9 @@ const MARITAL_STATUS_OPTIONS = ['SINGLE', 'MARRIED', 'DIVORCED', 'WIDOW', 'WIDOW
 /** Subject pronoun in items 2–5 (I = self; HE/SHE = child/registrant as third person). Stored uppercase. */
 const AFFIANT_PRONOUN_OPTIONS = ['I', 'HE', 'SHE'];
 
+/** Item 5 — common reason for delayed birth registration. */
+const DELAY_REASON_SUGGESTIONS = ['OVERSIGHT','NEGLIGENCE TO REGISTER AT THE TIME OF BIRTH'];
+
 function pronounWas(subject) {
   const u = asUpper(subject);
   if (u === 'I' || u === 'HE' || u === 'SHE') return u;
@@ -797,7 +800,13 @@ export function DelayedRegistrationAffidavit() {
               <span>
                 That the reason for the delay in registering {pronounPossessive(form.affiantPronoun) || 'my/his/her'} birth was
               </span>
-              <FormLine value={form.delayReason} onChange={v => update('delayReason', v)} placeholder="(Reason for delay)" width="flex-1" />
+              <FormLine
+                value={form.delayReason}
+                onChange={v => update('delayReason', v)}
+                placeholder="(Reason for delay)"
+                width="flex-1"
+                suggestionOptions={DELAY_REASON_SUGGESTIONS}
+              />
             </div>
 
             <div className="flex flex-wrap items-baseline gap-2">
