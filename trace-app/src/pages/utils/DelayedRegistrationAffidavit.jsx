@@ -468,6 +468,31 @@ export function DelayedRegistrationAffidavit() {
     [registeredPositionSuggestion],
   );
   const commonPlaceSuggestions = useMemo(() => ['ILIGAN CITY, LANAO DEL NORTE'], []);
+
+  const dateNowSuggestions = useMemo(() => {
+    const now = new Date();
+    const day = now.getDate();
+    const getOrdinal = (d) => {
+      const j = d % 10;
+      const k = d % 100;
+      if (j === 1 && k !== 11) return `${d}ST`;
+      if (j === 2 && k !== 12) return `${d}ND`;
+      if (j === 3 && k !== 13) return `${d}RD`;
+      return `${d}TH`;
+    };
+    const dayStr = String(day);
+    const dayOrdinal = getOrdinal(day);
+    const monthStr = now.toLocaleString('en-US', { month: 'long' }).toUpperCase();
+    const yearStr = String(now.getFullYear());
+    const formattedDate = `${monthStr} ${day}, ${yearStr}`;
+    return {
+      day: [dayStr, dayOrdinal],
+      month: [monthStr],
+      year: [yearStr],
+      issuedOn: [formattedDate],
+    };
+  }, []);
+
   const certMarriageDateSuggestions = useMemo(() => {
     const c =
       child?.certificate_of_live_birth && typeof child.certificate_of_live_birth === 'object'
@@ -793,9 +818,21 @@ export function DelayedRegistrationAffidavit() {
           <div className="mt-8 space-y-4">
             <div className="flex flex-wrap items-baseline gap-2">
               <span>In truth whereof, I have affixed my signature below this</span>
-              <FormLine value={form.affixedDay} onChange={v => update('affixedDay', v)} placeholder="(Day)" width="w-16" />
+              <FormLine
+                value={form.affixedDay}
+                onChange={v => update('affixedDay', v)}
+                placeholder="(Day)"
+                width="w-16"
+                suggestionOptions={dateNowSuggestions.day}
+              />
               <span>day of</span>
-              <FormLine value={form.affixedMonth} onChange={v => update('affixedMonth', v)} placeholder="(Month)" width="w-32" />
+              <FormLine
+                value={form.affixedMonth}
+                onChange={v => update('affixedMonth', v)}
+                placeholder="(Month)"
+                width="w-32"
+                suggestionOptions={dateNowSuggestions.month}
+              />
             </div>
             <div className="flex flex-wrap items-baseline gap-2">
               <span>at</span>
@@ -830,11 +867,29 @@ export function DelayedRegistrationAffidavit() {
             <div className="flex flex-wrap items-baseline gap-2">
               <span className="font-bold uppercase">Subscribed and Sworn</span>
               <span>to before me this</span>
-              <FormLine value={form.swornDay} onChange={v => update('swornDay', v)} placeholder="(Day)" width="w-16" />
+              <FormLine
+                value={form.swornDay}
+                onChange={v => update('swornDay', v)}
+                placeholder="(Day)"
+                width="w-16"
+                suggestionOptions={dateNowSuggestions.day}
+              />
               <span>day of</span>
-              <FormLine value={form.swornMonth} onChange={v => update('swornMonth', v)} placeholder="(Month)" width="w-32" />
+              <FormLine
+                value={form.swornMonth}
+                onChange={v => update('swornMonth', v)}
+                placeholder="(Month)"
+                width="w-32"
+                suggestionOptions={dateNowSuggestions.month}
+              />
               <span>,</span>
-              <FormLine value={form.swornYear} onChange={v => update('swornYear', v)} placeholder="(Year)" width="w-20" />
+              <FormLine
+                value={form.swornYear}
+                onChange={v => update('swornYear', v)}
+                placeholder="(Year)"
+                width="w-20"
+                suggestionOptions={dateNowSuggestions.year}
+              />
               <span>at</span>
             </div>
             <div className="flex flex-wrap items-baseline gap-2">
@@ -850,7 +905,13 @@ export function DelayedRegistrationAffidavit() {
             <div className="flex flex-wrap items-baseline gap-2">
               <FormLine value={form.ctcNo} onChange={v => update('ctcNo', v)} placeholder="(Community Tax Cert. no.)" width="w-48" />
               <span>issued on</span>
-              <FormLine value={form.issuedOn} onChange={v => update('issuedOn', v)} placeholder="(Date issued)" width="w-48" />
+              <FormLine
+                value={form.issuedOn}
+                onChange={v => update('issuedOn', v)}
+                placeholder="(Date issued)"
+                width="w-48"
+                suggestionOptions={dateNowSuggestions.issuedOn}
+              />
               <span>at</span>
               <FormLine
                 value={form.issuedAt}

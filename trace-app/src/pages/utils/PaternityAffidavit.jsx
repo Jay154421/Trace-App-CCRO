@@ -212,17 +212,26 @@ function FormTextCombo({
   );
 }
 
-function FormLine({ value = '', onChange, placeholder, width = 'flex-1', className = '' }) {
+function FormLine({
+  value = '',
+  onChange,
+  placeholder,
+  width = 'flex-1',
+  className = '',
+  suggestionOptions = [],
+  maxSuggestionRows = 40,
+  includeNotApplicable = true,
+}) {
   return (
     <FormTextCombo
       value={value}
       onInputChange={onChange}
-      suggestionOptions={[]}
+      suggestionOptions={suggestionOptions}
       placeholder={placeholder}
       width={width}
       className={className}
-      includeNotApplicable
-      maxSuggestionRows={1}
+      includeNotApplicable={includeNotApplicable}
+      maxSuggestionRows={maxSuggestionRows}
       ariaLabel={placeholder || 'Text field'}
     />
   );
@@ -328,6 +337,30 @@ export function PaternityAffidavit() {
   }, [certificate]);
 
   const commonPlaceSuggestions = useMemo(() => ['ILIGAN CITY, LANAO DEL NORTE'], []);
+
+  const dateNowSuggestions = useMemo(() => {
+    const now = new Date();
+    const day = now.getDate();
+    const getOrdinal = (d) => {
+      const j = d % 10;
+      const k = d % 100;
+      if (j === 1 && k !== 11) return `${d}ST`;
+      if (j === 2 && k !== 12) return `${d}ND`;
+      if (j === 3 && k !== 13) return `${d}RD`;
+      return `${d}TH`;
+    };
+    const dayStr = String(day);
+    const dayOrdinal = getOrdinal(day);
+    const monthStr = now.toLocaleString('en-US', { month: 'long' }).toUpperCase();
+    const yearStr = String(now.getFullYear());
+    const formattedDate = `${monthStr} ${day}, ${yearStr}`;
+    return {
+      day: [dayStr, dayOrdinal],
+      month: [monthStr],
+      year: [yearStr],
+      issuedOn: [formattedDate],
+    };
+  }, []);
 
   useEffect(() => {
     if (loading || !id) return;
@@ -483,11 +516,29 @@ export function PaternityAffidavit() {
             <div className="flex items-baseline gap-2">
               <span className="font-bold">SUBSCRIBED AND SWORN</span>
               <span>to before me this</span>
-              <FormLine value={form.swornDay} onChange={v => update('swornDay', v)} placeholder="(Day)" width="w-16" />
+              <FormLine
+                value={form.swornDay}
+                onChange={v => update('swornDay', v)}
+                placeholder="(Day)"
+                width="w-16"
+                suggestionOptions={dateNowSuggestions.day}
+              />
               <span>day of</span>
-              <FormLine value={form.swornMonth} onChange={v => update('swornMonth', v)} placeholder="(Month)" width="w-32" />
+              <FormLine
+                value={form.swornMonth}
+                onChange={v => update('swornMonth', v)}
+                placeholder="(Month)"
+                width="w-32"
+                suggestionOptions={dateNowSuggestions.month}
+              />
               <span>,</span>
-              <FormLine value={form.swornYear} onChange={v => update('swornYear', v)} placeholder="(Year)" width="w-20" />
+              <FormLine
+                value={form.swornYear}
+                onChange={v => update('swornYear', v)}
+                placeholder="(Year)"
+                width="w-20"
+                suggestionOptions={dateNowSuggestions.year}
+              />
               <span>by</span>
             </div>
 
@@ -521,6 +572,7 @@ export function PaternityAffidavit() {
                 onChange={v => update('issuedOn', toUpperLongDate(v) || v)}
                 placeholder="(Date issued)"
                 width="w-48"
+                suggestionOptions={dateNowSuggestions.issuedOn}
               />
               <span>at</span>
             </div>
