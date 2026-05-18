@@ -43,9 +43,7 @@ export function Login() {
                 className="h-full w-full object-contain"
               />
             </div>
-            <div className="space-y-1">
-             
-             
+            <div className="space-y-1">   
               <p className="text-[24px] font-semibold tracking-[0.22em] text-white">B-TRACE SYSTEM</p>
               <p className="text-[16px] font-semibold  tracking-[0.10em] text-white/90">Birth Tracking for Registration and Certificate Entries</p>
             </div>

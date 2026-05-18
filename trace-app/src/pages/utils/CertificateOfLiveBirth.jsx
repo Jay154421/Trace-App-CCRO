@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { childrenApi } from '../../services/api';
+import { isTruthyFlag } from '../../utils/applicantForm';
 import regionReligionRows from '../../utils/region_list.json';
 import occupationRows from '../../utils/occupations_list.json';
 import provinceGeoRows from '../../utils/provinces_list.json';
@@ -322,6 +323,45 @@ const PH_GEO_PROVINCE_DATALIST_ID = 'certificate-of-live-birth-ph-province-datal
 const PH_JSON_COUNTRY_DATALIST_ID = 'certificate-of-live-birth-ph-json-country-datalist';
 const GENERIC_NOT_APPLICABLE_DATALIST_ID = 'certificate-of-live-birth-not-applicable-datalist';
 const NOT_APPLICABLE_LABEL = 'NOT APPLICABLE';
+
+function isColbBrapChild(child) {
+  return String(child?.application_type || '').toLowerCase() === 'colb_brap';
+}
+
+function shouldAutoFillMarriageNotApplicable(child) {
+  return isColbBrapChild(child) && !isTruthyFlag(child?.has_marriage_certificate);
+}
+
+function isMarriageNotApplicableValue(value) {
+  return String(value ?? '').trim().toUpperCase() === NOT_APPLICABLE_LABEL;
+}
+
+function applyMarriageNotApplicableFields(cert) {
+  return {
+    ...cert,
+    marriageMonth: NOT_APPLICABLE_LABEL,
+    marriageDay: '',
+    marriageYear: '',
+    marriagePlaceCity: NOT_APPLICABLE_LABEL,
+    marriagePlaceProvince: '',
+    marriagePlaceCountry: '',
+  };
+}
+
+function clearMarriageNotApplicableFields(cert) {
+  const next = { ...cert };
+  if (isMarriageNotApplicableValue(next.marriageMonth)) {
+    next.marriageMonth = '';
+    next.marriageDay = '';
+    next.marriageYear = '';
+  }
+  if (isMarriageNotApplicableValue(next.marriagePlaceCity)) {
+    next.marriagePlaceCity = '';
+    next.marriagePlaceProvince = '';
+    next.marriagePlaceCountry = '';
+  }
+  return next;
+}
 
 /** Deduped PSA locality rows (one per `code`) for city picker internals. */
 function buildPhGeoPickRecords(rows) {
@@ -1486,9 +1526,12 @@ export function CertificateOfLiveBirth() {
         base.certificationPurpose = loadedPurpose || DEFAULT_CERTIFICATION_PURPOSE;
         base.sex = normalizeSexSelectValue(base.sex);
         base.attendantAmpm = normalizeAttendantAmpmValue(base.attendantAmpm);
-        base.marriageMonth = padCertificateMonthDayPart(base.marriageMonth);
-        base.marriageDay = padCertificateMonthDayPart(base.marriageDay);
-        base.marriageYear = certificateYearDigitsOnly(base.marriageYear);
+        const marriageDateIsNa = isMarriageNotApplicableValue(base.marriageMonth);
+        if (!marriageDateIsNa) {
+          base.marriageMonth = padCertificateMonthDayPart(base.marriageMonth);
+          base.marriageDay = padCertificateMonthDayPart(base.marriageDay);
+          base.marriageYear = certificateYearDigitsOnly(base.marriageYear);
+        }
         const savedSex = trimStr(normalizeSexSelectValue(base.sex));
         const fromChild = {
           province: base.province || DEFAULT_PROVINCE,
@@ -1515,7 +1558,10 @@ export function CertificateOfLiveBirth() {
           fromChild.placeOfBirthCity = parsedPlace.city;
           fromChild.placeOfBirthProvince = parsedPlace.province;
         }
-        const merged = { ...base, ...fromChild };
+        let merged = { ...base, ...fromChild };
+        if (shouldAutoFillMarriageNotApplicable(data)) {
+          merged = applyMarriageNotApplicableFields(merged);
+        }
         setForm(merged);
         const phCitySeedKeys = [
           'cityMunicipality',
@@ -1538,6 +1584,32 @@ export function CertificateOfLiveBirth() {
       .catch(setError)
       .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    if (!child || loading) return;
+    if (shouldAutoFillMarriageNotApplicable(child)) {
+      setForm((prev) => {
+        if (
+          isMarriageNotApplicableValue(prev.marriageMonth) &&
+          isMarriageNotApplicableValue(prev.marriagePlaceCity)
+        ) {
+          return prev;
+        }
+        return applyMarriageNotApplicableFields(prev);
+      });
+      return;
+    }
+    if (!isColbBrapChild(child)) return;
+    setForm((prev) => {
+      if (
+        !isMarriageNotApplicableValue(prev.marriageMonth) &&
+        !isMarriageNotApplicableValue(prev.marriagePlaceCity)
+      ) {
+        return prev;
+      }
+      return clearMarriageNotApplicableFields(prev);
+    });
+  }, [child, loading]);
 
   const defaultTitle = 'B-TRACE System';
 
@@ -1581,11 +1653,14 @@ export function CertificateOfLiveBirth() {
 
   const save = useCallback(async () => {
     if (!id) return;
+    const certFields = shouldAutoFillMarriageNotApplicable(child)
+      ? applyMarriageNotApplicableFields(form)
+      : form;
     const payload = {
-      ...form,
-      motherCountry: String(form.motherCountry || '').trim().toUpperCase(),
-      fatherCountry: String(form.fatherCountry || '').trim().toUpperCase(),
-      marriagePlaceCountry: String(form.marriagePlaceCountry || '').trim().toUpperCase(),
+      ...certFields,
+      motherCountry: String(certFields.motherCountry || '').trim().toUpperCase(),
+      fatherCountry: String(certFields.fatherCountry || '').trim().toUpperCase(),
+      marriagePlaceCountry: String(certFields.marriagePlaceCountry || '').trim().toUpperCase(),
     };
     if (JSON.stringify(payload) === lastSavedRef.current) return;
     lastSavedRef.current = JSON.stringify(payload);
@@ -1856,6 +1931,11 @@ export function CertificateOfLiveBirth() {
     const s = String(form.motherResidenceLine1 ?? '').trim().toUpperCase();
     return s ? [s] : [];
   }, [form.motherResidenceLine1]);
+
+  const parentsMarriageNotApplicable = useMemo(
+    () => shouldAutoFillMarriageNotApplicable(child),
+    [child],
+  );
 
   if (loading) return <p className="text-slate-500">Loading…</p>;
   if (error) return <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">{error.message}</div>;
@@ -2329,8 +2409,9 @@ export function CertificateOfLiveBirth() {
                   onChange={(v) => updateNumericMaxTwoDigits('marriageMonth', v, '20a. DATE (MONTH)')}
                   onBlur={() => commitPaddedMonthDayPart('marriageMonth')}
                   placeholder="(Month)"
-                  className="w-28"
-                  width="w-28"
+                  className={parentsMarriageNotApplicable ? 'min-w-[12rem] flex-1' : 'w-28'}
+                  width={parentsMarriageNotApplicable ? 'min-w-[12rem] flex-1' : 'w-28'}
+                  disabled={parentsMarriageNotApplicable}
                 />
                 <FormLine
                   value={form.marriageDay}
@@ -2339,6 +2420,7 @@ export function CertificateOfLiveBirth() {
                   placeholder="(Day)"
                   className="w-14"
                   width="w-14"
+                  disabled={parentsMarriageNotApplicable}
                 />
                 <FormLine
                   value={form.marriageYear}
@@ -2346,7 +2428,9 @@ export function CertificateOfLiveBirth() {
                   placeholder="(Year)"
                   className="w-20"
                   width="w-20"
+                  disabled={parentsMarriageNotApplicable}
                 />
+                {!parentsMarriageNotApplicable ? (
                 <CertificateDatePicker
                   pickerId="marriage"
                   openPickerId={openPickerId}
@@ -2362,29 +2446,43 @@ export function CertificateOfLiveBirth() {
                   }}
                   ariaLabel="Choose parents marriage date"
                 />
+                ) : null}
               </div>
             </div>
             <div>
               <label className="block mb-1 font-normal">20b. PLACE</label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <FormPhCityCombo
-                  cityValue={form.marriagePlaceCity}
-                  onCityInputChange={(v) => update('marriagePlaceCity', v)}
-                  onCityEmptied={() => update('marriagePlaceProvince', '')}
-                  onGeoPick={(r) =>
-                    setForm((p) => ({
-                      ...p,
-                      marriagePlaceCity: r.city,
-                      marriagePlaceProvince: r.province,
-                      marriagePlaceCountry: r.country,
-                    }))
-                  }
-                  placeholder="(City/Municipality)"
-                  className="w-full"
-                  width="w-full"
-                  ariaLabel="Parents marriage place city or municipality"
-                  crossFieldSeedRef={phCityCrossSeedRef}
-                />
+                {parentsMarriageNotApplicable ? (
+                  <FormLine
+                    value={form.marriagePlaceCity}
+                    onChange={(v) => update('marriagePlaceCity', v)}
+                    placeholder="(City/Municipality)"
+                    className="w-full"
+                    width="w-full"
+                    disabled
+                    datalistId={GENERIC_NOT_APPLICABLE_DATALIST_ID}
+                    aria-label="Parents marriage place city or municipality"
+                  />
+                ) : (
+                  <FormPhCityCombo
+                    cityValue={form.marriagePlaceCity}
+                    onCityInputChange={(v) => update('marriagePlaceCity', v)}
+                    onCityEmptied={() => update('marriagePlaceProvince', '')}
+                    onGeoPick={(r) =>
+                      setForm((p) => ({
+                        ...p,
+                        marriagePlaceCity: r.city,
+                        marriagePlaceProvince: r.province,
+                        marriagePlaceCountry: r.country,
+                      }))
+                    }
+                    placeholder="(City/Municipality)"
+                    className="w-full"
+                    width="w-full"
+                    ariaLabel="Parents marriage place city or municipality"
+                    crossFieldSeedRef={phCityCrossSeedRef}
+                  />
+                )}
                 <FormLine
                   value={form.marriagePlaceProvince}
                   onChange={(v) => update('marriagePlaceProvince', v)}
@@ -2402,6 +2500,7 @@ export function CertificateOfLiveBirth() {
                   className="w-full"
                   width="w-full"
                   datalistId={PH_JSON_COUNTRY_DATALIST_ID}
+                  disabled={parentsMarriageNotApplicable}
                   aria-label="Parents marriage place country"
                 />
               </div>
