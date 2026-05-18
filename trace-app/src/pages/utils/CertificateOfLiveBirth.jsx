@@ -1978,6 +1978,230 @@ export function CertificateOfLiveBirth() {
     [child],
   );
 
+  const informantNameSuggestions = useMemo(() => {
+    const list = [];
+    const fatherFullName = [form.fatherFirst, form.fatherMiddle, form.fatherLast]
+      .map((s) => String(s || '').trim().toUpperCase())
+      .filter(Boolean)
+      .join(' ');
+    if (fatherFullName) list.push(fatherFullName);
+
+    const motherMaiden = [form.motherFirst, form.motherMiddle, form.motherLast]
+      .map((s) => String(s || '').trim().toUpperCase())
+      .filter(Boolean)
+      .join(' ');
+    if (motherMaiden && !list.includes(motherMaiden)) list.push(motherMaiden);
+
+    const childFullName = [form.childFirst, form.childMiddle, form.childLast]
+      .map((s) => String(s || '').trim().toUpperCase())
+      .filter(Boolean)
+      .join(' ');
+    if (childFullName && !list.includes(childFullName)) list.push(childFullName);
+
+    return list;
+  }, [
+    form.motherFirst,
+    form.motherMiddle,
+    form.motherLast,
+    form.childFirst,
+    form.childMiddle,
+    form.childLast,
+    form.fatherFirst,
+    form.fatherMiddle,
+    form.fatherLast,
+  ]);
+
+  const informantRelationshipSuggestions = useMemo(() => ['FATHER', 'GUARDIAN', 'MOTHER', 'MYSELF'], []);
+
+  const informantAddressSuggestions = useMemo(() => {
+    const list = [];
+    const motherAddr = [
+      form.motherResidenceLine1,
+      form.motherResidenceCity,
+      form.motherResidenceProvince,
+      form.motherCountry,
+    ]
+      .map((s) => String(s || '').trim().toUpperCase())
+      .filter(Boolean)
+      .join(', ');
+    if (motherAddr) list.push(motherAddr);
+
+    const fatherAddr = [
+      form.fatherResidenceLine1,
+      form.fatherResidenceCity,
+      form.fatherResidenceProvince,
+      form.fatherCountry,
+    ]
+      .map((s) => String(s || '').trim().toUpperCase())
+      .filter(Boolean)
+      .join(', ');
+    if (fatherAddr && !list.includes(fatherAddr)) list.push(fatherAddr);
+
+    return list;
+  }, [
+    form.motherResidenceLine1,
+    form.motherResidenceCity,
+    form.motherResidenceProvince,
+    form.motherCountry,
+    form.fatherResidenceLine1,
+    form.fatherResidenceCity,
+    form.fatherResidenceProvince,
+    form.fatherCountry,
+  ]);
+
+  const handleInformantNamePick = useCallback((pickedName) => {
+    const name = String(pickedName || '').trim().toUpperCase();
+    if (!name) return;
+
+    const motherMaiden = [form.motherFirst, form.motherMiddle, form.motherLast]
+      .map((s) => String(s || '').trim().toUpperCase())
+      .filter(Boolean)
+      .join(' ');
+    const motherMarried = [form.motherFirst, form.motherMiddle, form.childLast]
+      .map((s) => String(s || '').trim().toUpperCase())
+      .filter(Boolean)
+      .join(' ');
+
+    const fatherFullName = [form.fatherFirst, form.fatherMiddle, form.fatherLast]
+      .map((s) => String(s || '').trim().toUpperCase())
+      .filter(Boolean)
+      .join(' ');
+    const fatherMarried = [form.fatherFirst, form.fatherMiddle, form.childLast]
+      .map((s) => String(s || '').trim().toUpperCase())
+      .filter(Boolean)
+      .join(' ');
+
+    const childFullName = [form.childFirst, form.childMiddle, form.childLast]
+      .map((s) => String(s || '').trim().toUpperCase())
+      .filter(Boolean)
+      .join(' ');
+
+    if (name === motherMaiden || name === motherMarried) {
+      const motherAddr = [
+        form.motherResidenceLine1,
+        form.motherResidenceCity,
+        form.motherResidenceProvince,
+        form.motherCountry,
+      ]
+        .map((s) => String(s || '').trim().toUpperCase())
+        .filter(Boolean)
+        .join(', ');
+
+      setForm((p) => ({
+        ...p,
+        informantName: name,
+        informantRelationship: 'MOTHER',
+        informantAddress: motherAddr || p.informantAddress,
+      }));
+    } else if (name === fatherFullName || name === fatherMarried) {
+      const fatherAddr = [
+        form.fatherResidenceLine1,
+        form.fatherResidenceCity,
+        form.fatherResidenceProvince,
+        form.fatherCountry,
+      ]
+        .map((s) => String(s || '').trim().toUpperCase())
+        .filter(Boolean)
+        .join(', ');
+
+      setForm((p) => ({
+        ...p,
+        informantName: name,
+        informantRelationship: 'FATHER',
+        informantAddress: fatherAddr || p.informantAddress,
+      }));
+    } else if (name === childFullName) {
+      setForm((p) => ({
+        ...p,
+        informantName: name,
+        informantRelationship: 'MYSELF',
+      }));
+    }
+  }, [
+    form.motherFirst,
+    form.motherMiddle,
+    form.motherLast,
+    form.childFirst,
+    form.childMiddle,
+    form.childLast,
+    form.fatherFirst,
+    form.fatherMiddle,
+    form.fatherLast,
+    form.motherResidenceLine1,
+    form.motherResidenceCity,
+    form.motherResidenceProvince,
+    form.motherCountry,
+    form.fatherResidenceLine1,
+    form.fatherResidenceCity,
+    form.fatherResidenceProvince,
+    form.fatherCountry,
+  ]);
+
+  const handleInformantRelationshipPick = useCallback((pickedRelationship) => {
+    const rel = String(pickedRelationship || '').trim().toUpperCase();
+    if (!rel) return;
+
+    setForm((p) => {
+      let address = p.informantAddress;
+      let name = p.informantName;
+
+      if (rel === 'MOTHER') {
+        const motherAddr = [
+          p.motherResidenceLine1,
+          p.motherResidenceCity,
+          p.motherResidenceProvince,
+          p.motherCountry,
+        ]
+          .map((s) => String(s || '').trim().toUpperCase())
+          .filter(Boolean)
+          .join(', ');
+        if (motherAddr) address = motherAddr;
+
+        if (!p.informantName) {
+          const motherMaiden = [p.motherFirst, p.motherMiddle, p.motherLast]
+            .map((s) => String(s || '').trim().toUpperCase())
+            .filter(Boolean)
+            .join(' ');
+          if (motherMaiden) name = motherMaiden;
+        }
+      } else if (rel === 'FATHER') {
+        const fatherAddr = [
+          p.fatherResidenceLine1,
+          p.fatherResidenceCity,
+          p.fatherResidenceProvince,
+          p.fatherCountry,
+        ]
+          .map((s) => String(s || '').trim().toUpperCase())
+          .filter(Boolean)
+          .join(', ');
+        if (fatherAddr) address = fatherAddr;
+
+        if (!p.informantName) {
+          const fatherFullName = [p.fatherFirst, p.fatherMiddle, p.fatherLast]
+            .map((s) => String(s || '').trim().toUpperCase())
+            .filter(Boolean)
+            .join(' ');
+          if (fatherFullName) name = fatherFullName;
+        }
+      } else if (rel === 'MYSELF') {
+        if (!p.informantName) {
+          const childFullName = [p.childFirst, p.childMiddle, p.childLast]
+            .map((s) => String(s || '').trim().toUpperCase())
+            .filter(Boolean)
+            .join(' ');
+          if (childFullName) name = childFullName;
+        }
+      }
+
+      return {
+        ...p,
+        informantRelationship: rel,
+        informantAddress: address,
+        informantName: name,
+      };
+    });
+  }, []);
+
   if (loading) return <p className="text-slate-500">Loading…</p>;
   if (error) return <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">{error.message}</div>;
   if (!child) return null;
@@ -2705,15 +2929,48 @@ export function CertificateOfLiveBirth() {
             <p style={{ fontSize: '14px', marginBottom: '8px' }}>I hereby certify that all information supplied are true and correct to my own knowledge and belief.</p>
             <div className="space-y-2" style={{ fontSize: '14px' }}>
               
-              <div><p className="mb-1" style={{ fontWeight: 400 }}>Name in Print</p><FormLine value={form.informantName} onChange={(v) => update('informantName', v)} placeholder="(Name in print)" /></div>
-              <div><p className="mb-1" style={{ fontWeight: 400 }}>Relationship to the Child</p><FormLine value={form.informantRelationship} onChange={(v) => update('informantRelationship', v)} placeholder="(e.g. Mother, Father)" /></div>
+              <div>
+                <p className="mb-1" style={{ fontWeight: 400 }}>Name in Print</p>
+                <FormTextCombo
+                  value={form.informantName}
+                  onInputChange={(v) => update('informantName', v)}
+                  onOptionPick={handleInformantNamePick}
+                  suggestionOptions={informantNameSuggestions}
+                  idleFocusSuggestions={informantNameSuggestions}
+                  placeholder="(Name in print)"
+                  ariaLabel="Informant name in print"
+                  className="w-full"
+                  width="w-full"
+                  includeNotApplicable={false}
+                />
+              </div>
+              <div>
+                <p className="mb-1" style={{ fontWeight: 400 }}>Relationship to the Child</p>
+                <FormTextCombo
+                  value={form.informantRelationship}
+                  onInputChange={(v) => update('informantRelationship', v)}
+                  onOptionPick={handleInformantRelationshipPick}
+                  suggestionOptions={informantRelationshipSuggestions}
+                  idleFocusSuggestions={informantRelationshipSuggestions}
+                  placeholder="(e.g. Mother, Father)"
+                  ariaLabel="Informant relationship to the child"
+                  className="w-full"
+                  width="w-full"
+                  includeNotApplicable={false}
+                />
+              </div>
               <div>
                 <p className="mb-1" style={{ fontWeight: 400 }}>Address</p>
-                <FormLine
+                <FormTextCombo
                   value={form.informantAddress}
-                  onChange={(v) => update('informantAddress', v.toUpperCase())}
+                  onInputChange={(v) => update('informantAddress', v)}
+                  suggestionOptions={informantAddressSuggestions}
+                  idleFocusSuggestions={informantAddressSuggestions}
                   placeholder="(Complete address)"
+                  ariaLabel="Informant complete address"
                   className="w-full"
+                  width="w-full"
+                  includeNotApplicable={false}
                 />
               </div>
               <div>
