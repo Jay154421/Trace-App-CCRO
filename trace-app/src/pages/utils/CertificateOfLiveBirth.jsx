@@ -166,10 +166,10 @@ const LCRO_STAFF_MEMBERS = [
 const LCRO_STAFF_MEMBER_NAMES = LCRO_STAFF_MEMBERS.map((member) => member.name);
 const RECEIVED_BY_NAMES = RECEIVED_BY_OPTIONS.map((o) => o.name);
 
-const TYPE_OF_BIRTH_OPTIONS = ['SINGLE', 'TWIN', 'TRIPLE', 'QUADRUPLE', 'QUINTUPLE'];
+const TYPE_OF_BIRTH_OPTIONS = ['SINGLE', 'TWIN', 'TRIPLE', 'QUADRUPLE', 'QUINTUPLE', 'NOT APPLICABLE'];
 const ORDINAL_NUMBERS_OPTIONS = [
   'FIRST', 'SECOND', 'THIRD', 'FOURTH', 'FIFTH', 'SIXTH', 'SEVENTH', 'EIGHTH', 'NINTH', 'TENTH',
-  'ELEVENTH', 'TWELFTH', 'THIRTEENTH', 'FOURTEENTH', 'FIFTEENTH', 'SIXTEENTH', 'SEVENTEENTH', 'EIGHTEENTH', 'NINETEENTH', 'TWENTIETH'
+  'ELEVENTH', 'TWELFTH', 'THIRTEENTH', 'FOURTEENTH', 'FIFTEENTH', 'SIXTEENTH', 'SEVENTEENTH', 'EIGHTEENTH', 'NINETEENTH', 'TWENTIETH', 'NOT APPLICABLE'
 ];
 const SEX_OPTIONS = ['MALE', 'FEMALE'];
 
@@ -718,12 +718,30 @@ function formatSignatureLineDateLocal(d) {
   return dateToSignatureLongText(d);
 }
 
+/** Uppercase long date for items 22–24, e.g. APRIL 12, 2003. */
+function formatSignatureLineDateUppercase(d) {
+  if (!d || Number.isNaN(d.getTime())) return '';
+  return `${CALENDAR_MONTH_LABELS[d.getMonth()].toUpperCase()} ${d.getDate()}, ${d.getFullYear()}`;
+}
+
+function getTodaySignatureDateUppercase() {
+  return formatSignatureLineDateUppercase(new Date());
+}
+
 /** Normalize stored values (legacy ISO, DD-MM-YYYY, or long text) for display on load. */
 function toSignatureLineDateDisplay(value) {
   const t = trimStr(value);
   if (!t) return '';
   const parsed = parseFlexibleDateSeed(t);
   return parsed ? dateToSignatureLongText(parsed) : t;
+}
+
+/** Same as toSignatureLineDateDisplay but uppercase month (items 22–24). */
+function toSignatureLineDateDisplayUppercase(value) {
+  const t = trimStr(value);
+  if (!t) return '';
+  const parsed = parseFlexibleDateSeed(t);
+  return parsed ? formatSignatureLineDateUppercase(parsed) : t.toUpperCase();
 }
 
 function buildMonthCells(viewYear, viewMonthIndex) {
@@ -919,6 +937,31 @@ function FormCountrySelect({ value = '', onChange, className = '', width }) {
         </option>
       ))}
     </select>
+  );
+}
+
+/** Date line with idle-focus suggestion of today (items 22–24), e.g. APRIL 12, 2003. */
+function FormSignatureDateWithTodaySuggest({
+  value = '',
+  onChange,
+  placeholder = '(Month Day, Year)',
+  ariaLabel = 'Date',
+  className = 'flex-1 min-w-0',
+}) {
+  const todayIdleSuggestions = useMemo(() => [getTodaySignatureDateUppercase()], []);
+
+  return (
+    <FormTextCombo
+      value={value}
+      onInputChange={onChange}
+      suggestionOptions={[]}
+      idleFocusSuggestions={todayIdleSuggestions}
+      placeholder={placeholder}
+      ariaLabel={ariaLabel}
+      className={className}
+      width="w-full"
+      includeNotApplicable={false}
+    />
   );
 }
 
@@ -1510,15 +1553,13 @@ export function CertificateOfLiveBirth() {
         base.motherCountry = String(base.motherCountry || '').trim().toUpperCase();
         base.fatherCountry = String(base.fatherCountry || '').trim().toUpperCase();
         base.marriagePlaceCountry = String(base.marriagePlaceCountry || '').trim().toUpperCase();
-        const signatureDateKeys = [
-          'attendantDate',
-          'informantDate',
-          'preparedByDate',
-          'receivedByDate',
-          'registeredByDate',
-        ];
-        for (const key of signatureDateKeys) {
+        const signatureDateKeysTitleCase = ['attendantDate', 'registeredByDate'];
+        const signatureDateKeysUppercase = ['informantDate', 'preparedByDate', 'receivedByDate'];
+        for (const key of signatureDateKeysTitleCase) {
           base[key] = toSignatureLineDateDisplay(base[key]);
+        }
+        for (const key of signatureDateKeysUppercase) {
+          base[key] = toSignatureLineDateDisplayUppercase(base[key]);
         }
         const loadedPurpose = sanitizePurpose(
           base.certificationPurpose ?? base.certification_purpose ?? base.purpose,
@@ -2634,7 +2675,7 @@ export function CertificateOfLiveBirth() {
             <div>
               <p className="mb-1" style={{ fontWeight: 400 }}>Date</p>
               <div className="flex items-center gap-1">
-                <FormLine value={form.attendantDate} onChange={(v) => update('attendantDate', v)} placeholder="(May 7, 2026)" className="flex-1 min-w-0" />
+                <FormLine value={form.attendantDate} onChange={(v) => update('attendantDate', v)} placeholder="(Month Day, Year)" className="flex-1 min-w-0" />
                 <CertificateDatePicker
                   pickerId="attendantDate"
                   openPickerId={openPickerId}
@@ -2678,14 +2719,18 @@ export function CertificateOfLiveBirth() {
               <div>
                 <p className="mb-1" style={{ fontWeight: 400 }}>Date</p>
                 <div className="flex items-center gap-1">
-                  <FormLine value={form.informantDate} onChange={(v) => update('informantDate', v)} placeholder="(MONTH DAY, YEAR)" />
+                  <FormSignatureDateWithTodaySuggest
+                    value={form.informantDate}
+                    onChange={(v) => update('informantDate', v)}
+                    ariaLabel="Informant date"
+                  />
                   <CertificateDatePicker
                     pickerId="informantDate"
                     openPickerId={openPickerId}
                     setOpenPickerId={setOpenPickerId}
                     seedText={form.informantDate}
                     onPick={(d) => {
-                      setForm((p) => ({ ...p, informantDate: formatSignatureLineDateLocal(d) }));
+                      setForm((p) => ({ ...p, informantDate: formatSignatureLineDateUppercase(d) }));
                     }}
                     ariaLabel="Choose informant date"
                   />
@@ -2722,14 +2767,18 @@ export function CertificateOfLiveBirth() {
               <div>
                 <p className="mb-1" style={{ fontWeight: 400 }}>Date</p>
                 <div className="flex items-center gap-1">
-                  <FormLine value={form.preparedByDate} onChange={(v) => update('preparedByDate', v)} placeholder="(MONTH DAY, YEAR)" />
+                  <FormSignatureDateWithTodaySuggest
+                    value={form.preparedByDate}
+                    onChange={(v) => update('preparedByDate', v)}
+                    ariaLabel="Prepared by date"
+                  />
                   <CertificateDatePicker
                     pickerId="preparedByDate"
                     openPickerId={openPickerId}
                     setOpenPickerId={setOpenPickerId}
                     seedText={form.preparedByDate}
                     onPick={(d) => {
-                      setForm((p) => ({ ...p, preparedByDate: formatSignatureLineDateLocal(d) }));
+                      setForm((p) => ({ ...p, preparedByDate: formatSignatureLineDateUppercase(d) }));
                     }}
                     ariaLabel="Choose prepared by date"
                   />
@@ -2769,14 +2818,18 @@ export function CertificateOfLiveBirth() {
               <div>
                 <p className="mb-1" style={{ fontWeight: 400 }}>Date</p>
                 <div className="flex items-center gap-1">
-                  <FormLine value={form.receivedByDate} onChange={(v) => update('receivedByDate', v)} placeholder="(MONTH DAY, YEAR)" />
+                  <FormSignatureDateWithTodaySuggest
+                    value={form.receivedByDate}
+                    onChange={(v) => update('receivedByDate', v)}
+                    ariaLabel="Received by date"
+                  />
                   <CertificateDatePicker
                     pickerId="receivedByDate"
                     openPickerId={openPickerId}
                     setOpenPickerId={setOpenPickerId}
                     seedText={form.receivedByDate}
                     onPick={(d) => {
-                      setForm((p) => ({ ...p, receivedByDate: formatSignatureLineDateLocal(d) }));
+                      setForm((p) => ({ ...p, receivedByDate: formatSignatureLineDateUppercase(d) }));
                     }}
                     ariaLabel="Choose received by date"
                   />
@@ -2813,7 +2866,7 @@ export function CertificateOfLiveBirth() {
               <div>
                 <p className="mb-1" style={{ fontWeight: 400 }}>Date</p>
                 <div className="flex items-center gap-1">
-                  <FormLine value={form.registeredByDate} onChange={(v) => update('registeredByDate', v)} placeholder="(MONTH DAY, YEAR)" />
+                  <FormLine value={form.registeredByDate} onChange={(v) => update('registeredByDate', v)} placeholder="(Month Day, Year)" />
                   <CertificateDatePicker
                     pickerId="registeredByDate"
                     openPickerId={openPickerId}
