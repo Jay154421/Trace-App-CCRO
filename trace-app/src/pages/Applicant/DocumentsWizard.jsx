@@ -114,6 +114,14 @@ function isMarriageCertificateRequirement(requirement) {
   return requirement?.id === 'marriage_certificate' || label === 'marriage certificate';
 }
 
+function isAusfRequirement(requirement) {
+  return requirement?.id === 'ausf';
+}
+
+function isParentsMarriageContractRequirement(requirement) {
+  return requirement?.id === 'marriage_contract';
+}
+
 function isColbParentIdRequirement(requirement) {
   return requirement?.id === 'colb_parent_id';
 }
@@ -193,6 +201,12 @@ function buildChecklist(requirements, existing = [], child = null) {
     if (isMarriageCertificateRequirement(requirement)) {
       return normalizedHasMarriageCertificate;
     }
+    if (isAusfRequirement(requirement)) {
+      return !normalizedHasMarriageCertificate;
+    }
+    if (isParentsMarriageContractRequirement(requirement)) {
+      return normalizedHasMarriageCertificate;
+    }
     if (isColbParentIdRequirement(requirement)) {
       return normalizedColbParentId;
     }
@@ -205,6 +219,8 @@ function buildChecklist(requirements, existing = [], child = null) {
     if (!item?.label || !item?.category) return false;
     if (!normalizedOutOfTown && isOutOfTownAffidavitRequirement(item)) return false;
     if (!normalizedHasMarriageCertificate && isMarriageCertificateRequirement(item)) return false;
+    if (normalizedHasMarriageCertificate && isAusfRequirement(item)) return false;
+    if (!normalizedHasMarriageCertificate && isParentsMarriageContractRequirement(item)) return false;
     if (!normalizedColbParentId && isColbParentIdRequirement(item)) return false;
     if (!normalizedMuslimAttachment && isMuslimAttachmentRequirement(item)) return false;
     return !filteredRequirements.some((requirement) => (

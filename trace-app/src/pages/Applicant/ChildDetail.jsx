@@ -25,6 +25,12 @@ import {
   isTruthyFlag,
   formatApplicantGenderLabel,
 } from '../../utils/applicantForm';
+import {
+  AUSF_VARIANT_LABEL,
+  buildAusfPrintPath,
+  getAusfVariantForChild,
+  shouldShowAusfForChild,
+} from '../../utils/ausfVariant';
 import { onPdfSavedOpenInBrowser, openSavedPdfInBrowser } from '../../utils/openSavedPdfInBrowser';
 
 function savedPdfFileName(filePath) {
@@ -304,6 +310,9 @@ export function ChildDetail() {
   const colbRequiresParentId = isTruthyFlag(child.colb_requires_parent_id);
   const hasMuslimAttachment = isTruthyFlag(child.has_muslim_attachment);
   const isColbBrap = String(child.application_type || '').toLowerCase() === 'colb_brap';
+  const showAusf = shouldShowAusfForChild(child);
+  const ausfVariant = getAusfVariantForChild(child);
+  const ausfLinkLabel = AUSF_VARIANT_LABEL[ausfVariant] || 'AUSF';
   return (
     <div>
       {frontPdfPreviewOpen && frontPdfPreviewUrl && (
@@ -425,27 +434,15 @@ export function ChildDetail() {
           >
             Delayed Birth Affidavit
           </Link>
-          <Link
-            to={`${basePath}/${id}/ausf-0-6`}
-            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-            title="Affidavit to Use Surname of the Father — child 0–6 years (data from Certificate of Live Birth)"
-          >
-            AUSF (0–6)
-          </Link>
-          <Link
-            to={`${basePath}/${id}/ausf-07-17`}
-            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-            title="Affidavit to Use Surname of the Father — minor 7–17 years (data from Certificate of Live Birth)"
-          >
-            AUSF (7–17)
-          </Link>
-          <Link
-            to={`${basePath}/${id}/ausf-only`}
-            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-            title="Affidavit to Use Surname of the Father — adult / self (data from Certificate of Live Birth)"
-          >
-            AUSF (Adult)
-          </Link>
+          {showAusf ? (
+            <Link
+              to={buildAusfPrintPath(basePath, id, ausfVariant)}
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              title="Affidavit to Use Surname of the Father (data from Certificate of Live Birth)"
+            >
+              {ausfLinkLabel}
+            </Link>
+          ) : null}
           <Link
             to={`${basePath}/${id}/print-certificate`}
             className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"

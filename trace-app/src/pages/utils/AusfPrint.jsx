@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useParams, useLocation } from 'react-router-dom';
+import { Link, Navigate, useParams, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { childrenApi } from '../../services/api';
 import { applicantDetailPath, getApplicantBasePath } from '../../utils/applicantRoutes';
@@ -9,10 +9,41 @@ import {
   buildAusfSuggestedFilename,
 } from '../../utils/ausfPdf';
 import { buildAusfPrintData } from '../../utils/buildAusfPrintData';
+import {
+  buildAusfPrintPath,
+  getAusfVariantForChild,
+  shouldShowAusfForChild,
+} from '../../utils/ausfVariant';
 import { onPdfSavedOpenInBrowser } from '../../utils/openSavedPdfInBrowser';
-import Ausf06, { AUSF_06_PRINT_TYPE } from './Ausf1';
+import Ausf06, { AUSF_06_PRINT_TYPE } from './ausf1';
 import Ausf0717, { AUSF_0717_PRINT_TYPE } from './ausf2';
 import AusfOnly, { AUSF_ONLY_PRINT_TYPE } from './ausf3';
+
+const PRINT_SIZE_STYLE_ID = 'ausf-print-paper-size';
+
+function useAusfPrintPageSize(paperSize) {
+  useEffect(() => {
+    const dataPaper = paperSize === AUSF_PDF_PAGE_FORMAT.A4 ? 'a4' : 'long';
+    const pageSizeCss = paperSize === AUSF_PDF_PAGE_FORMAT.A4 ? '210mm 297mm' : '8.5in 13in';
+    document.documentElement.dataset.paperSize = dataPaper;
+
+    let el = document.getElementById(PRINT_SIZE_STYLE_ID);
+    if (!el) {
+      el = document.createElement('style');
+      el.id = PRINT_SIZE_STYLE_ID;
+      document.head.appendChild(el);
+    }
+    el.textContent = `@media print { @page { size: ${pageSizeCss}; margin: 0; } }`;
+
+    document.body.classList.remove('ausf-paper-a4', 'ausf-paper-long');
+    document.body.classList.add(dataPaper === 'a4' ? 'ausf-paper-a4' : 'ausf-paper-long');
+
+    return () => {
+      delete document.documentElement.dataset.paperSize;
+      document.body.classList.remove('ausf-paper-a4', 'ausf-paper-long', 'pdf-capture');
+    };
+  }, [paperSize]);
+}
 
 const VARIANTS = {
   [AUSF_06_PRINT_TYPE]: {
@@ -44,6 +75,8 @@ export function AusfPrint({ variant }) {
   const [savingPdf, setSavingPdf] = useState(false);
   const [paperSize, setPaperSize] = useState(AUSF_PDF_PAGE_FORMAT.LONG);
   const docArticleRef = useRef(null);
+
+  useAusfPrintPageSize(paperSize);
 
   useEffect(() => {
     if (!id) return;
@@ -96,6 +129,7 @@ export function AusfPrint({ variant }) {
       return;
     }
     setSavingPdf(true);
+    document.body.classList.add('pdf-capture');
     try {
       const base64 = await buildAusfPdfBase64(el, paperSize);
       if (!base64) {
@@ -110,6 +144,7 @@ export function AusfPrint({ variant }) {
     } catch (err) {
       toast.error(err?.message || 'Failed to save PDF.');
     } finally {
+      document.body.classList.remove('pdf-capture');
       setSavingPdf(false);
     }
   }, [printData, cert, child, variant, paperSize]);
@@ -136,21 +171,29 @@ export function AusfPrint({ variant }) {
     );
   }
 
+  if (child && !shouldShowAusfForChild(child)) {
+    return (
+      <p className="m-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900">
+        AUSF is not required when parents are married — attach the marriage contract instead.
+        <Link to={applicantDetailPath(basePath, id)} className="ml-2 font-medium text-emerald-600 underline">
+          Back to applicant
+        </Link>
+      </p>
+    );
+  }
+
+  const expectedVariant = child ? getAusfVariantForChild(child) : null;
+  if (child && expectedVariant && variant !== expectedVariant) {
+    return <Navigate to={buildAusfPrintPath(basePath, id, expectedVariant)} replace />;
+  }
+
   const missingColb = !cert || !Object.keys(cert).length;
 
-  const printPageSizeCss =
-    paperSize === AUSF_PDF_PAGE_FORMAT.A4 ? 'A4' : '8.5in 13in';
+  const previewWidthClass =
+    paperSize === AUSF_PDF_PAGE_FORMAT.A4 ? 'w-[210mm]' : 'w-[8.5in]';
 
   return (
     <section className="ausf-print-page min-h-screen bg-slate-100 print:bg-white">
-      <style>{`
-        @media print {
-          @page {
-            size: ${printPageSizeCss};
-            margin: 0.35in;
-          }
-        }
-      `}</style>
       <header className="print:hidden mx-auto max-w-[210mm] px-4 py-4">
         <Link to={applicantDetailPath(basePath, id)} className="text-sm font-medium text-emerald-600 hover:text-emerald-700">
           ← Back to applicant
@@ -221,7 +264,10 @@ export function AusfPrint({ variant }) {
         </div>
       </header>
 
-      <article ref={docArticleRef} className="mx-auto print:mx-0 print:max-w-none">
+      <article
+        ref={docArticleRef}
+        className={`mx-auto mb-8 ${previewWidthClass} print:mx-0 print:mb-0 print:w-auto print:max-w-none`}
+      >
         {printData ? <Component data={printData} /> : null}
       </article>
     </section>

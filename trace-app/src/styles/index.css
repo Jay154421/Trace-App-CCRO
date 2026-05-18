@@ -11,23 +11,288 @@ body {
   @apply outline-2 outline-offset-2 outline-emerald-500;
 }
 
-/* AUSF print documents (long bond) */
+/* --- AUSF print: underline below text (::after), reliable in html2canvas PDF --- */
+
 .fill-blank {
-  @apply inline-block border-b border-black align-baseline;
+  display: inline-block;
+  position: relative;
+  border-bottom: none;
+  text-decoration: none;
+  padding: 0 0.15em 0.22em;
+  font-weight: 700;
+  text-align: left;
+  line-height: 1.35;
+  vertical-align: baseline;
+  box-sizing: content-box;
+  width: fit-content;
+  min-width: 2em;
+  max-width: 100%;
 }
 
-.affiant-name-bold-underline .affiant-name-inner {
-  @apply font-bold underline decoration-1 underline-offset-2;
+.fill-blank::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background-color: #000;
+  pointer-events: none;
+}
+
+.fill-blank.empty-blank {
+  min-width: 8rem;
+}
+
+.ausf-doc .fill-blank.affiant-name-blank {
+  display: inline-block !important;
+  min-width: 4rem;
+  width: fit-content !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  text-align: left !important;
+  padding-left: 0.5em !important;
+  padding-right: 0.15em !important;
+}
+
+.ausf-doc .fill-blank.affiant-name-blank .affiant-name-inner {
+  display: inline;
+  text-align: left;
+  padding: 0;
+  margin: 0;
+  font-weight: bold;
+}
+
+.ausf-doc .ausf-place-of-birth-line {
+  text-align: left;
+}
+
+.ausf-doc .ausf-place-of-birth-line .fill-blank {
+  display: inline-block !important;
+  min-width: 0;
+  text-align: left;
 }
 
 .empty-blank:empty::before {
   content: '\00a0';
 }
 
+.ausf-doc {
+  line-height: 1.5;
+}
+
+.ausf-doc p,
+.ausf-doc ol,
+.ausf-doc ol li {
+  line-height: 1.5;
+}
+
+.ausf-doc .ausf-section-title {
+  font-size: 14pt;
+  font-weight: 700;
+  text-align: center;
+  text-transform: uppercase;
+  margin-top: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.ausf-doc.print-doc ol,
+.ausf-doc.print-doc ol li {
+  text-align: left;
+}
+
+.ausf-doc .ausf-subscribed-sworn {
+  line-height: 1.5;
+}
+
+.print-doc-footer p {
+  margin: 0;
+  padding: 0;
+  line-height: 1.25;
+}
+
+/* Screen preview: long bond, 1" margins (official CCRO layout) */
+.ausf-doc.print-doc {
+  box-sizing: border-box;
+  width: 8.5in;
+  max-width: 8.5in;
+  min-height: 13in;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 1in;
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 12pt;
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+}
+
+.ausf-only-doc .print-doc-footer,
+.ausf-only-doc .print-doc-footer p {
+  font-size: 12px;
+}
+
+.ausf-doc.print-doc .ausf-doc-header__logo,
+.ausf-doc.print-doc .print-doc-header__logo {
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.ausf-doc.print-doc .print-doc-body,
+.ausf-doc.print-doc .ausf-doc-body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.ausf-doc.print-doc .print-doc-footer-wrap,
+.ausf-doc.print-doc .ausf-doc-footer {
+  flex-shrink: 0;
+  margin-top: auto;
+}
+
+.ausf-doc.print-doc ol {
+  list-style-position: outside;
+  margin-left: 0.2in;
+  padding-left: 0.35in;
+}
+
+.ausf-doc.print-doc .ausf-sworn-attestation-title {
+  margin-top: 1.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.ausf-doc.print-doc .ausf-signature-block {
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.ausf-doc.print-doc .ausf-signature-block__name {
+  display: inline-block;
+  position: relative;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-bottom: none;
+  padding: 0 0.15em 0.22em;
+  text-decoration: none;
+  line-height: 1.35;
+}
+
+.ausf-doc.print-doc .ausf-signature-block__name::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background-color: #000;
+  pointer-events: none;
+}
+
+.ausf-doc.print-doc .ausf-signature-block__label {
+  font-size: 10pt;
+  margin-top: 0;
+}
+
+.ausf-only-doc .registrar-signature-zone,
+.ausf-07-17-doc .registrar-signature-zone {
+  align-items: flex-end;
+}
+
+.ausf-only-doc .registrar-signature-zone .city-registrar-signature,
+.ausf-only-doc .registrar-signature-zone .city-registrar-signature p,
+.ausf-07-17-doc .registrar-signature-zone .city-registrar-signature,
+.ausf-07-17-doc .registrar-signature-zone .city-registrar-signature p {
+  text-align: right;
+}
+
+.ausf-only-doc .registrar-signature-zone .city-registrar-signature,
+.ausf-07-17-doc .registrar-signature-zone .city-registrar-signature,
+.ausf-0-6-doc .registrar-signature-zone .city-registrar-signature {
+  display: inline-block;
+  text-align: right;
+  margin-right: 0;
+}
+
+.ausf-only-doc .registrar-signature-zone .city-registrar-signature p,
+.ausf-07-17-doc .registrar-signature-zone .city-registrar-signature p,
+.ausf-0-6-doc .registrar-signature-zone .city-registrar-signature p {
+  margin: 0;
+  text-align: right;
+}
+
+html[data-paper-size='long'] .ausf-doc.print-doc,
+html[data-paper-size='a4'] .ausf-doc.print-doc {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding-bottom: 0.25rem;
+}
+
+html[data-paper-size='long'] .print-doc-footer-wrap,
+html[data-paper-size='a4'] .print-doc-footer-wrap {
+  margin-top: auto;
+  flex-shrink: 0;
+}
+
+html[data-paper-size='a4'] .ausf-doc.print-doc {
+  min-height: 297mm;
+  width: 210mm;
+  max-width: 210mm;
+  padding: 1in;
+}
+
+html[data-paper-size='long'] .ausf-0-6-doc.print-doc {
+  min-height: 13in;
+}
+
+/* PDF capture: keep 1" document margins (html2canvas) */
+body.pdf-capture .print-doc,
+body.pdf-capture .ausf-doc {
+  font-family: 'Times New Roman', Times, serif !important;
+  padding: 1in !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  max-width: none !important;
+}
+
+body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc {
+  width: 210mm !important;
+}
+
+body.pdf-capture.ausf-paper-long .ausf-doc.print-doc {
+  width: 8.5in !important;
+}
+
+/* html2canvas: extra gap so underline sits clearly below glyphs */
+body.pdf-capture .ausf-doc .fill-blank,
+body.pdf-capture .ausf-doc .ausf-signature-block__name {
+  padding-bottom: 0.28em !important;
+  line-height: 1.4 !important;
+}
+
+body.pdf-capture .ausf-doc .fill-blank::after,
+body.pdf-capture .ausf-doc .ausf-signature-block__name::after {
+  height: 1px !important;
+  background-color: #000 !important;
+}
+
 @media print {
   @page {
-    size: 8.5in 13in;
-    margin: 0.35in;
+    margin: 0;
+  }
+
+  html,
+  body {
+    font-family: 'Times New Roman', Times, serif !important;
+    background: white;
+    margin: 0;
+    padding: 0;
   }
 
   aside[aria-label='Main navigation'] {
@@ -38,13 +303,182 @@ body {
     display: none !important;
   }
 
-  .print-doc {
+  .print-doc,
+  .ausf-doc {
+    font-family: 'Times New Roman', Times, serif !important;
     box-shadow: none !important;
+    max-width: 100% !important;
+    padding: 1in !important;
+    page-break-inside: avoid;
+    display: flex !important;
+    flex-direction: column !important;
   }
 
-  /* Keep AUSF on one sheet; avoid splitting the form across pages when possible */
+  .print-doc-header {
+    flex-shrink: 0 !important;
+  }
+
+  .print-doc-body {
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+  }
+
+  .print-doc-footer-wrap {
+    flex-shrink: 0 !important;
+    margin-top: auto !important;
+  }
+
   .ausf-print-page .ausf-doc.print-doc {
     break-inside: avoid;
     page-break-inside: avoid;
+  }
+
+  .ausf-0-6-doc.print-doc,
+  .ausf-07-17-doc.print-doc,
+  .ausf-only-doc.print-doc {
+    page-break-inside: avoid !important;
+  }
+
+  .ausf-0-6-doc.print-doc h2:first-of-type,
+  .ausf-07-17-doc.print-doc h2:first-of-type,
+  .ausf-only-doc.print-doc h2:first-of-type {
+    margin-top: 0 !important;
+  }
+
+  .ausf-0-6-doc .print-doc-header,
+  .ausf-07-17-doc .print-doc-header,
+  .ausf-only-doc .print-doc-header {
+    margin-bottom: 0 !important;
+  }
+
+  .ausf-0-6-doc.print-doc,
+  html[data-paper-size='a4'] .ausf-0-6-doc.print-doc,
+  html[data-paper-size='long'] .ausf-0-6-doc.print-doc {
+    font-size: 12pt !important;
+  }
+
+  .ausf-0-6-doc .print-doc-footer,
+  .ausf-0-6-doc .print-doc-footer p,
+  .ausf-0-6-doc .print-doc-footer * {
+    font-size: 12px !important;
+  }
+
+  .ausf-0-6-doc.print-doc .registrar-signature-zone {
+    align-items: flex-end !important;
+    margin-top: 0.2in !important;
+  }
+
+  .ausf-0-6-doc.print-doc .registrar-signature-zone .city-registrar-signature,
+  .ausf-0-6-doc.print-doc .registrar-signature-zone .city-registrar-signature p {
+    text-align: right !important;
+  }
+
+  html[data-paper-size='a4'] .ausf-07-17-doc {
+    font-size: 12pt !important;
+    line-height: 1.5 !important;
+  }
+
+  html[data-paper-size='a4'] .ausf-07-17-doc p,
+  html[data-paper-size='a4'] .ausf-07-17-doc ol,
+  html[data-paper-size='a4'] .ausf-07-17-doc ol li {
+    font-size: 12pt !important;
+  }
+
+  html[data-paper-size='a4'] .ausf-07-17-doc .print-doc-footer p,
+  html[data-paper-size='a4'] .ausf-07-17-doc .print-doc-footer .text-xs {
+    font-size: 12px !important;
+  }
+
+  html[data-paper-size='long'] .ausf-07-17-doc {
+    font-size: 12pt !important;
+    line-height: 1.5 !important;
+  }
+
+  html[data-paper-size='long'] .ausf-07-17-doc p,
+  html[data-paper-size='long'] .ausf-07-17-doc ol,
+  html[data-paper-size='long'] .ausf-07-17-doc ol li {
+    font-size: 12pt !important;
+  }
+
+  html[data-paper-size='long'] .ausf-07-17-doc .print-doc-footer p,
+  html[data-paper-size='long'] .ausf-07-17-doc .print-doc-footer .text-xs {
+    font-size: 12px !important;
+  }
+
+  .ausf-07-17-doc .ausf-subscribed-sworn {
+    margin-bottom: 0.12in !important;
+  }
+
+  .ausf-only-doc.print-doc {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .ausf-only-doc .registrar-signature-zone {
+    align-items: flex-end !important;
+    margin-top: 0.2in !important;
+  }
+
+  html[data-paper-size='a4'] .ausf-only-doc .ausf-only-doc-body,
+  html[data-paper-size='a4'] .ausf-only-doc .ausf-only-doc-body *,
+  html[data-paper-size='long'] .ausf-only-doc .ausf-only-doc-body,
+  html[data-paper-size='long'] .ausf-only-doc .ausf-only-doc-body * {
+    font-size: 12pt !important;
+  }
+
+  html[data-paper-size='long'] .ausf-only-doc .print-doc-footer p,
+  html[data-paper-size='long'] .ausf-only-doc .print-doc-footer .text-xs,
+  html[data-paper-size='a4'] .ausf-only-doc .print-doc-footer p,
+  html[data-paper-size='a4'] .ausf-only-doc .print-doc-footer .text-xs {
+    font-size: 12px !important;
+  }
+
+  html[data-paper-size='long'] .ausf-only-doc .registrar-signature-zone {
+    margin-top: 0.45in !important;
+  }
+
+  .fill-blank,
+  .ausf-doc .fill-blank,
+  .ausf-doc .ausf-signature-block__name {
+    border-bottom: none !important;
+    padding-bottom: 0.22em !important;
+    line-height: 1.35 !important;
+    vertical-align: baseline;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .fill-blank::after,
+  .ausf-doc .ausf-signature-block__name::after {
+    height: 1px !important;
+    background-color: #000 !important;
+  }
+
+  html[data-paper-size='a4'] .print-doc,
+  html[data-paper-size='a4'] .ausf-doc.print-doc {
+    min-height: 297mm !important;
+    width: 210mm !important;
+    max-width: 210mm !important;
+    padding: 1in !important;
+  }
+
+  html[data-paper-size='a4'] .registrar-signature-zone {
+    margin-top: auto !important;
+  }
+
+  html[data-paper-size='long'] .print-doc,
+  html[data-paper-size='long'] .ausf-doc.print-doc {
+    min-height: 13in !important;
+    height: 13in !important;
+    max-height: 13in !important;
+    width: 8.5in !important;
+    max-width: 8.5in !important;
+    padding: 1in !important;
+  }
+
+  html[data-paper-size='long'] .ausf-0-6-doc.print-doc .registrar-signature-zone {
+    margin-top: auto !important;
+    flex: 0 0 auto !important;
+    min-height: 0 !important;
   }
 }

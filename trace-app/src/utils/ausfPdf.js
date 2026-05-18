@@ -27,7 +27,8 @@ export function getAusfPdfPageSizeInches(format) {
   return [8.5, 13];
 }
 
-const PDF_MARGIN_IN = 0.2;
+/** Document includes 1in padding; export fills the page edge-to-edge */
+const PDF_MARGIN_IN = 0;
 
 /**
  * Capture an AUSF print document element and return base64 PDF (Long or A4).

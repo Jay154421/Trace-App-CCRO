@@ -67,6 +67,7 @@ const CONDITIONAL_DOCS = {
   foreign_parent_id: { id: 'foreign_parent_id', label: 'Passport or Bureau of Immigration cert. (foreign parent)' },
   affidavit_corroboration_out_of_town: { id: 'out_of_town_affidavit_legal_office', label: 'Affidavit w/ Corroboration for Out-of-Town Applicant (Legal Office)' },
   marriage_certificate: { id: 'marriage_certificate', label: 'Marriage Certificate' },
+  ausf: { id: 'ausf', label: 'AUSF (Affidavit to Use Surname of Father)' },
   colb_parent_id: { id: 'colb_parent_id', label: 'Valid I.D. of parent/s or guardian' },
   muslim_attachment: { id: 'muslim_attachment', label: 'Muslim attachment' },
 };
@@ -108,6 +109,8 @@ function getRequirementsForChild(child) {
     const conditional = [];
     if (child.has_marriage_certificate) {
       conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.marriage_certificate), category: 'conditional' });
+    } else {
+      conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.ausf), category: 'conditional' });
     }
     if (child.colb_requires_parent_id) {
       conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.colb_parent_id), category: 'conditional' });
@@ -124,6 +127,17 @@ function getRequirementsForChild(child) {
   }
 
   const base = getRequirementsForAgeGroup(child.age_group || '1m1d_to_6');
+  const parentsMarried = Boolean(child.has_marriage_certificate);
+  const ageSpecific = base.ageSpecific.filter((doc) => {
+    if (doc.id === 'ausf') return !parentsMarried;
+    if (doc.id === 'marriage_contract') return parentsMarried;
+    return true;
+  });
+  const general = base.general;
+  const filteredAll = [
+    ...general,
+    ...ageSpecific,
+  ];
   const conditional = [];
   if (child.registrant_deceased) {
     conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.death_cert_registrant), category: 'conditional' });
@@ -138,9 +152,10 @@ function getRequirementsForChild(child) {
   if (child.out_of_town) {
     conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.affidavit_corroboration_out_of_town), category: 'conditional' });
   }
-  const all = [...base.all, ...conditional];
+  const all = [...filteredAll, ...conditional];
   return {
-    ...base,
+    general,
+    ageSpecific,
     conditional,
     all,
   };
