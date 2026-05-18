@@ -393,6 +393,25 @@ function clearAttendantNotApplicableFields(cert) {
   return next;
 }
 
+/** When user enters NOT APPLICABLE in 21b Address, fill related certification fields. */
+function applyAttendantCertNotApplicableFromAddress(cert, addressValue) {
+  const address = String(addressValue ?? '').trim().toUpperCase();
+  if (!isMarriageNotApplicableValue(address)) {
+    const next = { ...cert, attendantAddress: addressValue };
+    if (next.attendantName === NOT_APPLICABLE_LABEL) next.attendantName = '';
+    if (next.attendantTitle === NOT_APPLICABLE_LABEL) next.attendantTitle = '';
+    if (next.attendantDate === NOT_APPLICABLE_LABEL) next.attendantDate = '';
+    return next;
+  }
+  return {
+    ...cert,
+    attendantAddress: NOT_APPLICABLE_LABEL,
+    attendantName: NOT_APPLICABLE_LABEL,
+    attendantTitle: NOT_APPLICABLE_LABEL,
+    attendantDate: NOT_APPLICABLE_LABEL,
+  };
+}
+
 const NA_DK_SUGGESTIONS = ['N/A', 'D.K'];
 const ATTENDANT_SIGNATURE_SUGGESTIONS = [
   'Nowhere to be found at the time of registration',
@@ -1960,6 +1979,10 @@ export function CertificateOfLiveBirth() {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
+  const updateAttendantAddress = (value) => {
+    setForm((prev) => applyAttendantCertNotApplicableFromAddress(prev, value));
+  };
+
   const updateNumericMaxTwoDigits = (key, rawValue, fieldLabel) => {
     const clean = String(rawValue ?? '').toUpperCase();
     if (isValidNaOrDkPrefix(clean)) {
@@ -3024,7 +3047,7 @@ export function CertificateOfLiveBirth() {
             </div>
             <div>
               <p className="mb-1" style={{ fontWeight: 400 }}>Address</p>
-              <FormLine value={form.attendantAddress} onChange={(v) => update('attendantAddress', v)} placeholder="(Address)" className="w-full" disabled={attendantNotApplicable} />
+              <FormLine value={form.attendantAddress} onChange={updateAttendantAddress} placeholder="(Address)" className="w-full" disabled={attendantNotApplicable} />
             </div>
             <div>
               <p className="mb-1" style={{ fontWeight: 400 }}>Name in Print</p>
