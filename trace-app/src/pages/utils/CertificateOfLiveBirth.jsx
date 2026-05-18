@@ -363,6 +363,56 @@ function clearMarriageNotApplicableFields(cert) {
   return next;
 }
 
+function shouldAutoFillAttendantNotApplicable(child) {
+  return isTruthyFlag(child?.hilot_deceased);
+}
+
+function applyAttendantNotApplicableFields(cert) {
+  return {
+    ...cert,
+    attendantType: 'Hilot (Traditional Birth Attendant)',
+    attendantOthersSpecify: '',
+    attendantName: NOT_APPLICABLE_LABEL,
+    attendantSignature: NOT_APPLICABLE_LABEL,
+    attendantAddress: NOT_APPLICABLE_LABEL,
+    attendantTitle: NOT_APPLICABLE_LABEL,
+    attendantDate: NOT_APPLICABLE_LABEL,
+  };
+}
+
+function clearAttendantNotApplicableFields(cert) {
+  const next = { ...cert };
+  if (next.attendantType === 'Hilot (Traditional Birth Attendant)') {
+    next.attendantType = '';
+  }
+  if (next.attendantName === NOT_APPLICABLE_LABEL) next.attendantName = '';
+  if (next.attendantSignature === NOT_APPLICABLE_LABEL) next.attendantSignature = '';
+  if (next.attendantAddress === NOT_APPLICABLE_LABEL) next.attendantAddress = '';
+  if (next.attendantTitle === NOT_APPLICABLE_LABEL) next.attendantTitle = '';
+  if (next.attendantDate === NOT_APPLICABLE_LABEL) next.attendantDate = '';
+  return next;
+}
+
+const NA_DK_SUGGESTIONS = ['N/A', 'D.K'];
+
+function isValidNaOrDkPrefix(val) {
+  const clean = String(val ?? '').trim().toUpperCase();
+  if (!clean) return true;
+  return (
+    'N/A'.startsWith(clean) ||
+    'NA'.startsWith(clean) ||
+    'D.K'.startsWith(clean) ||
+    'DK'.startsWith(clean)
+  );
+}
+
+function finalizeNaOrDk(val) {
+  const clean = String(val ?? '').trim().toUpperCase();
+  if (clean === 'N' || clean === 'N/' || clean === 'NA' || clean === 'N/A') return 'N/A';
+  if (clean === 'D' || clean === 'D.' || clean === 'DK' || clean === 'D.K') return 'D.K';
+  return val;
+}
+
 /** Deduped PSA locality rows (one per `code`) for city picker internals. */
 function buildPhGeoPickRecords(rows) {
   const byCode = new Map();
@@ -1652,6 +1702,31 @@ export function CertificateOfLiveBirth() {
     });
   }, [child, loading]);
 
+  useEffect(() => {
+    if (!child || loading) return;
+    if (shouldAutoFillAttendantNotApplicable(child)) {
+      setForm((prev) => {
+        if (
+          prev.attendantName === NOT_APPLICABLE_LABEL &&
+          prev.attendantAddress === NOT_APPLICABLE_LABEL
+        ) {
+          return prev;
+        }
+        return applyAttendantNotApplicableFields(prev);
+      });
+      return;
+    }
+    setForm((prev) => {
+      if (
+        prev.attendantName !== NOT_APPLICABLE_LABEL &&
+        prev.attendantAddress !== NOT_APPLICABLE_LABEL
+      ) {
+        return prev;
+      }
+      return clearAttendantNotApplicableFields(prev);
+    });
+  }, [child, loading]);
+
   const defaultTitle = 'B-TRACE System';
 
   useEffect(() => {
@@ -1694,11 +1769,17 @@ export function CertificateOfLiveBirth() {
 
   const save = useCallback(async () => {
     if (!id) return;
-    const certFields = shouldAutoFillMarriageNotApplicable(child)
+    let certFields = shouldAutoFillMarriageNotApplicable(child)
       ? applyMarriageNotApplicableFields(form)
       : form;
+    if (shouldAutoFillAttendantNotApplicable(child)) {
+      certFields = applyAttendantNotApplicableFields(certFields);
+    }
     const payload = {
       ...certFields,
+      motherAge: finalizeNaOrDk(certFields.motherAge),
+      fatherAge: finalizeNaOrDk(certFields.fatherAge),
+      weightGrams: finalizeNaOrDk(certFields.weightGrams),
       motherCountry: String(certFields.motherCountry || '').trim().toUpperCase(),
       fatherCountry: String(certFields.fatherCountry || '').trim().toUpperCase(),
       marriagePlaceCountry: String(certFields.marriagePlaceCountry || '').trim().toUpperCase(),
@@ -1710,6 +1791,9 @@ export function CertificateOfLiveBirth() {
       await childrenApi.updateCertificateOfLiveBirth(id, payload);
       setForm((prev) => ({
         ...prev,
+        motherAge: payload.motherAge,
+        fatherAge: payload.fatherAge,
+        weightGrams: payload.weightGrams,
         motherCountry: payload.motherCountry,
         fatherCountry: payload.fatherCountry,
         marriagePlaceCountry: payload.marriagePlaceCountry,
@@ -1868,6 +1952,11 @@ export function CertificateOfLiveBirth() {
   };
 
   const updateNumericMaxTwoDigits = (key, rawValue, fieldLabel) => {
+    const clean = String(rawValue ?? '').toUpperCase();
+    if (isValidNaOrDkPrefix(clean)) {
+      update(key, clean);
+      return;
+    }
     const { value, hadNonDigit, exceededLength } = normalizeTwoDigitNumericInput(rawValue);
     if (hadNonDigit) {
       toast.error(`${fieldLabel}: digits only (0–9), maximum 2 digits.`, { id: `cert-2dig-char-${key}` });
@@ -1886,6 +1975,11 @@ export function CertificateOfLiveBirth() {
     update(key, value);
   };
   const updateDigitsOnly = (key, rawValue, fieldLabel) => {
+    const clean = String(rawValue ?? '').toUpperCase();
+    if (isValidNaOrDkPrefix(clean)) {
+      update(key, clean);
+      return;
+    }
     const source = String(rawValue ?? '');
     const value = source.replace(/\D/g, '');
     if (source !== value) {
@@ -1975,6 +2069,11 @@ export function CertificateOfLiveBirth() {
 
   const parentsMarriageNotApplicable = useMemo(
     () => shouldAutoFillMarriageNotApplicable(child),
+    [child],
+  );
+
+  const attendantNotApplicable = useMemo(
+    () => shouldAutoFillAttendantNotApplicable(child),
     [child],
   );
 
@@ -2392,7 +2491,18 @@ export function CertificateOfLiveBirth() {
             <div>
               <label className="block mb-1 font-normal">6. WEIGHT AT BIRTH</label>
               <div className="flex items-baseline gap-2">
-                <FormLine value={form.weightGrams} onChange={(v) => updateDigitsOnly('weightGrams', v, '6. WEIGHT AT BIRTH')} placeholder="(e.g. 3200)" className="w-24" width="w-24" includeNotApplicable={false} />
+                <FormTextCombo
+                  value={form.weightGrams}
+                  onInputChange={(v) => updateDigitsOnly('weightGrams', v, '6. WEIGHT AT BIRTH')}
+                  onBlur={() => setForm((prev) => ({ ...prev, weightGrams: finalizeNaOrDk(prev.weightGrams) }))}
+                  suggestionOptions={NA_DK_SUGGESTIONS}
+                  idleFocusSuggestions={NA_DK_SUGGESTIONS}
+                  placeholder="(e.g. 3200)"
+                  className="w-28"
+                  width="w-28"
+                  includeNotApplicable={false}
+                  ariaLabel="Weight at birth"
+                />
                 <span>grams</span>
               </div>
             </div>
@@ -2477,13 +2587,17 @@ export function CertificateOfLiveBirth() {
             <div>
               <label className="block mb-1 font-normal">12. AGE at the time of this birth (completed years)</label>
               <div className="flex items-baseline gap-2">
-                <FormLine
+                <FormTextCombo
                   value={form.motherAge}
-                  onChange={(v) => updateNumericMaxTwoDigits('motherAge', v, '12')}
+                  onInputChange={(v) => updateNumericMaxTwoDigits('motherAge', v, '12')}
+                  onBlur={() => setForm((prev) => ({ ...prev, motherAge: finalizeNaOrDk(prev.motherAge) }))}
+                  suggestionOptions={NA_DK_SUGGESTIONS}
+                  idleFocusSuggestions={NA_DK_SUGGESTIONS}
                   placeholder="(Age)"
-                  className="w-20"
-                  width="w-20"
+                  className="w-24"
+                  width="w-24"
                   includeNotApplicable={false}
+                  ariaLabel="Mother age"
                 />
                 <span style={{ fontSize: '14px' }}>#</span>
               </div>
@@ -2585,13 +2699,17 @@ export function CertificateOfLiveBirth() {
             <div>
               <label className="block mb-1 font-normal">18. AGE at the time of this birth (completed years)</label>
               <div className="flex items-baseline gap-2">
-                <FormLine
+                <FormTextCombo
                   value={form.fatherAge}
-                  onChange={(v) => updateNumericMaxTwoDigits('fatherAge', v, '18')}
+                  onInputChange={(v) => updateNumericMaxTwoDigits('fatherAge', v, '18')}
+                  onBlur={() => setForm((prev) => ({ ...prev, fatherAge: finalizeNaOrDk(prev.fatherAge) }))}
+                  suggestionOptions={NA_DK_SUGGESTIONS}
+                  idleFocusSuggestions={NA_DK_SUGGESTIONS}
                   placeholder="(Age)"
-                  className="w-20"
-                  width="w-20"
+                  className="w-24"
+                  width="w-24"
                   includeNotApplicable={false}
+                  ariaLabel="Father age"
                 />
                 <span style={{ fontSize: '14px' }}>#</span>
               </div>
@@ -2788,13 +2906,14 @@ export function CertificateOfLiveBirth() {
             ].map((label, i) => {
               const opt = ['Physician', 'Nurse', 'Midwife', 'Hilot (Traditional Birth Attendant)', 'Others'][i];
               return (
-                <label key={opt} className="flex items-center gap-2 cursor-pointer">
+                <label key={opt} className={`flex items-center gap-2 ${attendantNotApplicable ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}>
                   <input
                     type="radio"
                     name="attendantType"
                     checked={form.attendantType === opt}
                     onChange={() => update('attendantType', opt)}
                     className="sr-only"
+                    disabled={attendantNotApplicable}
                   />
                   <span
                     className="inline-block w-4 h-4 flex-shrink-0"
@@ -2802,7 +2921,7 @@ export function CertificateOfLiveBirth() {
                   />
                   <span>{label}</span>
                   {opt === 'Others' && (
-                    <FormLine value={form.attendantOthersSpecify} onChange={(v) => update('attendantOthersSpecify', v)} placeholder="(Specify)" className="w-24 inline-block ml-0" width="w-24" />
+                    <FormLine value={form.attendantOthersSpecify} onChange={(v) => update('attendantOthersSpecify', v)} placeholder="(Specify)" className="w-24 inline-block ml-0" width="w-24" disabled={attendantNotApplicable} />
                   )}
                 </label>
               );
@@ -2886,20 +3005,22 @@ export function CertificateOfLiveBirth() {
                 onChange={(v) => update('attendantSignature', v)}
                 placeholder="(Signature)"
                 className="w-full"
+                disabled={attendantNotApplicable}
               />
             </div>
             <div>
               <p className="mb-1" style={{ fontWeight: 400 }}>Address</p>
-              <FormLine value={form.attendantAddress} onChange={(v) => update('attendantAddress', v)} placeholder="(Address)" className="w-full" />
+              <FormLine value={form.attendantAddress} onChange={(v) => update('attendantAddress', v)} placeholder="(Address)" className="w-full" disabled={attendantNotApplicable} />
             </div>
             <div>
               <p className="mb-1" style={{ fontWeight: 400 }}>Name in Print</p>
-              <FormLine value={form.attendantName} onChange={(v) => update('attendantName', v)} placeholder="(Name in print)" />
+              <FormLine value={form.attendantName} onChange={(v) => update('attendantName', v)} placeholder="(Name in print)" disabled={attendantNotApplicable} />
             </div>
             <div>
               <p className="mb-1" style={{ fontWeight: 400 }}>Date</p>
               <div className="flex items-center gap-1">
-                <FormLine value={form.attendantDate} onChange={(v) => update('attendantDate', v)} placeholder="(Month Day, Year)" className="flex-1 min-w-0" />
+                <FormLine value={form.attendantDate} onChange={(v) => update('attendantDate', v)} placeholder="(Month Day, Year)" className="flex-1 min-w-0" disabled={attendantNotApplicable} />
+                {!attendantNotApplicable ? (
                 <CertificateDatePicker
                   pickerId="attendantDate"
                   openPickerId={openPickerId}
@@ -2910,11 +3031,12 @@ export function CertificateOfLiveBirth() {
                   }}
                   ariaLabel="Choose attendant signature date"
                 />
+                ) : null}
               </div>
             </div>
             <div className="sm:col-span-2">
               <p className="mb-1" style={{ fontWeight: 400 }}>Title or Position</p>
-              <FormLine value={form.attendantTitle} onChange={(v) => update('attendantTitle', v)} placeholder="(Title or position)" />
+              <FormLine value={form.attendantTitle} onChange={(v) => update('attendantTitle', v)} placeholder="(Title or position)" disabled={attendantNotApplicable} />
             </div>
           </div>
           </div>
