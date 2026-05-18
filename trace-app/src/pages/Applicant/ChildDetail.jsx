@@ -25,54 +25,37 @@ import {
   isTruthyFlag,
   formatApplicantGenderLabel,
 } from '../../utils/applicantForm';
+import { onPdfSavedOpenInBrowser, openSavedPdfInBrowser } from '../../utils/openSavedPdfInBrowser';
 
-async function openSavedPdfInEdge(filePath) {
-  if (!window.electron?.openPdfInEdge) {
-    return { ok: false, error: 'Open in Edge is available in the desktop app.' };
-  }
-  try {
-    return await window.electron.openPdfInEdge(filePath);
-  } catch (err) {
-    return { ok: false, error: err?.message || 'Could not open in Microsoft Edge.' };
-  }
+function savedPdfFileName(filePath) {
+  if (!filePath) return '';
+  const parts = String(filePath).split(/[/\\]/);
+  return parts[parts.length - 1] || filePath;
 }
 
-function showPdfOpenEdgeRetryToast(filePath, label) {
-  toast.custom(
-    (t) => (
-      <div
-        role="button"
-        tabIndex={0}
-        className={`flex max-w-md cursor-pointer items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900 shadow-lg transition-opacity duration-300 ease-out ${t.visible ? 'opacity-100' : 'opacity-0'}`}
+function SavedPdfOpenLink({ filePath, label }) {
+  if (!filePath) return null;
+  const fileName = savedPdfFileName(filePath);
+  return (
+    <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+      <p className="text-sm font-medium text-emerald-900">{label} saved</p>
+      <p className="mt-1 truncate text-xs text-slate-600" title={filePath}>
+        {fileName}
+      </p>
+      <button
+        type="button"
         onClick={async () => {
-          toast.dismiss(t.id);
-          const result = await openSavedPdfInEdge(filePath);
+          const result = await openSavedPdfInBrowser(filePath);
           if (!result?.ok) {
-            toast.error(result?.error || 'Could not open in Microsoft Edge.');
+            toast.error(result?.error || 'Could not open the PDF in a browser.');
           }
         }}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            e.currentTarget.click();
-          }
-        }}
+        className="mt-2 text-sm font-medium text-emerald-700 underline hover:text-emerald-800"
       >
-        {label} saved. Click here to open in Microsoft Edge.
-      </div>
-    ),
-    { duration: 12000 }
+        Open in Microsoft Edge or Google Chrome
+      </button>
+    </div>
   );
-}
-
-async function onPdfSavedOpenInEdge(filePath, label) {
-  const openResult = await openSavedPdfInEdge(filePath);
-  if (openResult?.ok) {
-    toast.success(`${label} saved and opened in Microsoft Edge.`, { duration: 5000 });
-    return;
-  }
-  toast.error(openResult?.error || 'PDF saved but could not open in Microsoft Edge.');
-  showPdfOpenEdgeRetryToast(filePath, label);
 }
 
 export function ChildDetail() {
@@ -92,11 +75,18 @@ export function ChildDetail() {
   const [frontPdfSaving, setFrontPdfSaving] = useState(false);
   const [backPdfMenuOpen, setBackPdfMenuOpen] = useState(false);
   const [backPdfSaving, setBackPdfSaving] = useState(false);
+  const [lastFrontPdfPath, setLastFrontPdfPath] = useState(null);
+  const [lastBackPdfPath, setLastBackPdfPath] = useState(null);
   const [staffStatusUpdating, setStaffStatusUpdating] = useState(false);
   const { url: frontPdfPreviewUrl, isOpen: frontPdfPreviewOpen, openPreview: openFrontPdfPreview, closePreview: closeFrontPdfPreview } =
     usePdfPreviewUrl();
   const { url: backPdfPreviewUrl, isOpen: backPdfPreviewOpen, openPreview: openBackPdfPreview, closePreview: closeBackPdfPreview } =
     usePdfPreviewUrl();
+
+  useEffect(() => {
+    setLastFrontPdfPath(null);
+    setLastBackPdfPath(null);
+  }, [id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -206,7 +196,8 @@ export function ChildDetail() {
       const suggestedFilename = buildPdfFilename(child, cert);
       const result = await window.electron.saveFieldPositionPdf(base64, suggestedFilename);
       if (result?.ok) {
-        await onPdfSavedOpenInEdge(result.filePath, 'Front PDF');
+        setLastFrontPdfPath(result.filePath);
+        await onPdfSavedOpenInBrowser(result.filePath, 'Front PDF');
         return true;
       }
       return false;
@@ -262,7 +253,8 @@ export function ChildDetail() {
       const suggestedFilename = `BACK-${buildBackPdfFilename(child, cert)}`;
       const result = await window.electron.saveFieldPositionPdf(base64, suggestedFilename);
       if (result?.ok) {
-        await onPdfSavedOpenInEdge(result.filePath, 'Back PDF');
+        setLastBackPdfPath(result.filePath);
+        await onPdfSavedOpenInBrowser(result.filePath, 'Back PDF');
         return true;
       }
       return false;
@@ -332,13 +324,23 @@ export function ChildDetail() {
               <h2 id="child-detail-front-pdf-preview-title" className="text-sm font-semibold text-slate-800">
                 PDF preview
               </h2>
-              <button
-                type="button"
-                onClick={closeFrontPdfPreview}
-                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-              >
-                Close
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <a
+                  href={frontPdfPreviewUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-800 hover:bg-emerald-100"
+                >
+                  Open in new tab
+                </a>
+                <button
+                  type="button"
+                  onClick={closeFrontPdfPreview}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  Close
+                </button>
+              </div>
             </div>
             <iframe
               src={frontPdfPreviewUrl}
@@ -367,13 +369,23 @@ export function ChildDetail() {
               <h2 id="child-detail-back-pdf-preview-title" className="text-sm font-semibold text-slate-800">
                 Back PDF preview
               </h2>
-              <button
-                type="button"
-                onClick={closeBackPdfPreview}
-                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-              >
-                Close
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <a
+                  href={backPdfPreviewUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-800 hover:bg-emerald-100"
+                >
+                  Open in new tab
+                </a>
+                <button
+                  type="button"
+                  onClick={closeBackPdfPreview}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  Close
+                </button>
+              </div>
             </div>
             <iframe
               src={backPdfPreviewUrl}
@@ -745,8 +757,7 @@ export function ChildDetail() {
                   onClick={async () => {
                     setFrontPdfSaving(true);
                     try {
-                      const ok = await handleSavePdf();
-                      if (ok) setFrontPdfMenuOpen(false);
+                      await handleSavePdf();
                     } finally {
                       setFrontPdfSaving(false);
                     }
@@ -757,6 +768,7 @@ export function ChildDetail() {
                   {frontPdfSaving ? 'Saving…' : 'Save Front as PDF'}
                 </button>
               </div>
+              <SavedPdfOpenLink filePath={lastFrontPdfPath} label="Front PDF" />
             </div>
             <div className="flex justify-end border-t border-slate-200 bg-slate-50/60 px-6 py-4">
               <button
@@ -765,7 +777,7 @@ export function ChildDetail() {
                 disabled={frontPdfSaving}
                 className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
               >
-                Cancel
+                {lastFrontPdfPath ? 'Done' : 'Cancel'}
               </button>
             </div>
           </div>
@@ -810,8 +822,7 @@ export function ChildDetail() {
                   onClick={async () => {
                     setBackPdfSaving(true);
                     try {
-                      const ok = await handleSavePdfBack();
-                      if (ok) setBackPdfMenuOpen(false);
+                      await handleSavePdfBack();
                     } finally {
                       setBackPdfSaving(false);
                     }
@@ -822,6 +833,7 @@ export function ChildDetail() {
                   {backPdfSaving ? 'Saving…' : 'Save Back as PDF'}
                 </button>
               </div>
+              <SavedPdfOpenLink filePath={lastBackPdfPath} label="Back PDF" />
             </div>
             <div className="flex justify-end border-t border-slate-200 bg-slate-50/60 px-6 py-4">
               <button
@@ -830,7 +842,7 @@ export function ChildDetail() {
                 disabled={backPdfSaving}
                 className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
               >
-                Cancel
+                {lastBackPdfPath ? 'Done' : 'Cancel'}
               </button>
             </div>
           </div>

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { jsPDF } from 'jspdf';
 import { childrenApi } from '../../services/api';
+import { onPdfSavedOpenInBrowser } from '../../utils/openSavedPdfInBrowser';
 
 // ============================================================================
 // CONSTANTS
@@ -1129,7 +1130,7 @@ export function FieldPosition() {
       const suggestedFilename = buildPdfFilename(child, cert);
       const result = await window.electron.saveFieldPositionPdf(base64, suggestedFilename);
       if (result?.ok) {
-        toast.success('PDF saved.');
+        await onPdfSavedOpenInBrowser(result.filePath, 'PDF');
       }
     } catch (err) {
       toast.error(err?.message || 'Failed to save PDF.');
@@ -1147,7 +1148,7 @@ export function FieldPosition() {
       const suggestedFilename = `combined-${buildPdfFilename(child, cert)}`;
       const result = await window.electron.saveFieldPositionPdf(base64, suggestedFilename);
       if (result?.ok) {
-        toast.success('Combined PDF with checklist saved.');
+        await onPdfSavedOpenInBrowser(result.filePath, 'Combined PDF');
       }
     } catch (err) {
       toast.error(err?.message || 'Failed to save combined PDF.');

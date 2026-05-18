@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { jsPDF } from 'jspdf';
 import { childrenApi } from '../../services/api';
 import { usePdfPreviewUrl } from '../../hooks/usePdfPreviewUrl';
+import { onPdfSavedOpenInBrowser } from '../../utils/openSavedPdfInBrowser';
 
 // ============================================================================
 // CONSTANTS
@@ -47,7 +48,7 @@ const RADIO_CHECK_SHAPE_EXTENT = { horizontal: 0.95, vertical: 0.7 };
 
 /** DRA template marks: one horizontal stroke (not a checkmark), PDF units inches */
 const DRA_STRAIGHT_MARK = {
-    lengthIn: 0.1 / 2.54, // 0.3 inches
+    lengthIn: 0.3 / 2.54, // 0.3 inches
     lineWidthIn: 0.03 / 2.54
 };
 
@@ -121,16 +122,16 @@ const FIELD_POSITIONS = {
     dra_rad_marital_widow: { x: 2007, y: 1653 },
     dra_rad_marital_widower: { x: 2136, y: 1653 },
     dra_rad_attended_i: { x: 481, y: 2208 },
-    dra_rad_attended_he: { x: 531, y: 2208 },
+    dra_rad_attended_he: { x: 521, y: 2208 },
     dra_rad_attended_she: { x: 570, y: 2208 },
     dra_rad_citizen_i: { x: 531, y: 2349 },
-    dra_rad_citizen_he: { x: 588, y: 2349 },
+    dra_rad_citizen_he: { x: 575, y: 2349 },
     dra_rad_citizen_she: { x: 648, y: 2349 },
     dra_rad_parents_my: { x: 483, y: 2442 },
-    dra_rad_parents_his: { x: 555, y: 2442 },
+    dra_rad_parents_his: { x: 545, y: 2442 },
     dra_rad_parents_her: { x: 624, y: 2442 },
     dra_rad_nm_ack_my: { x: 1311, y: 2586 },
-    dra_rad_nm_ack_his: { x: 1344, y: 2586 },
+    dra_rad_nm_ack_his: { x: 1336, y: 2586 },
     dra_rad_nm_ack_her: { x: 1416, y: 2586 },
     dra_rad_nm_nack_my: { x: 2124, y: 2586 },
     dra_rad_nm_nack_his: { x: 2172, y: 2586 },
@@ -1228,7 +1229,7 @@ export function FieldPositionBack() {
             const suggestedFilename = buildPdfFilename(child, cert);
             const result = await window.electron.saveFieldPositionPdf(base64, suggestedFilename);
             if (result?.ok) {
-                toast.success('PDF saved.');
+                await onPdfSavedOpenInBrowser(result.filePath, 'PDF');
             }
         } catch (err) {
             toast.error(err?.message || 'Failed to save PDF.');
@@ -1246,7 +1247,7 @@ export function FieldPositionBack() {
             const suggestedFilename = `combined-${buildPdfFilename(child, cert)}`;
             const result = await window.electron.saveFieldPositionPdf(base64, suggestedFilename);
             if (result?.ok) {
-                toast.success('Combined PDF with checklist saved.');
+                await onPdfSavedOpenInBrowser(result.filePath, 'Combined PDF');
             }
         } catch (err) {
             toast.error(err?.message || 'Failed to save combined PDF.');
