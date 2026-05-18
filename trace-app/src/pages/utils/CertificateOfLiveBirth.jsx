@@ -1118,6 +1118,8 @@ function FormPhCityCombo({
   ariaLabel,
   maxSuggestionRows = 40,
   crossFieldSeedRef,
+  /** When empty on focus, suggest from this city first (e.g. place of birth → residence). */
+  idleFocusSeed,
 }) {
   const listboxBaseId = useId();
   const listboxId = `${listboxBaseId}-listbox`;
@@ -1193,6 +1195,13 @@ function FormPhCityCombo({
         onFocus={() => {
           if (trimmedCity) {
             const sug = getPhCityPickerSuggestions(trimmedCity, maxSuggestionRows);
+            if (sug.length) setOpen(true);
+            return;
+          }
+          const pobSeed = String(idleFocusSeed ?? '').trim().toUpperCase();
+          if (pobSeed) {
+            setPendingCrossFieldSeed(pobSeed);
+            const sug = getPhCityPickerSuggestions(pobSeed, maxSuggestionRows);
             if (sug.length) setOpen(true);
             return;
           }
@@ -2093,11 +2102,21 @@ export function CertificateOfLiveBirth() {
     return s ? [s] : [];
   }, [form.childLast]);
 
-  /** Mother residence line 1 → suggest same for father (shared household). */
-  const fatherResidenceLine1FromMotherOptions = useMemo(() => {
-    const s = String(form.motherResidenceLine1 ?? '').trim().toUpperCase();
+  /** Place of birth address line → suggest for mother/father residence (13., 19.). */
+  const residenceLine1FromPlaceOfBirthOptions = useMemo(() => {
+    const s = String(form.placeOfBirthName ?? '').trim().toUpperCase();
     return s ? [s] : [];
-  }, [form.motherResidenceLine1]);
+  }, [form.placeOfBirthName]);
+
+  /** Father residence line 1: place of birth, then mother residence. */
+  const fatherResidenceLine1LinkedOptions = useMemo(() => {
+    const opts = [];
+    const fromPob = String(form.placeOfBirthName ?? '').trim().toUpperCase();
+    const fromMother = String(form.motherResidenceLine1 ?? '').trim().toUpperCase();
+    if (fromPob) opts.push(fromPob);
+    if (fromMother && !opts.includes(fromMother)) opts.push(fromMother);
+    return opts;
+  }, [form.placeOfBirthName, form.motherResidenceLine1]);
 
   const parentsMarriageNotApplicable = useMemo(
     () => shouldAutoFillMarriageNotApplicable(child),
@@ -2637,7 +2656,16 @@ export function CertificateOfLiveBirth() {
             <div className="md:col-span-2">
               <label className="block mb-1 font-normal">13. RESIDENCE</label>
               <div className="space-y-2 w-full">
-                <FormLine value={form.motherResidenceLine1} onChange={(v) => update('motherResidenceLine1', v)} placeholder="(House No., St., Barangay)" className="w-full" width="w-full" />
+                <FormTextCombo
+                  value={form.motherResidenceLine1}
+                  onInputChange={(v) => update('motherResidenceLine1', v)}
+                  suggestionOptions={residenceLine1FromPlaceOfBirthOptions}
+                  idleFocusSuggestions={residenceLine1FromPlaceOfBirthOptions}
+                  placeholder="(House No., St., Barangay)"
+                  className="w-full"
+                  width="w-full"
+                  ariaLabel="Mother residence house number street barangay"
+                />
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <FormPhCityCombo
                     cityValue={form.motherResidenceCity}
@@ -2658,6 +2686,7 @@ export function CertificateOfLiveBirth() {
                     width="w-full"
                     ariaLabel="Mother residence city or municipality"
                     crossFieldSeedRef={phCityCrossSeedRef}
+                    idleFocusSeed={form.placeOfBirthCity}
                   />
                   <FormLine
                     value={form.motherResidenceProvince}
@@ -2752,8 +2781,8 @@ export function CertificateOfLiveBirth() {
                 <FormTextCombo
                   value={form.fatherResidenceLine1}
                   onInputChange={(v) => update('fatherResidenceLine1', v)}
-                  suggestionOptions={fatherResidenceLine1FromMotherOptions}
-                  idleFocusSuggestions={fatherResidenceLine1FromMotherOptions}
+                  suggestionOptions={fatherResidenceLine1LinkedOptions}
+                  idleFocusSuggestions={fatherResidenceLine1LinkedOptions}
                   placeholder="(House No., St., Barangay)"
                   className="w-full"
                   width="w-full"
@@ -2779,6 +2808,7 @@ export function CertificateOfLiveBirth() {
                     width="w-full"
                     ariaLabel="Father residence city or municipality"
                     crossFieldSeedRef={phCityCrossSeedRef}
+                    idleFocusSeed={form.placeOfBirthCity}
                   />
                   <FormLine
                     value={form.fatherResidenceProvince}
