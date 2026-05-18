@@ -394,6 +394,11 @@ function clearAttendantNotApplicableFields(cert) {
 }
 
 const NA_DK_SUGGESTIONS = ['N/A', 'D.K'];
+const ATTENDANT_SIGNATURE_SUGGESTIONS = [
+  'Nowhere to be found at the time of registration',
+  'Deceased at the time of registration',
+  'Dont know',
+];
 
 function isValidNaOrDkPrefix(val) {
   const clean = String(val ?? '').trim().toUpperCase();
@@ -1375,6 +1380,7 @@ function FormTextCombo({
   ariaLabel,
   maxSuggestionRows = 40,
   includeNotApplicable = true,
+  disabled = false,
 }) {
   const listboxBaseId = useId();
   const listboxId = `${listboxBaseId}-listbox`;
@@ -1409,7 +1415,7 @@ function FormTextCombo({
   ]);
 
   const canOpenIdleOnFocus =
-    idleFocusSuggestions && idleFocusSuggestions.length > 0 && !valueTrimmed;
+    idleFocusSuggestions && idleFocusSuggestions.length > 0 && !valueTrimmed && !disabled;
 
   useEffect(() => {
     setActiveIndex(0);
@@ -1449,6 +1455,7 @@ function FormTextCombo({
         aria-activedescendant={showList ? `${listboxId}-opt-${activeIndex}` : undefined}
         autoComplete="off"
         spellCheck={false}
+        disabled={disabled}
         onChange={(e) => {
           const nextValue = e.target.value.toUpperCase();
           onInputChange(nextValue);
@@ -1491,6 +1498,8 @@ function FormTextCombo({
           borderRadius: 0,
           padding: '2px 4px',
           color: COLORS.black,
+          cursor: disabled ? 'not-allowed' : 'text',
+          opacity: disabled ? 0.7 : 1,
         }}
       />
       {showList && (
@@ -3000,12 +3009,17 @@ export function CertificateOfLiveBirth() {
           >
             <div className="sm:col-span-2">
               <p className="mb-1" style={{ fontWeight: 400 }}>Signature</p>
-              <FormLine
+              <FormTextCombo
                 value={form.attendantSignature}
-                onChange={(v) => update('attendantSignature', v)}
+                onInputChange={(v) => update('attendantSignature', v)}
+                suggestionOptions={ATTENDANT_SIGNATURE_SUGGESTIONS}
+                idleFocusSuggestions={ATTENDANT_SIGNATURE_SUGGESTIONS}
                 placeholder="(Signature)"
                 className="w-full"
+                width="w-full"
+                includeNotApplicable={false}
                 disabled={attendantNotApplicable}
+                ariaLabel="Attendant signature"
               />
             </div>
             <div>
