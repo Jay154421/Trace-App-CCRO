@@ -14,7 +14,8 @@
     "electron:dev": "cross-env PORT=3001 ELECTRON_STRICT_PORTS=1 concurrently \"npm run dev:server\" \"npm run dev:vite\" \"wait-on tcp:5174 tcp:3001 && node electron/dev-runner.js\"",
     "electron:build": "vite build --mode electron && electron-builder",
     "electron:start": "electron .",
-    "seed:applicants": "node server/factory/seeder.js"
+    "seed:applicants": "node server/factory/seeder.js",
+    "export:user-guide-pdf": "node scripts/export-user-guide-pdf.mjs"
   },
   "dependencies": {
     "cors": "^2.8.5",

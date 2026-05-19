@@ -4,6 +4,12 @@
 
 For a shorter technical walkthrough, see [Demo.md](./Demo.md). For installation and development, see [trace-app/README.md](./trace-app/README.md).
 
+**PDF:** [USER_GUIDE.pdf](./USER_GUIDE.pdf) — regenerate anytime from the `trace-app` folder:
+
+```bash
+npm run export:user-guide-pdf
+```
+
 ---
 
 ## Table of contents
@@ -94,6 +100,16 @@ Click a row to open that person's **profile**.
 3. Under **Conditional document requirements**, check everything that applies (see [Section 16](#16-age-groups-and-conditional-flags-reference)). These add extra checklist items automatically.
 4. Click **Add applicant**. You are taken to the new profile.
 
+### Place of birth (when adding or editing)
+
+Enter place of birth as **three parts separated by two commas**:
+
+`Hospital or address, City, Province`
+
+**Example:** `Connelly - Cummings Clinic, Calamba, Lanao Del Norte`
+
+This helps the **Certificate of Live Birth** form split the address, city, and municipality/province automatically. If you use only **one comma** (city and province only), the COLB form may not fill city and province fields—you should enter the full three-part format when possible.
+
 ---
 
 ## 5. Applicant profile
@@ -115,7 +131,16 @@ The profile header shows the name in **LAST, FIRST** form (e.g. **RODRIGUEZ, NOR
 | **Edit** | Update applicant details and conditional flags |
 | **Delete** | Remove the record (confirmation required) |
 
-**Front PDF** and **Back PDF** are **disabled** (greyed out) until **every checklist item is complete**. The tooltip explains: *Complete the document checklist first*.
+**Front PDF** and **Back PDF** — After the document checklist is **100% complete** (every required item has at least one attachment), click these buttons to open options to **print/preview** or **save** the front and back pages of the generated Certificate of Live Birth PDF.
+
+| Button | Menu options |
+|--------|----------------|
+| **Front PDF** | **Print Front** (preview in browser) · **Save Front as PDF** (desktop app) |
+| **Back PDF** | **Print Back** (preview) · **Save Back as PDF** (desktop app) |
+
+> **Note:** **Front PDF** and **Back PDF** stay **disabled (grayed out)** until the checklist is fully complete. They do **not** require staff to mark the case **Under Process** or **Verified**—only completed document attachments. The tooltip says: *Complete the document checklist first*.
+
+To change the applicant’s name, date of birth, contact, or conditional flags, use **Edit** on this profile—not the certification letter screen.
 
 ### Status banner
 
@@ -136,8 +161,8 @@ When the checklist is **100% complete**:
 Displays:
 
 - Full name, date of birth (DD-MM-YYYY), age, gender
-- Place of birth, contact number
-- **Age group (requirements)** — e.g. `18 to 59` (drives which documents are required)
+- **Place of birth**, contact number (see [Place of birth format](#place-of-birth-when-adding-or-editing) above)
+- **Age group (requirements)** — e.g. `18 to 59` (drives which documents are required); not shown for COLB BRAP records
 - **Conditional requirements** — If any were set at add/edit (deceased registrant, foreign parent, out-of-town, etc.)
 - **Created** / **Updated** dates
 - **Documents checklist** — Progress bar or link **Open document checklist to get started**
@@ -236,29 +261,35 @@ Affidavit for delayed registration of birth. Fill and save; fields can appear on
 
 ### Print certification
 
-Generates the **Delayed Registration of Birth** certification letter:
+Generates the **Delayed Registration of Birth** certification letter. Open it from **Print certification** on the applicant or COLB BRAP profile.
 
-- Purpose (e.g. "ANY LEGAL")
-- Requesting person
-- Signatory (city registrar or registration officers)
-- Preview and save PDF (Long or A4)
+**On the letter preview:**
+
+- **Click to edit request person** — Click the name in *“issued upon the request of …”* to type who requested the certification. Press **Enter** or click outside the field when finished.
+- **Click to edit certification purpose** — Click the purpose text (e.g. **ANY LEGAL**) in *“for … requirement purposes”* to change it. Press **Enter** or click outside when finished.
+- **Signatory** — Choose from the dropdown (city civil registrar or registration officers).
+- Changes **save automatically** (about one second after you stop editing) to the Certificate of Live Birth record.
+- **Preview** or **Save as PDF** — Long or A4 paper size (save requires the desktop/Electron app).
+
+> **Note:** To edit the **applicant’s profile** (legal name, birth date, etc.), use **Edit** on the profile page—not these click-to-edit fields on the certification letter.
 
 ---
 
 ## 10. Front PDF and Back PDF
 
-Available on the applicant profile **only when the checklist is 100% complete**.
+Available on the applicant or COLB BRAP profile **only when the document checklist is 100% complete**.
 
 ### Front PDF
 
 - Combines **Certificate of Live Birth** field positions with the **Document Requirements Checklist** on the official front layout.
-- Options typically include **Preview** and **Save** (Electron saves to disk and can open in browser).
+- Click **Front PDF** → **Print Front** (browser preview) or **Save Front as PDF** (saves to disk in the desktop app; you can open it in Edge or Chrome).
 
 ### Back PDF
 
 - Maps **Paternity Affidavit**, **Delayed Registration Affidavit**, and related marks to the back of the form.
+- Click **Back PDF** → **Print Back** or **Save Back as PDF**.
 
-Both require complete checklist and filled COLB (and related affidavits where used).
+Both require a **complete checklist** (every line has an attachment) and a filled **Certificate of Live Birth** (and related affidavits where used). Staff **Verified** status is **not** required to enable these buttons.
 
 ---
 
@@ -278,14 +309,52 @@ Both require complete checklist and filled COLB (and related affidavits where us
 
 ## 12. COLB BRAP (separate menu)
 
-**COLB BRAP** is a second list for COLB BRAP application type:
+**COLB BRAP** is a separate registration track. Use the **COLB BRAP** item in the sidebar—not **Applicants**—for these records.
 
-- Shorter **general** checklist (National ID, barangay indigency, two witnesses, barangay facts of birth, 2×2 photo).
-- **Conditional**: parents married (marriage contract) **or** AUSF; parent/guardian ID; Muslim attachment.
-- No age-group step (age group is not used).
-- Same profile buttons (COLB, checklist, affidavits, PDFs) but under the COLB BRAP section.
+### How it differs from Applicants
 
-Use **Applicants** for standard delayed registration; use **COLB BRAP** only for that program's records.
+| Topic | Applicants | COLB BRAP |
+|-------|------------|-----------|
+| Checklist | General + **age-specific** + conditionals | **5 general** items + up to 3 conditionals |
+| Age group | Used for extra documents | **Not used** |
+| Add/Edit flags | Out of town, deceased registrant, foreign parent | Parents married, child registrant, Muslim attachment |
+| Front / Back PDF | Enabled when checklist 100% complete | **Same rule** — not tied to staff Verified |
+| Place of birth | Three-part comma format (see Section 4) | **Same format** |
+
+### Add a COLB BRAP record
+
+1. Open **COLB BRAP** → **Add COLB BRAP**.
+2. Fill basic details (name, date of birth, place of birth, contact, etc.).
+3. Under **COLB BRAP conditional requirement**, check all that apply (see [COLB BRAP flags](#colb-brap-only) in Section 16).
+4. Save—you are taken to the COLB BRAP profile.
+
+### COLB BRAP document checklist
+
+**Always required (general):**
+
+1. National I.D.
+2. Brgy. indigency
+3. Affidavit of Two Witnesses (Legal Office)
+4. Brgy. Certification (Facts of Birth)
+5. 2×2 Photo I.D. with white background
+
+**Conditional (from add/edit flags):**
+
+- **Parents are married** → Marriage certificate on checklist (AUSF not used).
+- **Parents not married** → AUSF on checklist; profile may show **AUSF** by age.
+- **Registrant is a child** → Valid I.D. of parent/s or guardian.
+- **Muslim registrant** → Muslim attachment.
+
+The checklist has **no age-specific step**—only general and conditional groups. Progress, attachments, and auto-save work the same as for Applicants.
+
+### COLB BRAP profile
+
+Same action buttons as a standard applicant profile: **Certificate of Live Birth**, **Document checklist**, affidavits, **Print certification**, **Front PDF**, **Back PDF**, **Edit**, **Delete**.
+
+- **Front PDF** / **Back PDF** — Same as Section 10: enabled only when every checklist item has an attachment; use **Print** or **Save as PDF** from the dialog. Not blocked by staff **Verified** status.
+- **Place of birth** — Use `Hospital or address, City, Province` with two commas when entering on add/edit.
+
+Use **Applicants** for standard delayed registration only; use **COLB BRAP** for BRAP program records.
 
 ---
 
@@ -306,16 +375,24 @@ Use this for:
 
 ## 14. Recommended daily workflow
 
-Typical sequence for a delayed registration case:
+### Standard Applicants (delayed registration)
 
-1. **Open document checklist** → Complete every general, age-specific, and conditional item with uploads or scans.
-2. Wait for auto-save; confirm progress shows **100%**.
-3. On profile, click **Mark Under Process** when intake review starts.
-4. Complete **Certificate of Live Birth** and affidavits as needed.
-5. Use **AUSF** (correct age variant) if parents are not married.
-6. Enable **Front PDF** / **Back PDF** → preview and save for printing.
-7. Use **Print certification** for the official certification letter.
-8. **Mark Verified** when the case is fully processed.
+1. **Add applicant** — Use three-part **place of birth** (`address, city, province`) when possible.
+2. **Open document checklist** → Complete every general, age-specific, and conditional item with uploads or scans.
+3. Wait for auto-save; confirm progress shows **100%**.
+4. On profile, click **Mark Under Process** when intake review starts.
+5. Complete **Certificate of Live Birth** and affidavits as needed.
+6. Use **AUSF** (correct age variant) if parents are not married.
+7. **Front PDF** / **Back PDF** → **Print** or **Save as PDF** (buttons enabled after checklist is complete).
+8. **Print certification** → click to edit **request person** and **purpose** on the letter if needed; preview or save PDF.
+9. **Mark Verified** when the case is fully processed.
+
+### COLB BRAP
+
+1. **COLB BRAP** → **Add COLB BRAP** → set conditional flags → complete the shorter checklist (no age-specific step).
+2. **Certificate of Live Birth** and affidavits as needed.
+3. When checklist is **100%**, use **Front PDF** / **Back PDF** and **Print certification** (same rules as above).
+4. **Mark Under Process** / **Mark Verified** when appropriate.
 
 ---
 
@@ -323,12 +400,16 @@ Typical sequence for a delayed registration case:
 
 | Issue | What to check |
 |-------|----------------|
-| Front/Back PDF disabled | Finish every checklist item (attachments on each line) |
-| Status stuck at Incomplete Checklist | All items checked via attachments; then use Mark Under Process |
+| Front/Back PDF disabled | Finish every checklist item (attachments on each line); staff **Verified** is not required |
+| Status stuck at Incomplete Checklist | All items have attachments; then use Mark Under Process |
+| COLB city/province empty | Use place of birth with **two commas**: `address, city, province` |
 | AUSF button missing | Parents marked married — use marriage contract on checklist instead |
 | AUSF won't print | Save **Certificate of Live Birth** first |
-| Can't mark Verified on checklist page | Wait for "Saving…" to finish (auto-save) |
-| Wrong documents listed | Edit applicant — verify date of birth and conditional checkboxes |
+| Can't mark Verified on checklist page | Wait for auto-save to finish (~1.5 s after last edit) |
+| Wrong documents listed | **Edit** applicant — verify date of birth and conditional checkboxes |
+| BRAP case in wrong list | Open **COLB BRAP**, not **Applicants** |
+| Certification name/purpose won't change | Click the **bold text** on the letter (request person / purpose), not **Edit** on profile |
+| Save certification PDF fails | Use the **desktop (Electron)** app |
 | Data on another PC | Export backup on source; import on destination |
 
 ---

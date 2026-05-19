@@ -3,6 +3,8 @@
 ## Introduction
 The B-TRACE System is a comprehensive digital solution developed for the City Civil Registry Office (CCRO) to manage, track, and secure birth certificate (Certificate of Live Birth - COLB) records. It is designed to modernize public service by moving away from traditional, paper-based tracking to an efficient, digital-first workflow. The system ensures that every applicant's document requirements are organized, verifiable, and easily accessible.
 
+**Staff user guide:** See [USER_GUIDE.md](../USER_GUIDE.md) in the repository root for step-by-step instructions (navigation, checklist, forms, PDFs, status workflow, and backups).
+
 ## Purpose
 The primary purpose of the B-TRACE System is to streamline the evaluation of birth certificate applications by focusing on document completeness. It helps manage applicant records, dynamically adapt checklists based on age-group requirements, and handle document attachments and workflows. By doing so, it enhances the operational efficiency of the local civil registry office and ensures accuracy in civil registrations.
 
@@ -130,6 +132,7 @@ Import behavior is non-destructive and merges records/checklist attachments when
 | `npm run electron:build` | Build frontend in electron mode and package installer |
 | `npm run electron:start` | Launch Electron entry directly |
 | `npm run seed:applicants` | Seed sample applicant data |
+| `npm run export:user-guide-pdf` | Build `USER_GUIDE.pdf` from `../USER_GUIDE.md` |
 
 ## Electron Notes
 

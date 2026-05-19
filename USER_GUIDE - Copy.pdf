@@ -1,0 +1,2457 @@
+%PDF-1.3
+%ºß¬à
+3 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 4 0 R
+>>
+endobj
+4 0 obj
+<<
+/Length 4425
+>>
+stream
+0.5670000000000001 w
+0 G
+BT
+/F2 18 Tf
+20.6999999999999993 TL
+0 g
+51.0236220472441033 785.1970866141732586 Td
+(B-TRACE User Guide) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 752.3151968503937042 Td
+(B-TRACE \(Birth Tracking for Registration and Certificate Entries\) is a desktop/web application for the City Civil) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 735.3073228346456744 Td
+(Registry Office \(CCRO\). It helps staff track delayed birth registration applicants, manage document) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 718.2994488188976447 Td
+(requirements by age and situation, fill official forms, and generate printable PDFs.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 698.4569291338582389 Td
+(For a shorter technical walkthrough, see Demo.md. For installation and development, see) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 681.4490551181102092 Td
+(trace-app/README.md.) Tj
+ET
+0.78 G
+51.0236220472441033 655.9372440944881646 m
+544.2519685039370643 655.9372440944881646 l
+S
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0 g
+51.0236220472441033 630.42543307086612 Td
+(Table of contents) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 602.6459055118109518 Td
+(1. Getting started) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 585.6380314960629221 Td
+(2. Main navigation) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 568.6301574803148924 Td
+(3. Dashboard) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 551.6222834645668627 Td
+(4. Applicants list) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 534.614409448818833 Td
+(5. Applicant profile) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 517.6065354330708033 Td
+(6. Application status workflow) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 500.5986614173228304 Td
+(7. Document checklist) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 483.5907874015748007 Td
+(8. Certificate of Live Birth) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 466.582913385826771 Td
+(9. Affidavits and certification) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 449.5750393700787413 Td
+(10. Front PDF and Back PDF) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 432.5671653543307116 Td
+(11. Edit and delete) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 415.5592913385826819 Td
+(12. COLB BRAP) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 398.5514173228346522 Td
+(13. Backup and restore) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 381.5435433070866225 Td
+(14. Recommended daily workflow) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 364.5356692913385928 Td
+(15. Tips and troubleshooting) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 347.5277952755905631 Td
+(16. Age groups and conditional flags) Tj
+ET
+0.78 G
+51.0236220472441033 322.0159842519684616 m
+544.2519685039370643 322.0159842519684616 l
+S
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0 g
+51.0236220472441033 296.5041732283464171 Td
+(1. Getting started) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0 g
+51.0236220472441033 257.3860629921259715 Td
+(Sign in) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 232.1577165354329964 Td
+(1. Open the application \(browser in development, or the packaged Electron desktop app\).) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 215.1498425196849666 Td
+(2. On the Login screen, enter your username and password.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 198.1419685039369369 Td
+(3. Click Login. Invalid credentials show an error; successful login takes you to the Dashboard.) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0 g
+51.0236220472441033 166.9608661417322537 Td
+(Sign out) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 141.7325196850392786 Td
+(Use Logout at the bottom of the left sidebar. You return to the login page.) Tj
+ET
+0.78 G
+51.0236220472441033 116.2207086614172198 m
+544.2519685039370643 116.2207086614172198 l
+S
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0 g
+51.0236220472441033 90.7088976377951894 Td
+(2. Main navigation \(left sidebar\)) Tj
+ET
+BT
+/F2 9 Tf
+10.3499999999999996 TL
+0 g
+53.8582677165354369 62.9293700787400212 Td
+(Menu item) Tj
+ET
+BT
+/F2 9 Tf
+10.3499999999999996 TL
+0 g
+300.472440944881896 62.9293700787400212 Td
+(Purpose) Tj
+ET
+0.71 G
+51.0236220472441033 60.0947244094486805 m
+544.2519685039370643 60.0947244094486805 l
+S
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.471 g
+240.1577952755905585 28.3466929133857093 Td
+(B-TRACE User Guide — Page 1) Tj
+ET
+endstream
+endobj
+5 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 6 0 R
+>>
+endobj
+6 0 obj
+<<
+/Length 5165
+>>
+stream
+0.5670000000000001 w
+0.71 G
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 790.8663779527558972 Td
+(Dashboard) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 790.8663779527558972 Td
+(Overview, charts, recent applicants, database backup) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 773.8585039370078675 Td
+(Applicants) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 773.8585039370078675 Td
+(Standard delayed registration records) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 756.8506299212598378 Td
+(COLB BRAP) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 756.8506299212598378 Td
+(Separate workflow for COLB BRAP records \(simpler) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 739.8427559055118081 Td
+(Logout) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 739.8427559055118081 Td
+(End session) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 717.1655905511811397 Td
+(The header shows B-TRACE and the tag Document Requirements, reflecting that document completeness is) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 700.15771653543311 Td
+(the core of the system.) Tj
+ET
+0.78 G
+51.0236220472441033 674.6459055118109518 m
+544.2519685039370643 674.6459055118109518 l
+S
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0. g
+51.0236220472441033 649.1340944881889072 Td
+(3. Dashboard) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 621.3545669291338527 Td
+(After login you see:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 601.5120472440944468 Td
+(• Totals — How many applicants exist and how many are Verified vs still pending.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 584.5041732283464171 Td
+(• Charts) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 564.6616535433070112 Td
+(- Applicants by age group   - Registration status \(Incomplete Checklist, Under Process, Verified\)   - Applications) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 547.6537795275589815 Td
+(over time \(filter: last 7/14 days, 12 months, year, or custom range\)) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 527.8112598425195756 Td
+(• Recent applicants — Quick links to open a profile.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 510.8033858267716028 Td
+(• Add applicant — Opens the same add form as on the Applicants list.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 493.795511811023573 Td
+(• Export Backup / Import Backup — Download or restore a .zip containing the database and all attachments \(for) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 476.7876377952754865 Td
+(moving data between machines or disaster recovery\).) Tj
+ET
+0.78 G
+51.0236220472441033 451.2758267716534419 m
+544.2519685039370643 451.2758267716534419 l
+S
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0. g
+51.0236220472441033 425.7640157480313974 Td
+(4. Applicants list) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 397.9844881889762291 Td
+(Open Applicants from the sidebar.) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0. g
+51.0236220472441033 366.8033858267715459 Td
+(Find and filter) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 341.5750393700785708 Td
+(• Search — By name, place of birth, or date of birth \(several date formats work\).) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 324.567165354330541 Td
+(• Status filters — All, Incomplete Checklist, Under Process, Verified.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 304.7246456692911352 Td
+(Each row shows:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 284.882125984251843 Td
+(• Name \(LAST, FIRST format on the list\)) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 267.8742519685038133 Td
+(• Date of birth) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 250.8663779527557836 Td
+(• Document progress \(X/Y complete\) or — if the checklist was never opened) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 233.8585039370077538 Td
+(• Status badge \(color-coded\)) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 214.015984251968348 Td
+(Click a row to open that person's profile.) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0. g
+51.0236220472441033 182.8348818897636647 Td
+(Add a new applicant) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 157.6065354330706896 Td
+(1. Click Add applicant.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 140.5986614173226599 Td
+(2. Fill Basic details \(required: first name, last name, date of birth\).) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 123.5907874015746302 Td
+(3. Under Conditional document requirements, check everything that applies \(see Section 16\). These add extra) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 106.5829133858266005 Td
+(checklist items automatically.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 89.5750393700785708 Td
+(4. Click Add applicant. You are taken to the new profile.) Tj
+ET
+0.78 G
+51.0236220472441033 64.0632283464564836 m
+544.2519685039370643 64.0632283464564836 l
+S
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.471 g
+240.1577952755905585 28.3466929133857093 Td
+(B-TRACE User Guide — Page 2) Tj
+ET
+endstream
+endobj
+7 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 8 0 R
+>>
+endobj
+8 0 obj
+<<
+/Length 6533
+>>
+stream
+0.5670000000000001 w
+0.78 G
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0. g
+51.0236220472441033 779.5277952755905062 Td
+(5. Applicant profile) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 751.7482677165354517 Td
+(The profile header shows the name in LAST, FIRST form \(e.g. RODRIGUEZ, NORMA KENJI\).) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0. g
+51.0236220472441033 720.5671653543306547 Td
+(Action buttons \(top row\)) Tj
+ET
+BT
+/F2 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 695.3388188976377933 Td
+(Button) Tj
+ET
+BT
+/F2 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 695.3388188976377933 Td
+(What it does) Tj
+ET
+0.71 G
+51.0236220472441033 692.5041732283464171 m
+544.2519685039370643 692.5041732283464171 l
+S
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 675.4962992125983874 Td
+(Certificate of Live Birth \(green\)) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 675.4962992125983874 Td
+(Official COLB data entry form) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 658.4884251968503577 Td
+(Document checklist) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 658.4884251968503577 Td
+(Required documents, uploads, camera capture) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 641.480551181102328 Td
+(Paternity Affidavit) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 641.480551181102328 Td
+(Paternity affidavit form) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 624.4726771653542983 Td
+(Delayed Birth Affidavit) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 624.4726771653542983 Td
+(Delayed registration affidavit) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 607.4648031496062686 Td
+(AUSF \(Adult\) / AUSF \(0–6\) / AUSF \(7–17\)) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 607.4648031496062686 Td
+(Affidavit to Use Surname of the Father — label depends on) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 590.4569291338582389 Td
+(Print certification) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 590.4569291338582389 Td
+(Delayed registration certification letter/PDF) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 573.4490551181102092 Td
+(Front PDF) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 573.4490551181102092 Td
+(Generate/preview front of combined COLB + checklist PDF) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 556.4411811023621794 Td
+(Back PDF) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 556.4411811023621794 Td
+(Generate/preview back \(affidavits, etc.\)) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 539.4333070866141497 Td
+(Edit) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 539.4333070866141497 Td
+(Update applicant details and conditional flags) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 522.42543307086612 Td
+(Delete) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 522.42543307086612 Td
+(Remove the record \(confirmation required\)) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 499.7482677165353948 Td
+(Front PDF and Back PDF are disabled \(greyed out\) until every checklist item is complete. The tooltip explains:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 482.7403937007873651 Td
+(Complete the document checklist first.) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0. g
+51.0236220472441033 451.5592913385826819 Td
+(Status banner) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 426.3309448818897067 Td
+(Below the buttons:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 406.4884251968503577 Td
+(• Status badge — e.g. Incomplete Checklist \(amber\).) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 389.480551181102328 Td
+(• Message: Complete every checklist item to enable Under Process and Verified.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 369.6380314960629221 Td
+(When the checklist is 100% complete:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 349.795511811023573 Td
+(• Mark Under Process and Mark Verified appear.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 332.7876377952755433 Td
+(• Staff can move the case through internal processing.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 312.9451181102361943 Td
+(Important: On the Document checklist page, if you have unsaved edits, you must wait for auto-save \(about 1.5) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 295.9372440944881646 Td
+(seconds after you stop editing\) before staff status buttons work. The message then says: Save the checklist) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 278.9293700787401349 Td
+(before setting Under Process or Verified.) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0. g
+51.0236220472441033 247.748267716535338 Td
+(Child identification section) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 222.5199212598424765 Td
+(Displays:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 202.6774015748030706 Td
+(• Full name, date of birth \(DD-MM-YYYY\), age, gender) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 185.6695275590550409 Td
+(• Place of birth, contact number) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 168.6616535433070112 Td
+(• Age group \(requirements\) — e.g. 18 to 59 \(drives which documents are required\)) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 151.6537795275589815 Td
+(• Conditional requirements — If any were set at add/edit \(deceased registrant, foreign parent, out-of-town, etc.\)) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 134.6459055118109518 Td
+(• Created / Updated dates) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 117.6380314960629221 Td
+(• Documents checklist — Progress bar or link Open document checklist to get started) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 97.7955118110235162 Td
+(Adult delayed registrations \(e.g. age group 18 to 59\) use age-specific items such as baptismal, school records,) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 80.7876377952754865 Td
+(voter's certification, NBI/police clearance, plus general items \(National ID, PSA Negative, affidavits, barangay) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 63.7797637795274568 Td
+(certifications, 2×2 photo\).) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.471 g
+240.1577952755905585 28.3466929133857093 Td
+(B-TRACE User Guide — Page 3) Tj
+ET
+endstream
+endobj
+9 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 10 0 R
+>>
+endobj
+10 0 obj
+<<
+/Length 5318
+>>
+stream
+0.5670000000000001 w
+0.71 G
+0.78 G
+51.0236220472441033 785.1970866141731449 m
+544.2519685039370643 785.1970866141731449 l
+S
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0. g
+51.0236220472441033 759.6852755905511003 Td
+(6. Application status workflow) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 731.9057480314960458 Td
+(Statuses work in this order:) Tj
+ET
+0.96 0.97 0.98 rg
+51.0236220472441033 720.5671653543306547 493.2283464566929752 -82.2047244094488292 re
+f
+BT
+/F5 9 Tf
+10.3499999999999996 TL
+0. g
+59.5275590551181182 712.0632283464566399 Td
+(Status flow:) Tj
+ET
+BT
+/F5 9 Tf
+10.3499999999999996 TL
+0. g
+59.5275590551181182 697.8899999999999864 Td
+(  Incomplete Checklist) Tj
+ET
+BT
+/F5 9 Tf
+10.3499999999999996 TL
+0. g
+59.5275590551181182 683.7167716535432191 Td
+(    -> Checklist 100% complete) Tj
+ET
+BT
+/F5 9 Tf
+10.3499999999999996 TL
+0. g
+59.5275590551181182 669.5435433070865656 Td
+(    -> Mark Under Process) Tj
+ET
+BT
+/F5 9 Tf
+10.3499999999999996 TL
+0. g
+59.5275590551181182 655.3703149606299121 Td
+(    -> Mark Verified) Tj
+ET
+BT
+/F2 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 635.5277952755905062 Td
+(Status) Tj
+ET
+BT
+/F2 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 635.5277952755905062 Td
+(Meaning) Tj
+ET
+0.71 G
+51.0236220472441033 632.69314960629913 m
+544.2519685039370643 632.69314960629913 l
+S
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 615.6852755905511003 Td
+(Incomplete Checklist) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 615.6852755905511003 Td
+(One or more required documents not yet attached/checked) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 598.6774015748030706 Td
+(Under Process) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 598.6774015748030706 Td
+(Checklist complete; staff marked the case in progress) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 581.6695275590550409 Td
+(Verified) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 581.6695275590550409 Td
+(Checklist complete; staff marked the case verified) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 558.9923622047243725 Td
+(Checklist completion is automatic: each requirement is "done" when it has at least one attachment \(upload or) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 541.9844881889763428 Td
+(camera\). You do not manually tick checkboxes—they reflect attachments.) Tj
+ET
+0.78 G
+51.0236220472441033 516.4726771653541846 m
+544.2519685039370643 516.4726771653541846 l
+S
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0. g
+51.0236220472441033 490.9608661417322537 Td
+(7. Document checklist \(core workflow\)) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 463.1813385826771423 Td
+(Open via Document checklist on the profile or the green link under Documents checklist.) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0. g
+51.0236220472441033 432.0002362204724022 Td
+(Structure) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 406.7718897637794839 Td
+(Requirements are grouped into steps \(when applicable\):) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 386.929370078740078 Td
+(1. General documents — Same for all applicants \(National ID, PSA Negative, affidavits, barangay certifications,) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 369.9214960629920483 Td
+(2×2 photo, etc.\)) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 352.9136220472440186 Td
+(2. Age-specific requirements — Based on age group:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 333.0711023622046696 Td
+(- 1 month 1 day to 6 years    - 7 to 17 years    - 18 to 59 years    - 60 plus) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 313.2285826771652637 Td
+(1. Conditional documents — Only if flags were set \(death certificates, foreign parent ID, out-of-town affidavit,) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 296.220708661417234 Td
+(marriage contract vs AUSF, etc.\)) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0. g
+51.0236220472441033 265.0396062992125508 Td
+(Per requirement you can) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 239.8112598425195756 Td
+(• Add Notes \(optional\)) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 222.8033858267715459 Td
+(• Attach file\(s\) from the computer) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 205.7955118110235162 Td
+(• Take Picture — For the 2×2 photo ID \(crop overlay, white background\)) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 188.7876377952754865 Td
+(• Scan Document — For other items \(document-oriented crop\)) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 171.7797637795274568 Td
+(• View / Remove attachments \(remove asks for confirmation\)) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0. g
+51.0236220472441033 140.5986614173227736 Td
+(Saving) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 115.3703149606297984 Td
+(• Changes auto-save about 1.5 seconds after you stop editing.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 98.3624409448817687 Td
+(• Leaving the page with unsaved changes triggers a navigation warning.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 81.354566929133739 Td
+(• Progress bar at top shows % complete.) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.471 g
+240.1577952755905585 28.3466929133857093 Td
+(B-TRACE User Guide — Page 4) Tj
+ET
+endstream
+endobj
+11 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 12 0 R
+>>
+endobj
+12 0 obj
+<<
+/Length 4439
+>>
+stream
+0.5670000000000001 w
+0.78 G
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0. g
+51.0236220472441033 779.5277952755905062 Td
+(Marriage / AUSF on checklist) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 754.2994488188976447 Td
+(• If parents are married \(marriage contract on file\), the checklist expects Marriage contract instead of AUSF.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 737.291574803149615 Td
+(• The profile's AUSF button is hidden when married; use marriage contract on the checklist instead.) Tj
+ET
+0.78 G
+51.0236220472441033 711.7797637795274568 m
+544.2519685039370643 711.7797637795274568 l
+S
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0. g
+51.0236220472441033 686.2679527559055259 Td
+(8. Certificate of Live Birth \(COLB\)) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 658.4884251968503577 Td
+(1. Click Certificate of Live Birth \(green\).) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 641.480551181102328 Td
+(2. Enter all fields matching the official Municipal Form No. 102 layout \(child, parents, birth facts, attendant, etc.\).) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 624.4726771653542983 Td
+(3. Save the form. Data is stored on the applicant record.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 604.6301574803148924 Td
+(Many other outputs \(AUSF, Front/Back PDF, certification\) pull data from this form. If COLB is empty, AUSF print) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 587.6222834645668627 Td
+(may show an error to complete COLB first.) Tj
+ET
+0.78 G
+51.0236220472441033 562.1104724409448181 m
+544.2519685039370643 562.1104724409448181 l
+S
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0. g
+51.0236220472441033 536.5986614173227736 Td
+(9. Affidavits and certification) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0. g
+51.0236220472441033 497.480551181102328 Td
+(Paternity Affidavit) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 472.2522047244094665 Td
+(Separate form for acknowledgment/admission of paternity. Fill, save, and use with back PDF mapping where) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 455.2443307086614368 Td
+(applicable.) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0. g
+51.0236220472441033 424.0632283464566967 Td
+(Delayed Birth Affidavit) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 398.8348818897637784 Td
+(Affidavit for delayed registration of birth. Fill and save; fields can appear on the back PDF.) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0. g
+51.0236220472441033 367.6537795275590383 Td
+(AUSF \(Affidavit to Use Surname of the Father\)) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 342.42543307086612 Td
+(• Shown only when parents are not marked as married.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 325.4175590551180903 Td
+(• Variant by age:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 305.5750393700786844 Td
+(- AUSF \(0–6\) — Child 0–6   - AUSF \(7–17\) — Minor 7–17   - AUSF \(Adult\) — 18+) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 285.7325196850392786 Td
+(• Requires saved Certificate of Live Birth data.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 268.7246456692912489 Td
+(• Choose paper size \(Long or A4\), preview, save PDF \(desktop can open in Edge/Chrome\).) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0. g
+51.0236220472441033 237.5435433070865656 Td
+(Print certification) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 212.3151968503935905 Td
+(Generates the Delayed Registration of Birth certification letter:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 192.4726771653542983 Td
+(• Purpose \(e.g. "ANY LEGAL"\)) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 175.4648031496062686 Td
+(• Requesting person) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 158.4569291338582389 Td
+(• Signatory \(city registrar or registration officers\)) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 141.4490551181102092 Td
+(• Preview and save PDF \(Long or A4\)) Tj
+ET
+0.78 G
+51.0236220472441033 115.9372440944880225 m
+544.2519685039370643 115.9372440944880225 l
+S
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0. g
+51.0236220472441033 90.4254330708660063 Td
+(10. Front PDF and Back PDF) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 62.6459055118108381 Td
+(Available on the applicant profile only when the checklist is 100% complete.) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.471 g
+240.1577952755905585 28.3466929133857093 Td
+(B-TRACE User Guide — Page 5) Tj
+ET
+endstream
+endobj
+13 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 14 0 R
+>>
+endobj
+14 0 obj
+<<
+/Length 4589
+>>
+stream
+0.5670000000000001 w
+0.78 G
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0. g
+51.0236220472441033 779.5277952755905062 Td
+(Front PDF) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 754.2994488188976447 Td
+(• Combines Certificate of Live Birth field positions with the Document Requirements Checklist on the official) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 737.291574803149615 Td
+(front layout.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 720.2837007874015853 Td
+(• Options typically include Preview and Save \(Electron saves to disk and can open in browser\).) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0. g
+51.0236220472441033 689.1025984251967884 Td
+(Back PDF) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 663.8742519685039269 Td
+(• Maps Paternity Affidavit, Delayed Registration Affidavit, and related marks to the back of the form.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 644.0317322834645211 Td
+(Both require complete checklist and filled COLB \(and related affidavits where used\).) Tj
+ET
+0.78 G
+51.0236220472441033 618.5199212598424765 m
+544.2519685039370643 618.5199212598424765 l
+S
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0. g
+51.0236220472441033 593.0081102362204319 Td
+(11. Edit and delete) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0. g
+51.0236220472441033 553.8899999999999864 Td
+(Edit) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 528.6616535433070112 Td
+(• Updates name, DOB, contact, place of birth, and conditional requirement checkboxes.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 511.6537795275589815 Td
+(• Changing conditions updates the checklist \(new items may appear; removed conditions may drop) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 494.6459055118109518 Td
+(items—confirm current attachments after edits\).) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0. g
+51.0236220472441033 463.4648031496062686 Td
+(Delete) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 438.2364566929132934 Td
+(• Opens a confirmation dialog.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 421.2285826771652637 Td
+(• Permanent — removes applicant, checklist, attachments, and related saved form data from the local database.) Tj
+ET
+0.78 G
+51.0236220472441033 395.7167716535432191 m
+544.2519685039370643 395.7167716535432191 l
+S
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0. g
+51.0236220472441033 370.2049606299211746 Td
+(12. COLB BRAP \(separate menu\)) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 342.4254330708660063 Td
+(COLB BRAP is a second list for COLB BRAP application type:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 322.5829133858266005 Td
+(• Shorter general checklist \(National ID, barangay indigency, two witnesses, barangay facts of birth, 2×2 photo\).) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 305.5750393700785708 Td
+(• Conditional: parents married \(marriage contract\) or AUSF; parent/guardian ID; Muslim attachment.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 288.567165354330541 Td
+(• No age-group step \(age group is not used\).) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 271.5592913385825113 Td
+(• Same profile buttons \(COLB, checklist, affidavits, PDFs\) but under the COLB BRAP section.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 251.7167716535432191 Td
+(Use Applicants for standard delayed registration; use COLB BRAP only for that program's records.) Tj
+ET
+0.78 G
+51.0236220472441033 226.2049606299211177 m
+544.2519685039370643 226.2049606299211177 l
+S
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0. g
+51.0236220472441033 200.69314960629913 Td
+(13. Backup and restore) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 172.9136220472439618 Td
+(On the Dashboard:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 153.0711023622045559 Td
+(1. Export Backup — Downloads a .zip with trace.db and all attachment files.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 136.0632283464565262 Td
+(2. Import Backup — Upload a previously exported .zip; merges records and attachments without wiping) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 119.0553543307084965 Td
+(unrelated data when possible.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 99.2128346456692043 Td
+(Use this for:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 79.3703149606297984 Td
+(• Moving data from a field laptop to the main office) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 62.3624409448817687 Td
+(• Scheduled backups) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.471 g
+240.1577952755905585 28.3466929133857093 Td
+(B-TRACE User Guide — Page 6) Tj
+ET
+endstream
+endobj
+15 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 16 0 R
+>>
+endobj
+16 0 obj
+<<
+/Length 6916
+>>
+stream
+0.5670000000000001 w
+0.78 G
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0. g
+51.0236220472441033 790.8663779527558972 Td
+(• Recovery after hardware failure) Tj
+ET
+0.78 G
+51.0236220472441033 765.3545669291338527 m
+544.2519685039370643 765.3545669291338527 l
+S
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0. g
+51.0236220472441033 739.8427559055118081 Td
+(14. Recommended daily workflow) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 712.0632283464566399 Td
+(Typical sequence for a delayed registration case:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 692.2207086614173477 Td
+( 1 .   O p e n   d o c u m e n t   c h e c k l i s t  !’   C o m p l e t e   e v e r y   g e n e r a l ,   a g e - s p e c i f i c ,   a n d   c o n d i t i o n a l   i t e m   w i t h   u p l o a d s   o r   s c a n s .) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 675.212834645669318 Td
+(2. Wait for auto-save; confirm progress shows 100%.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 658.2049606299212883 Td
+(3. On profile, click Mark Under Process when intake review starts.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 641.1970866141732586 Td
+(4. Complete Certificate of Live Birth and affidavits as needed.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 624.1892125984252289 Td
+(5. Use AUSF \(correct age variant\) if parents are not married.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 607.1813385826771992 Td
+( 6 .   E n a b l e   F r o n t   P D F   /   B a c k   P D F  !’   p r e v i e w   a n d   s a v e   f o r   p r i n t i n g .) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 590.1734645669291695 Td
+(7. Use Print certification for the official certification letter.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 573.1655905511811397 Td
+(8. Mark Verified when the case is fully processed.) Tj
+ET
+0.78 G
+51.0236220472441033 547.6537795275589815 m
+544.2519685039370643 547.6537795275589815 l
+S
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0. g
+51.0236220472441033 522.1419685039370506 Td
+(15. Tips and troubleshooting) Tj
+ET
+BT
+/F2 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 494.3624409448818824 Td
+(Issue) Tj
+ET
+BT
+/F2 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 494.3624409448818824 Td
+(What to check) Tj
+ET
+0.71 G
+51.0236220472441033 491.5277952755905062 m
+544.2519685039370643 491.5277952755905062 l
+S
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 474.5199212598424765 Td
+(Front/Back PDF disabled) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 474.5199212598424765 Td
+(Finish every checklist item \(attachments on each line\)) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 457.5120472440944468 Td
+(Status stuck at Incomplete Checklist) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 457.5120472440944468 Td
+(All items checked via attachments; then use Mark Under) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 440.5041732283464171 Td
+(AUSF button missing) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 440.5041732283464171 Td
+(Parents marked married — use marriage contract on) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 423.4962992125983874 Td
+(AUSF won't print) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 423.4962992125983874 Td
+(Save Certificate of Live Birth first) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 406.4884251968503577 Td
+(Can't mark Verified on checklist page) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 406.4884251968503577 Td
+(Wait for "Saving…" to finish \(auto-save\)) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 389.480551181102328 Td
+(Wrong documents listed) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 389.480551181102328 Td
+(Edit applicant — verify date of birth and conditional) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 372.4726771653542983 Td
+(Data on another PC) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 372.4726771653542983 Td
+(Export backup on source; import on destination) Tj
+ET
+0.78 G
+51.0236220472441033 344.1262204724408775 m
+544.2519685039370643 344.1262204724408775 l
+S
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0. g
+51.0236220472441033 318.614409448818833 Td
+(16. Age groups and conditional flags \(reference\)) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0. g
+51.0236220472441033 279.4962992125983874 Td
+(Age groups \(from date of birth\)) Tj
+ET
+BT
+/F2 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 254.2679527559054122 Td
+(Age group) Tj
+ET
+BT
+/F2 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 254.2679527559054122 Td
+(Approximate ages) Tj
+ET
+0.71 G
+51.0236220472441033 251.4333070866140645 m
+544.2519685039370643 251.4333070866140645 l
+S
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 234.4254330708660063 Td
+(1m1d to 6) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 234.4254330708660063 Td
+(Infant / young child) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 217.4175590551179766 Td
+(7 to 17) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 217.4175590551179766 Td
+(Minor) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 200.4096850393699469 Td
+(18 to 59) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 200.4096850393699469 Td
+(Adult) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 183.4018110236219172 Td
+(60 plus) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 183.4018110236219172 Td
+(Senior) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0. g
+51.0236220472441033 149.3860629921258578 Td
+(Conditional flags when adding/editing applicants) Tj
+ET
+BT
+/F2 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 124.1577165354328827 Td
+(Flag) Tj
+ET
+BT
+/F2 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 124.1577165354328827 Td
+(Adds to checklist) Tj
+ET
+0.71 G
+51.0236220472441033 121.3230708661415775 m
+544.2519685039370643 121.3230708661415775 l
+S
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 104.3151968503934768 Td
+(Out of town) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 104.3151968503934768 Td
+(Affidavit w/ Corroboration \(Legal Office\)) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 87.3073228346454471 Td
+(Registrant deceased) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 87.3073228346454471 Td
+(Death certificate \(registrant\)) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 70.2994488188974174 Td
+(One parent foreigner) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 70.2994488188974174 Td
+(Passport or BI certificate) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.471 g
+240.1577952755905585 28.3466929133857093 Td
+(B-TRACE User Guide — Page 7) Tj
+ET
+endstream
+endobj
+17 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 18 0 R
+>>
+endobj
+18 0 obj
+<<
+/Length 1916
+>>
+stream
+0.5670000000000001 w
+0.71 G
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 790.8663779527558972 Td
+( H I L O T   d e c e a s e d   \( a g e  "d 5 \)) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 790.8663779527558972 Td
+(Death certificate \(HILOT\)) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0. g
+51.0236220472441033 756.8506299212598378 Td
+(COLB BRAP only) Tj
+ET
+BT
+/F2 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 731.6222834645668627 Td
+(Flag) Tj
+ET
+BT
+/F2 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 731.6222834645668627 Td
+(Adds to checklist) Tj
+ET
+0.71 G
+51.0236220472441033 728.7876377952756002 m
+544.2519685039370643 728.7876377952756002 l
+S
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 711.7797637795275705 Td
+(Parents are married) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 711.7797637795275705 Td
+(Marriage contract) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 694.7718897637795408 Td
+(Registrant is a child) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 694.7718897637795408 Td
+(Valid I.D. of parent/s or guardian) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+53.8582677165354369 677.7640157480315111 Td
+(Muslim registrant) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0. g
+300.472440944881896 677.7640157480315111 Td
+(Muslim attachment) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 655.086850393700729 Td
+(When parents are not married on a COLB BRAP record, AUSF is required instead of marriage contract.) Tj
+ET
+0.78 G
+51.0236220472441033 629.5750393700786844 m
+544.2519685039370643 629.5750393700786844 l
+S
+BT
+/F1 10 Tf
+11.5 TL
+0. g
+51.0236220472441033 615.4018110236220309 Td
+(Document version: aligned with Trace-App-CCRO as of May 2026.) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.471 g
+240.1577952755905585 28.3466929133857093 Td
+(B-TRACE User Guide — Page 8) Tj
+ET
+endstream
+endobj
+1 0 obj
+<</Type /Pages
+/Kids [3 0 R 5 0 R 7 0 R 9 0 R 11 0 R 13 0 R 15 0 R 17 0 R ]
+/Count 8
+>>
+endobj
+19 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+20 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+21 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-Oblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+22 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-BoldOblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+23 0 obj
+<<
+/Type /Font
+/BaseFont /Courier
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+24 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+25 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-Oblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+26 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-BoldOblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+27 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Roman
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+28 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+29 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Italic
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+30 0 obj
+<<
+/Type /Font
+/BaseFont /Times-BoldItalic
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+31 0 obj
+<<
+/Type /Font
+/BaseFont /ZapfDingbats
+/Subtype /Type1
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+32 0 obj
+<<
+/Type /Font
+/BaseFont /Symbol
+/Subtype /Type1
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+2 0 obj
+<<
+/ProcSet [/PDF /Text /ImageB /ImageC /ImageI]
+/Font <<
+/F1 19 0 R
+/F2 20 0 R
+/F3 21 0 R
+/F4 22 0 R
+/F5 23 0 R
+/F6 24 0 R
+/F7 25 0 R
+/F8 26 0 R
+/F9 27 0 R
+/F10 28 0 R
+/F11 29 0 R
+/F12 30 0 R
+/F13 31 0 R
+/F14 32 0 R
+>>
+/XObject <<
+>>
+>>
+endobj
+33 0 obj
+<<
+/Producer (jsPDF 4.2.0)
+/CreationDate (D:20260519090851+08'00')
+>>
+endobj
+34 0 obj
+<<
+/Type /Catalog
+/Pages 1 0 R
+/OpenAction [3 0 R /FitH null]
+/PageLayout /OneColumn
+>>
+endobj
+xref
+0 35
+0000000000 65535 f 
+0000040842 00000 n 
+0000042710 00000 n 
+0000000015 00000 n 
+0000000152 00000 n 
+0000004629 00000 n 
+0000004766 00000 n 
+0000009983 00000 n 
+0000010120 00000 n 
+0000016705 00000 n 
+0000016843 00000 n 
+0000022214 00000 n 
+0000022353 00000 n 
+0000026845 00000 n 
+0000026984 00000 n 
+0000031626 00000 n 
+0000031765 00000 n 
+0000038734 00000 n 
+0000038873 00000 n 
+0000040945 00000 n 
+0000041071 00000 n 
+0000041202 00000 n 
+0000041336 00000 n 
+0000041474 00000 n 
+0000041598 00000 n 
+0000041727 00000 n 
+0000041859 00000 n 
+0000041995 00000 n 
+0000042123 00000 n 
+0000042250 00000 n 
+0000042379 00000 n 
+0000042512 00000 n 
+0000042614 00000 n 
+0000042963 00000 n 
+0000043049 00000 n 
+trailer
+<<
+/Size 35
+/Root 34 0 R
+/Info 33 0 R
+/ID [ <98C49F40B3615960130355665C51120C> <98C49F40B3615960130355665C51120C> ]
+>>
+startxref
+43153
+%%EOF
