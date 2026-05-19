@@ -279,6 +279,15 @@ body {
   margin-bottom: 0.5rem;
 }
 
+/* AUSF 7–17: pull sworn attestation block slightly closer to first affiant signature */
+.ausf-07-17-doc.print-doc .ausf-signature-block:first-of-type {
+  margin-bottom: 0.4rem;
+}
+
+.ausf-07-17-doc.print-doc .ausf-sworn-attestation-title {
+  margin-top: 1.1rem;
+}
+
 .ausf-doc.print-doc .ausf-signature-block {
   margin-top: 0.75rem;
   margin-bottom: 0.75rem;
@@ -377,16 +386,31 @@ html[data-paper-size='a4'] .ausf-only-doc.print-doc .registrar-signature-zone {
   margin-bottom: 3em !important;
 }
 
-html[data-paper-size='long'] .ausf-0-6-doc.print-doc .registrar-signature-zone,
 html[data-paper-size='a4'] .ausf-0-6-doc.print-doc .registrar-signature-zone {
-  margin-top: auto !important;
-  margin-bottom: 0 !important;
+  margin-top: 0.75in !important;
+  margin-bottom: 3em !important;
+}
+
+html[data-paper-size='long'] .ausf-0-6-doc.print-doc .registrar-signature-zone{
+  margin-top: 0.75in !important;
+  margin-bottom: 18em !important;
+}
+
+
+html[data-paper-size='long'] .ausf-0-6-doc .ausf-subscribed-sworn,
+html[data-paper-size='a4'] .ausf-0-6-doc .ausf-subscribed-sworn {
+  margin-bottom: 0.12in !important;
 }
 
 html[data-paper-size='long'] .ausf-07-17-doc.print-doc .registrar-signature-zone,
 html[data-paper-size='a4'] .ausf-07-17-doc.print-doc .registrar-signature-zone {
   margin-top: auto !important;
-  margin-bottom: 0 !important;
+  margin-bottom: 0.1in !important;
+}
+
+/* AUSF 7–17: drop footer rule below City Civil Registrar title */
+.ausf-07-17-doc.print-doc .print-doc-footer {
+  margin-top: 0.12in !important;
 }
 
 /* A4 only: items 2 (place of birth) & 4 (public docs) — justify + normal single-space gaps */
@@ -454,10 +478,18 @@ body.pdf-capture.ausf-paper-a4 .ausf-only-doc.print-doc .registrar-signature-zon
   margin-bottom: 3em !important;
 }
 
-body.pdf-capture .ausf-0-6-doc.print-doc .registrar-signature-zone,
+body.pdf-capture .ausf-0-6-doc.print-doc .registrar-signature-zone {
+  margin-top: 0.65in !important;
+  margin-bottom: 0 !important;
+}
+
 body.pdf-capture .ausf-07-17-doc.print-doc .registrar-signature-zone {
   margin-top: auto !important;
-  margin-bottom: 0 !important;
+  margin-bottom: 0.1in !important;
+}
+
+body.pdf-capture .ausf-07-17-doc.print-doc .print-doc-footer {
+  margin-top: 0.12in !important;
 }
 
 body.pdf-capture .ausf-07-17-doc .ausf-subscribed-sworn {
@@ -697,7 +729,13 @@ body.pdf-capture .ausf-doc .ausf-signature-block__name::after,
   }
 
   html[data-paper-size='long'] .ausf-0-6-doc.print-doc .registrar-signature-zone {
-    margin-top: auto !important;
+    margin-top: 0.65in !important;
+    flex: 0 0 auto !important;
+    min-height: 0 !important;
+  }
+
+  html[data-paper-size='a4'] .ausf-0-6-doc.print-doc .registrar-signature-zone {
+    margin-top: 0.65in !important;
     flex: 0 0 auto !important;
     min-height: 0 !important;
   }
@@ -736,6 +774,14 @@ body.pdf-capture .ausf-doc .ausf-signature-block__name::after,
 
   .ausf-07-17-doc .ausf-subscribed-sworn {
     margin-bottom: 0.12in !important;
+  }
+
+  .ausf-07-17-doc.print-doc .registrar-signature-zone {
+    margin-bottom: 0.1in !important;
+  }
+
+  .ausf-07-17-doc.print-doc .print-doc-footer {
+    margin-top: 0.12in !important;
   }
 
   html[data-paper-size='a4'] .ausf-07-17-doc .ausf-07-17-doc-body,
@@ -839,6 +885,16 @@ body.pdf-capture .ausf-doc .ausf-signature-block__name::after,
   html[data-paper-size='a4'] .ausf-doc.print-doc .registrar-signature-zone {
     margin-top: auto !important;
     margin-bottom: 2.5em !important;
+  }
+
+  html[data-paper-size='long'] .ausf-0-6-doc.print-doc .registrar-signature-zone {
+    margin-top: 0.65in !important;
+    margin-bottom: 0 !important;
+  }
+
+  html[data-paper-size='a4'] .ausf-0-6-doc.print-doc .registrar-signature-zone {
+    margin-top: 0.65in !important;
+    margin-bottom: 0 !important;
   }
 
   html[data-paper-size='a4'] .ausf-doc.print-doc ol > li:nth-child(2),
