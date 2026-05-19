@@ -30,10 +30,78 @@ export function getAusfPdfPageSizeInches(format) {
 /** Document includes 1in padding; export fills the page edge-to-edge */
 const PDF_MARGIN_IN = 0;
 
+const PDF_CAPTURE_CLASS = 'ausf-pdf-capture';
+
 /**
- * Capture an AUSF print document element and return base64 PDF (Long or A4).
- * Entire document is scaled to fit on exactly one page (no multi-page tiling).
- * @param {HTMLElement} element — root `.print-doc` node
+ * CSS zoom breaks html2canvas text layout (overlapping glyphs). Clear before rasterizing.
+ * @param {HTMLElement | null} printDoc
+ */
+export function clearAusfFitForPdfCapture(printDoc) {
+  if (!printDoc) return;
+  printDoc.style.zoom = '';
+  const body = printDoc.querySelector('.print-doc-body, .ausf-doc-body');
+  if (body) {
+    body.style.zoom = '';
+    body.style.transform = '';
+  }
+}
+
+/**
+ * @param {Document} clonedDoc
+ * @param {HTMLElement} clonedRoot
+ */
+function prepareAusfPdfClone(clonedDoc, clonedRoot) {
+  const clonedPrintDoc =
+    clonedRoot.classList?.contains('print-doc')
+      ? clonedRoot
+      : clonedRoot.querySelector?.('.ausf-doc.print-doc');
+  if (!clonedPrintDoc) return;
+
+  clonedPrintDoc.classList.add(PDF_CAPTURE_CLASS);
+  clonedPrintDoc.style.zoom = '';
+  clonedPrintDoc.style.overflow = 'visible';
+  if (clonedPrintDoc.closest('article')) {
+    clonedPrintDoc.style.height = '100%';
+    clonedPrintDoc.style.minHeight = '100%';
+  }
+
+  const clonedBody = clonedPrintDoc.querySelector('.print-doc-body, .ausf-doc-body');
+  if (clonedBody) {
+    clonedBody.style.zoom = '';
+    clonedBody.style.transform = '';
+    clonedBody.style.overflow = 'visible';
+  }
+
+  const clonedArticle = clonedPrintDoc.closest('article');
+  if (clonedArticle) clonedArticle.style.overflow = 'visible';
+
+  clonedDoc.body?.classList.add('pdf-capture');
+}
+
+/**
+ * Taller variants (e.g. 7–17 with sworn attestation) overflow the page frame once fit zoom is cleared.
+ * @param {HTMLElement | null | undefined} printDoc
+ * @param {HTMLElement | null | undefined} article
+ */
+function shouldCaptureFullScrollHeight(printDoc, article) {
+  if (!printDoc || !article) return false;
+  const body = printDoc.querySelector('.print-doc-body, .ausf-doc-body');
+  if (!body) return false;
+  const header = printDoc.querySelector('.print-doc-header, .ausf-doc-header');
+  const footer = printDoc.querySelector('.print-doc-footer-wrap, .ausf-doc-footer');
+  const docStyle = getComputedStyle(printDoc);
+  const padY =
+    (parseFloat(docStyle.paddingTop) || 0) + (parseFloat(docStyle.paddingBottom) || 0);
+  const headerH = header?.offsetHeight ?? 0;
+  const footerH = footer?.offsetHeight ?? 0;
+  const availableH = Math.max(0, article.clientHeight - padY - headerH - footerH);
+  return body.scrollHeight > availableH + 2;
+}
+
+/**
+ * Capture an AUSF print document and return base64 PDF (Long or A4).
+ * Rasterizes without CSS zoom, then scales the image to fit one page (preserves aspect).
+ * @param {HTMLElement} element — page `article` or root `.print-doc` node
  * @param {AusfPdfPageFormat | string} [pageFormat]
  * @returns {Promise<string>}
  */
@@ -42,14 +110,68 @@ export async function buildAusfPdfBase64(element, pageFormat = AUSF_PDF_PAGE_FOR
 
   const [pageWIn, pageHIn] = getAusfPdfPageSizeInches(pageFormat);
 
-  const canvas = await html2canvas(element, {
-    scale: 2,
-    useCORS: true,
-    logging: false,
-    backgroundColor: '#ffffff',
-    windowWidth: element.scrollWidth,
-    windowHeight: element.scrollHeight,
-  });
+  const printDoc =
+    element.classList?.contains('print-doc')
+      ? element
+      : element.querySelector?.('.ausf-doc.print-doc');
+  const article = printDoc?.closest('article') ?? (element.tagName === 'ARTICLE' ? element : null);
+  /** Page frame (article) keeps footer pinned; scrollHeight capture leaves footer mid-page on short forms. */
+  const captureRoot = article ?? printDoc ?? element;
+  const capturePageFrame = captureRoot === article && article;
+
+  clearAusfFitForPdfCapture(printDoc);
+
+  const prevDocHeight = printDoc?.style.height ?? '';
+  const prevDocMinHeight = printDoc?.style.minHeight ?? '';
+  if (printDoc && article) {
+    printDoc.style.height = '100%';
+    printDoc.style.minHeight = '100%';
+  }
+
+  if (article) article.style.overflow = 'visible';
+  const prevDocOverflow = printDoc?.style.overflow ?? '';
+  const prevRootOverflow = captureRoot.style.overflow ?? '';
+  if (printDoc) printDoc.style.overflow = 'visible';
+  captureRoot.style.overflow = 'visible';
+
+  if (printDoc?.classList) printDoc.classList.add(PDF_CAPTURE_CLASS);
+
+  const width = Math.round(captureRoot.offsetWidth || captureRoot.clientWidth);
+  const usePageFrameHeight =
+    capturePageFrame && !shouldCaptureFullScrollHeight(printDoc, article);
+  const height = Math.round(
+    usePageFrameHeight
+      ? captureRoot.clientHeight
+      : Math.max(captureRoot.scrollHeight, captureRoot.clientHeight, captureRoot.offsetHeight),
+  );
+
+  let canvas;
+  try {
+    canvas = await html2canvas(captureRoot, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      backgroundColor: '#ffffff',
+      width: width || undefined,
+      height: height || undefined,
+      windowWidth: width || undefined,
+      windowHeight: height || undefined,
+      scrollX: 0,
+      scrollY: 0,
+      onclone: (clonedDoc, clonedNode) => {
+        prepareAusfPdfClone(clonedDoc, clonedNode);
+      },
+    });
+  } finally {
+    if (printDoc?.classList) printDoc.classList.remove(PDF_CAPTURE_CLASS);
+    if (printDoc) {
+      printDoc.style.overflow = prevDocOverflow;
+      printDoc.style.height = prevDocHeight;
+      printDoc.style.minHeight = prevDocMinHeight;
+    }
+    captureRoot.style.overflow = prevRootOverflow;
+    if (article) article.style.overflow = '';
+  }
 
   const imgData = canvas.toDataURL('image/jpeg', 0.92);
   const doc = new jsPDF({

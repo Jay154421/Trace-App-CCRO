@@ -149,7 +149,7 @@ function padLeadingZeroSingleDigitMonthDay(raw) {
 }
 
 const RECEIVED_BY_OPTIONS = [
-  { name: 'ATTY. YUSSIF DON JUSTIN F. MARTIL', title: 'CITY CIVIL REGISTRAR' },
+  { name: 'ATTY. YUSSIF DON JUSTIN F. MARTIL, REB', title: 'CITY CIVIL REGISTRAR' },
   { name: 'LORELIE L. CANTO', title: 'REGISTRATION OFFICER IV' },
   { name: 'PHOEBE L. BENIGA', title: 'REGISTRATION OFFICER II' },
   { name: 'JAN FLAURENCE A. OBLENDA', title: 'REGISTRATION OFFICER II' },
@@ -161,7 +161,7 @@ const LCRO_STAFF_MEMBERS = [
   { name: 'SHIRLEY L. DEMECILLO', title: 'LCRO STAFF' },
   { name: 'ULYNDA P. ZALSOS', title: 'LCRO STAFF' },
   { name: 'PHOEBE L. BENIGA', title: 'REGISTRATION OFFICER II' },
-  { name: 'ATTY. YUSSIF DON JUSTIN F. MARTIL', title: 'CITY CIVIL REGISTRAR' },
+  { name: 'ATTY. YUSSIF DON JUSTIN F. MARTIL, REB', title: 'CITY CIVIL REGISTRAR' },
 ];
 const LCRO_STAFF_MEMBER_NAMES = LCRO_STAFF_MEMBERS.map((member) => member.name);
 const RECEIVED_BY_NAMES = RECEIVED_BY_OPTIONS.map((o) => o.name);

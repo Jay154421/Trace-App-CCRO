@@ -23,7 +23,7 @@ export default function Ausf0717({ data }) {
   const publicDate = formatDateLong(data.publicDocDate)
   const publicOffice = data.publicDocOffice
   const filingAt = data.filingLocation || 'ILIGAN CITY'
-  const witnessDate = formatDateLong(data.affidavitExecutionDate) || colbDate
+  const witnessDate = formatDateLong(data.affidavitExecutionDate) || formatDateLong(data.colbDateOfRegistration)
   const placeStreet = (data.placeOfBirthAddress || '').trim()
   const placeCityProvince = joinCommaParts(data.placeOfBirthCity, data.placeOfBirthProvince)
   const attestationName = fullName(data.childFirst, data.childMiddle, data.childLast) || data.applicantName
@@ -54,16 +54,16 @@ export default function Ausf0717({ data }) {
 
         <ol className="list-decimal space-y-2 mb-2 text-left leading-normal">
           <li>
-            I am seeking to use the surname of <span className={`${FILL_BOLD} px-0.5 align-baseline uppercase`}>{surnameSought}</span> in the Certificate of Live Birth/Report of Birth of pursuant to R.A No. 9255.
+            I am seeking to use the surname of <span className={`${FILL_BOLD} px-0.5 align-baseline uppercase`}>{surnameSought}</span> in the Certificate of Live Birth/Report of Birth of pursuant to R.A No. 9255
           </li>
           <li className="ausf-place-of-birth-line">
-            I was born on <span className={`${FILL_BOLD} px-0.5 align-baseline`}>{dobFormatted}</span> at <span className={`${FILL_BOLD} px-0.5 align-baseline`}>{placeStreet}</span>{placeStreet && placeCityProvince ? ', ' : null}{placeCityProvince ? <span className={`${FILL_BOLD} px-0.5 align-baseline uppercase`}>{placeCityProvince}</span> : null}.
+            I was born on <span className={`${FILL_BOLD} px-0.5 align-baseline`}>{dobFormatted}</span> at <span className={`${FILL_BOLD} px-0.5 align-baseline`}>{placeStreet}</span>{placeStreet && placeCityProvince ? ', ' : null}{placeCityProvince ? <span className={`${FILL_BOLD} px-0.5 align-baseline uppercase`}>{placeCityProvince}</span> : null}
           </li>
           <li>
-            My Birth was recorded under Registry Number <span className={`${FILL_BOLD} empty-blank px-0.5 align-baseline`}>{colbReg}</span> on <span className={`${FILL_BOLD} empty-blank px-0.5 align-baseline`}>{colbDate}</span>.
+            My Birth was recorded under Registry Number <span className={`${FILL_BOLD} empty-blank px-0.5 align-baseline`}>{colbReg}</span> on <span className={`${FILL_BOLD} empty-blank px-0.5 align-baseline`}>{colbDate}</span>
           </li>
           <li>
-            The Public Documents or the Private Handwritten Instrument was recorded under Registry Number <span className={`${FILL} empty-blank px-0.5 align-baseline`}>{publicReg || ' '}</span> on <span className={`${FILL} empty-blank px-0.5 align-baseline`}>{publicDate || ' '}</span> at the Local Civil Registry Office (LCRO)/Philippine Foreign Service Post (PFSP) of <span className={`${FILL} empty-blank px-0.5 align-baseline`}>{publicOffice || ' '}</span>.
+            The Public Documents or the Private Handwritten Instrument was recorded under Registry Number <span className={`${FILL} empty-blank px-0.5 align-baseline`}>{publicReg || ' '}</span> on <span className={`${FILL} empty-blank px-0.5 align-baseline`}>{publicDate || ' '}</span> at the Local Civil Registry Office (LCRO)/Philippine Foreign Service Post (PFSP) of <span className={`${FILL} empty-blank px-0.5 align-baseline`}>{publicOffice || ' '}</span>
           </li>
           <li>
             I am filing this AUSF at LCRO/PFSP of <span className={`${FILL_BOLD} px-0.5 align-baseline uppercase`}>{filingAt}</span> in accordance with R.A No. 9255 and its Revised Implementing Rules and Regulations.

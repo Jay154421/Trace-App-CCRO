@@ -1,12 +1,14 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate, useParams, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { usePdfPreviewUrl } from '../../hooks/usePdfPreviewUrl';
 import { childrenApi } from '../../services/api';
 import { applicantDetailPath, getApplicantBasePath } from '../../utils/applicantRoutes';
 import {
   AUSF_PDF_PAGE_FORMAT,
   buildAusfPdfBase64,
   buildAusfSuggestedFilename,
+  clearAusfFitForPdfCapture,
 } from '../../utils/ausfPdf';
 import { buildAusfPrintData } from '../../utils/buildAusfPrintData';
 import {
@@ -21,10 +23,19 @@ import AusfOnly, { AUSF_ONLY_PRINT_TYPE } from './ausf3';
 
 const PRINT_SIZE_STYLE_ID = 'ausf-print-paper-size';
 
+function getAusfPageDimensions(paperSize) {
+  const isA4 = paperSize === AUSF_PDF_PAGE_FORMAT.A4;
+  return {
+    pageSizeCss: isA4 ? '210mm 297mm' : '8.5in 13in',
+    width: isA4 ? '210mm' : '8.5in',
+    height: isA4 ? '297mm' : '13in',
+    dataPaper: isA4 ? 'a4' : 'long',
+  };
+}
+
 function useAusfPrintPageSize(paperSize) {
   useEffect(() => {
-    const dataPaper = paperSize === AUSF_PDF_PAGE_FORMAT.A4 ? 'a4' : 'long';
-    const pageSizeCss = paperSize === AUSF_PDF_PAGE_FORMAT.A4 ? '210mm 297mm' : '8.5in 13in';
+    const { pageSizeCss, width, height, dataPaper } = getAusfPageDimensions(paperSize);
     document.documentElement.dataset.paperSize = dataPaper;
 
     let el = document.getElementById(PRINT_SIZE_STYLE_ID);
@@ -33,7 +44,120 @@ function useAusfPrintPageSize(paperSize) {
       el.id = PRINT_SIZE_STYLE_ID;
       document.head.appendChild(el);
     }
-    el.textContent = `@media print { @page { size: ${pageSizeCss}; margin: 0; } }`;
+    el.textContent = `
+      @media print {
+        @page { size: ${pageSizeCss}; margin: 0; }
+        .ausf-print-page > article {
+          width: ${width} !important;
+          height: ${height} !important;
+          max-height: ${height} !important;
+          margin: 0 auto !important;
+          overflow: hidden !important;
+        }
+        .ausf-print-page .ausf-doc.print-doc {
+          width: ${width} !important;
+          max-width: ${width} !important;
+          height: ${height} !important;
+          min-height: ${height} !important;
+          max-height: ${height} !important;
+          box-sizing: border-box !important;
+          overflow: hidden !important;
+          padding: 0.3in 1in !important;
+        }
+        .ausf-print-page .ausf-doc.print-doc .print-doc-header,
+        .ausf-print-page .ausf-doc.print-doc .ausf-doc-header {
+          flex: 0 0 auto !important;
+          margin-top: 0 !important;
+        }
+        .ausf-print-page .ausf-doc.print-doc > .print-doc-body,
+        .ausf-print-page .ausf-doc.print-doc > .ausf-doc-body {
+          flex: 1 1 0% !important;
+          min-height: 0 !important;
+          display: flex !important;
+          flex-direction: column !important;
+        }
+        .ausf-print-page .ausf-doc.print-doc .print-doc-footer-wrap,
+        .ausf-print-page .ausf-doc.print-doc .ausf-doc-footer {
+          flex: 0 0 auto !important;
+          margin-top: auto !important;
+          margin-bottom: 0 !important;
+          width: 100% !important;
+        }
+        .ausf-print-page .ausf-doc.print-doc .print-doc-footer {
+          margin-top: 0 !important;
+        }
+      }
+      html[data-paper-size] .ausf-print-page > article {
+        width: ${width};
+        height: ${height};
+        max-height: ${height};
+        overflow: hidden;
+      }
+      html[data-paper-size] .ausf-print-page .ausf-doc.print-doc {
+        width: ${width} !important;
+        max-width: ${width} !important;
+        height: ${height} !important;
+        min-height: ${height} !important;
+        max-height: ${height} !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+        padding: 0.3in 1in !important;
+      }
+      html[data-paper-size] .ausf-print-page .ausf-doc.print-doc .print-doc-header,
+      html[data-paper-size] .ausf-print-page .ausf-doc.print-doc .ausf-doc-header {
+        flex: 0 0 auto !important;
+        margin-top: 0 !important;
+      }
+      html[data-paper-size] .ausf-print-page .ausf-doc.print-doc > .print-doc-body,
+      html[data-paper-size] .ausf-print-page .ausf-doc.print-doc > .ausf-doc-body {
+        flex: 1 1 0% !important;
+        min-height: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+      }
+      html[data-paper-size] .ausf-print-page .ausf-doc.print-doc .print-doc-footer-wrap,
+      html[data-paper-size] .ausf-print-page .ausf-doc.print-doc .ausf-doc-footer {
+        flex: 0 0 auto !important;
+        margin-top: auto !important;
+        margin-bottom: 0 !important;
+        width: 100% !important;
+      }
+      html[data-paper-size] .ausf-print-page .ausf-doc.print-doc .print-doc-footer {
+        margin-top: 0 !important;
+      }
+      body.pdf-capture .ausf-print-page > article {
+        width: ${width} !important;
+        height: ${height} !important;
+        max-height: ${height} !important;
+        overflow: hidden !important;
+      }
+      body.pdf-capture .ausf-print-page .ausf-doc.print-doc {
+        width: ${width} !important;
+        max-width: ${width} !important;
+        height: ${height} !important;
+        min-height: ${height} !important;
+        max-height: ${height} !important;
+        overflow: hidden !important;
+        padding: 0.3in 1in !important;
+      }
+      body.pdf-capture .ausf-print-page .ausf-doc.print-doc > .print-doc-body,
+      body.pdf-capture .ausf-print-page .ausf-doc.print-doc > .ausf-doc-body {
+        flex: 1 1 0% !important;
+        min-height: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+      }
+      body.pdf-capture .ausf-print-page .ausf-doc.print-doc .print-doc-footer-wrap,
+      body.pdf-capture .ausf-print-page .ausf-doc.print-doc .ausf-doc-footer {
+        flex: 0 0 auto !important;
+        margin-top: auto !important;
+        margin-bottom: 0 !important;
+        width: 100% !important;
+      }
+      body.pdf-capture .ausf-print-page .ausf-doc.print-doc .print-doc-footer {
+        margin-top: 0 !important;
+      }
+    `;
 
     document.body.classList.remove('ausf-paper-a4', 'ausf-paper-long');
     document.body.classList.add(dataPaper === 'a4' ? 'ausf-paper-a4' : 'ausf-paper-long');
@@ -43,6 +167,80 @@ function useAusfPrintPageSize(paperSize) {
       document.body.classList.remove('ausf-paper-a4', 'ausf-paper-long', 'pdf-capture');
     };
   }, [paperSize]);
+}
+
+/** Scale body only so header stays top and contact footer stays at page bottom. */
+function fitAusfDocToArticle(article, doc) {
+  const header = doc.querySelector('.print-doc-header, .ausf-doc-header');
+  const footer = doc.querySelector('.print-doc-footer-wrap, .ausf-doc-footer');
+  const body = doc.querySelector('.print-doc-body, .ausf-doc-body');
+
+  doc.style.zoom = '';
+  if (body) body.style.zoom = '';
+
+  const pageHeight = article.clientHeight;
+  const pageWidth = article.clientWidth;
+  if (!pageHeight || !pageWidth) return;
+
+  const docStyle = getComputedStyle(doc);
+  const padY =
+    (parseFloat(docStyle.paddingTop) || 0) + (parseFloat(docStyle.paddingBottom) || 0);
+  const headerH = header?.offsetHeight ?? 0;
+  const footerH = footer?.offsetHeight ?? 0;
+  const availableH = Math.max(0, pageHeight - padY - headerH - footerH);
+  const availableW = pageWidth;
+
+  if (!body) {
+    const scale = Math.min(1, pageHeight / doc.scrollHeight, pageWidth / doc.scrollWidth);
+    doc.style.zoom = scale < 0.995 ? String(scale) : '';
+    return;
+  }
+
+  const scale = Math.min(1, availableH / body.scrollHeight, availableW / body.scrollWidth);
+  body.style.zoom = scale < 0.995 ? String(scale) : '';
+}
+
+/** Scale document content so it fits the selected bond paper (A4 or long). */
+function useAusfFitToPaper(docArticleRef, paperSize, printData) {
+  useLayoutEffect(() => {
+    const article = docArticleRef.current;
+    const doc = article?.querySelector('.ausf-doc.print-doc');
+    const body = doc?.querySelector('.print-doc-body, .ausf-doc-body');
+    if (!article || !doc) return undefined;
+
+    const fit = () => {
+      if (document.body.classList.contains('pdf-capture')) return;
+      fitAusfDocToArticle(article, doc);
+    };
+
+    fit();
+    const frameId = requestAnimationFrame(fit);
+    const observer = new ResizeObserver(() => requestAnimationFrame(fit));
+    observer.observe(doc);
+    if (body) observer.observe(body);
+    return () => {
+      cancelAnimationFrame(frameId);
+      observer.disconnect();
+      doc.style.zoom = '';
+      if (body) body.style.zoom = '';
+    };
+  }, [docArticleRef, paperSize, printData]);
+}
+
+function waitForAusfLayout() {
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(resolve));
+  });
+}
+
+/** Clear fit zoom before rasterize — CSS zoom breaks html2canvas text on A4/Long PDF. */
+async function prepareAusfPdfCapture(articleRef) {
+  const doc = articleRef.current?.querySelector('.ausf-doc.print-doc');
+  if (!doc) return;
+
+  clearAusfFitForPdfCapture(doc);
+  await waitForAusfLayout();
+  await waitForAusfLayout();
 }
 
 const VARIANTS = {
@@ -73,8 +271,15 @@ export function AusfPrint({ variant }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [savingPdf, setSavingPdf] = useState(false);
+  const [previewingPdf, setPreviewingPdf] = useState(false);
   const [paperSize, setPaperSize] = useState(AUSF_PDF_PAGE_FORMAT.LONG);
   const docArticleRef = useRef(null);
+  const {
+    url: pdfPreviewUrl,
+    isOpen: pdfPreviewOpen,
+    openPreview,
+    closePreview,
+  } = usePdfPreviewUrl();
 
   useAusfPrintPageSize(paperSize);
 
@@ -98,6 +303,8 @@ export function AusfPrint({ variant }) {
     return buildAusfPrintData(child, cert);
   }, [child, cert]);
 
+  useAusfFitToPaper(docArticleRef, paperSize, printData);
+
   const handlePrint = useCallback(() => {
     if (!printData) {
       toast.error('Applicant data is not loaded.');
@@ -109,6 +316,41 @@ export function AusfPrint({ variant }) {
     }
     window.print();
   }, [printData, cert]);
+
+  const handlePreviewPdf = useCallback(async () => {
+    if (!printData) {
+      toast.error('Applicant data is not loaded.');
+      return;
+    }
+    if (!cert || !Object.keys(cert).length) {
+      toast.error('Complete the Certificate of Live Birth form first — AUSF fields are filled from that record.');
+      return;
+    }
+    const article = docArticleRef.current;
+    if (!article?.querySelector('.print-doc')) {
+      toast.error('Could not find the document to export.');
+      return;
+    }
+    setPreviewingPdf(true);
+    document.body.classList.add('pdf-capture');
+    try {
+      await waitForAusfLayout();
+      await prepareAusfPdfCapture(docArticleRef);
+      const base64 = await buildAusfPdfBase64(article, paperSize);
+      if (!base64) {
+        toast.error('Could not generate PDF.');
+        return;
+      }
+      openPreview(base64);
+    } catch (err) {
+      toast.error(err?.message || 'Failed to generate PDF.');
+    } finally {
+      document.body.classList.remove('pdf-capture');
+      const doc = article?.querySelector('.ausf-doc.print-doc');
+      if (article && doc) fitAusfDocToArticle(article, doc);
+      setPreviewingPdf(false);
+    }
+  }, [printData, cert, paperSize, openPreview]);
 
   const handleSavePdf = useCallback(async () => {
     if (!printData) {
@@ -123,15 +365,17 @@ export function AusfPrint({ variant }) {
       toast.error('Save PDF is available in the desktop app.');
       return;
     }
-    const el = docArticleRef.current?.querySelector('.print-doc');
-    if (!el) {
+    const article = docArticleRef.current;
+    if (!article?.querySelector('.print-doc')) {
       toast.error('Could not find the document to export.');
       return;
     }
     setSavingPdf(true);
     document.body.classList.add('pdf-capture');
     try {
-      const base64 = await buildAusfPdfBase64(el, paperSize);
+      await waitForAusfLayout();
+      await prepareAusfPdfCapture(docArticleRef);
+      const base64 = await buildAusfPdfBase64(article, paperSize);
       if (!base64) {
         toast.error('Could not generate PDF.');
         return;
@@ -145,6 +389,8 @@ export function AusfPrint({ variant }) {
       toast.error(err?.message || 'Failed to save PDF.');
     } finally {
       document.body.classList.remove('pdf-capture');
+      const doc = article?.querySelector('.ausf-doc.print-doc');
+      if (article && doc) fitAusfDocToArticle(article, doc);
       setSavingPdf(false);
     }
   }, [printData, cert, child, variant, paperSize]);
@@ -189,11 +435,47 @@ export function AusfPrint({ variant }) {
 
   const missingColb = !cert || !Object.keys(cert).length;
 
-  const previewWidthClass =
-    paperSize === AUSF_PDF_PAGE_FORMAT.A4 ? 'w-[210mm]' : 'w-[8.5in]';
+  const { width: pageWidth, height: pageHeight } = getAusfPageDimensions(paperSize);
+
+  const actionsDisabled = !printData || missingColb || savingPdf || previewingPdf;
 
   return (
     <section className="ausf-print-page min-h-screen bg-slate-100 print:bg-white">
+      {pdfPreviewOpen && pdfPreviewUrl ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 print:hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="ausf-pdf-preview-title"
+        >
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/50"
+            onClick={closePreview}
+            aria-label="Close PDF preview"
+          />
+          <div className="relative z-10 flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+            <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-3">
+              <h2 id="ausf-pdf-preview-title" className="text-sm font-semibold text-slate-800">
+                PDF preview — {title}
+              </h2>
+              <button
+                type="button"
+                onClick={closePreview}
+                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Close
+              </button>
+            </div>
+            <iframe
+              src={pdfPreviewUrl}
+              title={`${title} PDF preview`}
+              className="min-h-[70vh] w-full flex-1 border-0 bg-slate-100"
+            />
+          </div>
+        </div>
+      ) : null}
+
       <header className="print:hidden mx-auto max-w-[210mm] px-4 py-4">
         <Link to={applicantDetailPath(basePath, id)} className="text-sm font-medium text-emerald-600 hover:text-emerald-700">
           ← Back to applicant
@@ -245,8 +527,16 @@ export function AusfPrint({ variant }) {
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
+                onClick={handlePreviewPdf}
+                disabled={actionsDisabled}
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {previewingPdf ? 'Generating…' : 'Preview PDF'}
+              </button>
+              <button
+                type="button"
                 onClick={handlePrint}
-                disabled={!printData || missingColb || savingPdf}
+                disabled={actionsDisabled}
                 className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Print
@@ -254,7 +544,7 @@ export function AusfPrint({ variant }) {
               <button
                 type="button"
                 onClick={handleSavePdf}
-                disabled={!printData || missingColb || savingPdf}
+                disabled={actionsDisabled}
                 className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {savingPdf ? 'Saving…' : 'Save PDF'}
@@ -266,7 +556,8 @@ export function AusfPrint({ variant }) {
 
       <article
         ref={docArticleRef}
-        className={`mx-auto mb-8 ${previewWidthClass} print:mx-0 print:mb-0 print:w-auto print:max-w-none`}
+        className="mx-auto mb-8 print:mx-0 print:mb-0"
+        style={{ width: pageWidth, height: pageHeight, maxHeight: pageHeight, overflow: 'hidden' }}
       >
         {printData ? <Component data={printData} /> : null}
       </article>

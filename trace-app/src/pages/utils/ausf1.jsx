@@ -2,9 +2,9 @@ import React from 'react'
 import { formatDateLong, fullName, joinCommaParts } from '../../lib/printUtils';
 import { DocumentHeader, DocumentFooter, FILL, FILL_BOLD } from '../../components/print';
 
-/** Long bond only — not laid out for A4 or short (8.5" × 11"). */
+/** A4 and long bond — not laid out for short (8.5" × 11"). */
 export const AUSF_06_PRINT_TYPE = 'ausf-0-6'
-export const AUSF_06_EXCLUDED_PAPER_SIZE_IDS = new Set(['a4', 'short'])
+export const AUSF_06_EXCLUDED_PAPER_SIZE_IDS = new Set(['short'])
 
 export default function Ausf06({ data }) {
   const affiantName = data.applicantName || fullName(data.childFirst, data.childMiddle, data.fatherLast) || fullName(data.fatherFirst, data.fatherMiddle, data.fatherLast)
@@ -23,7 +23,7 @@ export default function Ausf06({ data }) {
   const placeCityProvince = joinCommaParts(data.placeOfBirthCity, data.placeOfBirthProvince)
 
   return (
-    <div className="ausf-doc ausf-0-6-doc print-doc flex flex-col bg-white text-black">
+    <div className="ausf-doc print-doc ausf-0-6-doc flex flex-col bg-white text-black">
       <DocumentHeader
         registryNo={data.ausfRegistryNo}
         juratBlock={

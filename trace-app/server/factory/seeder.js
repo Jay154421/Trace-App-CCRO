@@ -27,7 +27,7 @@ const DEFAULT_CERTIFICATION_PURPOSE = 'ANY LEGAL';
 
 /** Same options as CertificateOfLiveBirth “Received by” / “Registered by” selects. */
 const RECEIVED_BY_OPTIONS = [
-  { name: 'ATTY. YUSSIF DON JUSTIN F. MARTIL', title: 'CITY CIVIL REGISTRAR' },
+  { name: 'ATTY. YUSSIF DON JUSTIN F. MARTIL, REB', title: 'CITY CIVIL REGISTRAR' },
   { name: 'LORELIE L. CANTO', title: 'REGISTRATION OFFICER IV' },
   { name: 'PHOEBE L. BENIGA', title: 'REGISTRATION OFFICER II' },
   { name: 'JAN FLAURENCE A. OBLENDA', title: 'REGISTRATION OFFICER II' },

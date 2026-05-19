@@ -1,6 +1,8 @@
 import { buildMergedCertData } from './pdfUtils';
 
-const DEFAULT_CCR_NAME = 'ATTY. YUSSIF DON JUSTIN F. MARTIL';
+const DEFAULT_CCR_NAME = 'ATTY. YUSSIF DON JUSTIN F. MARTIL, REB';
+/** Legacy COLB / seeder value — maps to {@link DEFAULT_CCR_NAME} for AUSF print. */
+const LEGACY_CCR_NAME = 'ATTY. YUSSIF DON JUSTIN F. MARTIL';
 const DEFAULT_CONTACT_EMAIL = 'civilregistrar.iligan@gmail.com';
 const DEFAULT_CONTACT_PHONE = '(063) 228-1311';
 
@@ -50,13 +52,23 @@ function mapRelationshipToChild(cert, child) {
   return childLabel;
 }
 
+function normalizeCityCivilRegistrarName(name) {
+  const value = trim(name);
+  if (!value) return DEFAULT_CCR_NAME;
+  if (value.toUpperCase() === LEGACY_CCR_NAME.toUpperCase()) return DEFAULT_CCR_NAME;
+  if (value.toUpperCase() === DEFAULT_CCR_NAME.toUpperCase()) return DEFAULT_CCR_NAME;
+  return value;
+}
+
 function cityCivilRegistrarName(cert) {
   const custom = trim(cert.ausfCityCivilRegistrarName || cert.ausf_city_civil_registrar_name);
-  if (custom) return custom;
+  if (custom) return normalizeCityCivilRegistrarName(custom);
 
   const receivedTitle = trim(cert.receivedByTitle || cert.received_by_title).toUpperCase();
   const receivedName = trim(cert.receivedByName || cert.received_by_name);
-  if (receivedTitle.includes('CIVIL REGISTRAR') && receivedName) return receivedName;
+  if (receivedTitle.includes('CIVIL REGISTRAR') && receivedName) {
+    return normalizeCityCivilRegistrarName(receivedName);
+  }
 
   return DEFAULT_CCR_NAME;
 }
