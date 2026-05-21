@@ -17,6 +17,7 @@ import {
   getAusfVariantForChild,
   shouldShowAusfForChild,
 } from '../../utils/ausfVariant';
+import { notifyElectronSavePdfResult } from '../../utils/notifyElectronSavePdfResult';
 import { onPdfSavedOpenInBrowser } from '../../utils/openSavedPdfInBrowser';
 import Ausf06, { AUSF_06_PRINT_TYPE } from './ausf1';
 import Ausf0717, { AUSF_0717_PRINT_TYPE } from './ausf2';
@@ -380,7 +381,7 @@ export function AusfPrint({ variant }) {
       }
       const suggestedFilename = buildAusfSuggestedFilename(child, variant, paperSize);
       const result = await window.electron.saveFieldPositionPdf(base64, suggestedFilename);
-      if (result?.ok) {
+      if (notifyElectronSavePdfResult(result)) {
         onPdfSavedOpenInBrowser(result.filePath, 'AUSF PDF');
       }
     } catch (err) {

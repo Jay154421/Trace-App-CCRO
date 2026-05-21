@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams, useLocation } from "react-router-dom";
 import { applicantDetailPath, getApplicantBasePath } from "../../utils/applicantRoutes";
 import toast from "react-hot-toast";
+import { notifyElectronSavePdfResult } from "../../utils/notifyElectronSavePdfResult";
+import { onPdfSavedOpenInBrowser } from "../../utils/openSavedPdfInBrowser";
 import Header from "../../layouts/pdf/header.jsx";
 import Certification from "../../layouts/pdf/body.jsx";
 import Footer from "../../layouts/pdf/footer.jsx";
@@ -208,8 +210,8 @@ export function PrintCertificate() {
         paperSize === CERTIFICATION_PDF_PAGE_FORMAT.A4 ? "A4" : "Long";
       const suggestedFilename = `Certification-${sanitized}-${formatLabel}.pdf`;
       const result = await window.electron.saveFieldPositionPdf(base64, suggestedFilename);
-      if (result?.ok) {
-        toast.success("PDF saved.");
+      if (notifyElectronSavePdfResult(result)) {
+        onPdfSavedOpenInBrowser(result.filePath, "Certification PDF");
       }
     } catch (err) {
       toast.error(err?.message || "Failed to save PDF.");

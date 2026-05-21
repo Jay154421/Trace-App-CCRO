@@ -31,6 +31,7 @@ import {
   getAusfVariantForChild,
   shouldShowAusfForChild,
 } from '../../utils/ausfVariant';
+import { notifyElectronSavePdfResult } from '../../utils/notifyElectronSavePdfResult';
 import { onPdfSavedOpenInBrowser, openSavedPdfInBrowser } from '../../utils/openSavedPdfInBrowser';
 
 function savedPdfFileName(filePath) {
@@ -201,7 +202,7 @@ export function ChildDetail() {
       const base64 = buildFieldPositionPdfBase64(merged);
       const suggestedFilename = buildPdfFilename(child, cert);
       const result = await window.electron.saveFieldPositionPdf(base64, suggestedFilename);
-      if (result?.ok) {
+      if (notifyElectronSavePdfResult(result)) {
         setLastFrontPdfPath(result.filePath);
         onPdfSavedOpenInBrowser(result.filePath, 'Front PDF');
         return true;
@@ -258,7 +259,7 @@ export function ChildDetail() {
       const base64 = buildFieldPositionBackPdfBase64(merged);
       const suggestedFilename = `BACK-${buildBackPdfFilename(child, cert)}`;
       const result = await window.electron.saveFieldPositionPdf(base64, suggestedFilename);
-      if (result?.ok) {
+      if (notifyElectronSavePdfResult(result)) {
         setLastBackPdfPath(result.filePath);
         onPdfSavedOpenInBrowser(result.filePath, 'Back PDF');
         return true;

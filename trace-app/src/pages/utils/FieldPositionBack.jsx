@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { jsPDF } from 'jspdf';
 import { childrenApi } from '../../services/api';
 import { usePdfPreviewUrl } from '../../hooks/usePdfPreviewUrl';
+import { notifyElectronSavePdfResult } from '../../utils/notifyElectronSavePdfResult';
 import { onPdfSavedOpenInBrowser } from '../../utils/openSavedPdfInBrowser';
 
 // ============================================================================
@@ -1228,7 +1229,7 @@ export function FieldPositionBack() {
             const base64 = buildFieldPositionPdfBase64(merged);
             const suggestedFilename = buildPdfFilename(child, cert);
             const result = await window.electron.saveFieldPositionPdf(base64, suggestedFilename);
-            if (result?.ok) {
+            if (notifyElectronSavePdfResult(result)) {
                 onPdfSavedOpenInBrowser(result.filePath, 'PDF');
             }
         } catch (err) {
@@ -1246,7 +1247,7 @@ export function FieldPositionBack() {
             const base64 = buildCombinedPdfBase64(merged);
             const suggestedFilename = `combined-${buildPdfFilename(child, cert)}`;
             const result = await window.electron.saveFieldPositionPdf(base64, suggestedFilename);
-            if (result?.ok) {
+            if (notifyElectronSavePdfResult(result)) {
                 onPdfSavedOpenInBrowser(result.filePath, 'Combined PDF');
             }
         } catch (err) {

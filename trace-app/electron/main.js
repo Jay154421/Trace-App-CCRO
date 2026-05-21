@@ -177,6 +177,31 @@ ipcMain.handle('open-pdf-in-edge', (_event, filePath, browserChoice) =>
   openPdfInBrowser(filePath, browserChoice)
 );
 
+function sanitizePdfFilename(suggestedFileName) {
+  let base = `field-position-${Date.now()}.pdf`;
+  if (typeof suggestedFileName === 'string' && suggestedFileName.trim()) {
+    let name = path.basename(suggestedFileName.trim());
+    name = name.replace(/[<>:"|?*\u0000-\u001f]/g, '').trim();
+    if (!name.toLowerCase().endsWith('.pdf')) name = `${name}.pdf`;
+    if (name.length > 200) name = `${name.slice(0, 196)}.pdf`;
+    if (name && name !== '.pdf') base = name;
+  }
+  return base;
+}
+
+function resolveWritableSaveDir() {
+  const candidates = ['downloads', 'documents', 'desktop'];
+  for (const name of candidates) {
+    try {
+      const dir = app.getPath(name);
+      if (dir && fs.existsSync(dir)) return dir;
+    } catch {
+      // try next
+    }
+  }
+  return app.getPath('userData');
+}
+
 const isDev = process.env.ELECTRON_DEV === '1' || !app.isPackaged;
 
 const PRELOAD_PATH = path.join(__dirname, 'preload.js');
@@ -212,22 +237,58 @@ function createWindow(url) {
   if (isDev) win.webContents.openDevTools();
 
   ipcMain.handle('save-field-position-pdf', async (_event, pdfBase64, suggestedFileName) => {
-    let defaultPath = `field-position-${Date.now()}.pdf`;
-    if (typeof suggestedFileName === 'string' && suggestedFileName.trim()) {
-      let base = path.basename(suggestedFileName.trim());
-      base = base.replace(/[<>:"|?*\u0000-\u001f]/g, '').trim();
-      if (!base.toLowerCase().endsWith('.pdf')) base = `${base}.pdf`;
-      if (base.length > 200) base = `${base.slice(0, 196)}.pdf`;
-      if (base && base !== '.pdf') defaultPath = base;
+    if (!pdfBase64) {
+      return { ok: false, error: 'No PDF data to save.' };
     }
-    const { filePath } = await dialog.showSaveDialog(win, {
+
+    const filename = sanitizePdfFilename(suggestedFileName);
+    const defaultPath = path.join(resolveWritableSaveDir(), filename);
+
+    const { filePath, canceled } = await dialog.showSaveDialog(win, {
+      title: 'Save PDF as',
       defaultPath,
-      filters: [{ name: 'PDF', extensions: ['pdf'] }],
+      filters: [{ name: 'PDF Documents', extensions: ['pdf'] }],
+      properties: ['createDirectory', 'showOverwriteConfirmation'],
     });
-    if (!filePath || !pdfBase64) return { ok: false };
-    const buffer = Buffer.from(pdfBase64, 'base64');
-    fs.writeFileSync(filePath, buffer);
-    return { ok: true, filePath };
+
+    if (canceled) return { ok: false, canceled: true };
+    if (!filePath) {
+      return {
+        ok: false,
+        error:
+          'Save was cancelled or Windows could not use that folder. Try Downloads or Desktop (OneDrive Documents often shows "File not found").',
+      };
+    }
+
+    let targetPath = filePath.trim();
+    if (!targetPath.toLowerCase().endsWith('.pdf')) {
+      targetPath = `${targetPath}.pdf`;
+    }
+
+    try {
+      const dir = path.dirname(targetPath);
+      fs.mkdirSync(dir, { recursive: true });
+      const buffer = Buffer.from(pdfBase64, 'base64');
+      const tempPath = `${targetPath}.trace-tmp`;
+      fs.writeFileSync(tempPath, buffer);
+      try {
+        if (fs.existsSync(targetPath)) fs.unlinkSync(targetPath);
+      } catch {
+        // ignore — rename may still succeed
+      }
+      fs.renameSync(tempPath, targetPath);
+      return { ok: true, filePath: targetPath };
+    } catch (err) {
+      const code = err && err.code;
+      let message = err?.message || 'Failed to write the PDF file.';
+      if (code === 'ENOENT') {
+        message =
+          'That folder was not found. Save to Downloads or Desktop instead of a OneDrive-only folder.';
+      } else if (code === 'EACCES' || code === 'EPERM') {
+        message = 'Windows blocked writing to that location. Choose another folder.';
+      }
+      return { ok: false, error: message };
+    }
   });
 }
 
