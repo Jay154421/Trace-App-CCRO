@@ -33,17 +33,81 @@ const PDF_MARGIN_IN = 0;
 const PDF_CAPTURE_CLASS = 'ausf-pdf-capture';
 
 /**
- * CSS zoom breaks html2canvas text layout (overlapping glyphs). Clear before rasterizing.
+ * CSS zoom breaks html2canvas text layout (overlapping glyphs). Clear screen fit before rasterizing.
  * @param {HTMLElement | null} printDoc
  */
 export function clearAusfFitForPdfCapture(printDoc) {
   if (!printDoc) return;
   printDoc.style.zoom = '';
   const body = printDoc.querySelector('.print-doc-body, .ausf-doc-body');
-  if (body) {
-    body.style.zoom = '';
-    body.style.transform = '';
+  if (!body) return;
+  body.style.zoom = '';
+  body.style.transform = '';
+  body.style.transformOrigin = '';
+  body.style.width = '';
+  body.style.maxWidth = '';
+  body.style.overflow = '';
+  delete body.dataset.ausfPdfFit;
+}
+
+/**
+ * @param {HTMLElement} article
+ * @param {HTMLElement} printDoc
+ * @returns {number}
+ */
+export function computeAusfBodyFitScale(article, printDoc) {
+  const header = printDoc.querySelector('.print-doc-header, .ausf-doc-header');
+  const footer = printDoc.querySelector('.print-doc-footer-wrap, .ausf-doc-footer');
+  const body = printDoc.querySelector('.print-doc-body, .ausf-doc-body');
+  if (!body) return 1;
+
+  const docStyle = getComputedStyle(printDoc);
+  const padY =
+    (parseFloat(docStyle.paddingTop) || 0) + (parseFloat(docStyle.paddingBottom) || 0);
+  const headerH = header?.offsetHeight ?? 0;
+  const footerH = footer?.offsetHeight ?? 0;
+  const availableH = Math.max(0, article.clientHeight - padY - headerH - footerH);
+  const availableW = article.clientWidth;
+
+  return Math.min(1, availableH / body.scrollHeight, availableW / body.scrollWidth);
+}
+
+/**
+ * Scale body to fit between header and footer. Uses top-left origin + width compensation
+ * so left/right edges align with the footer (center origin leaves side gaps).
+ * @param {HTMLElement | null | undefined} article
+ * @param {HTMLElement | null | undefined} printDoc
+ * @returns {number}
+ */
+export function applyAusfBodyFit(article, printDoc) {
+  if (!article || !printDoc) return 1;
+  const body = printDoc.querySelector('.print-doc-body, .ausf-doc-body');
+  if (!body) return 1;
+
+  body.style.transform = '';
+  body.style.transformOrigin = '';
+  body.style.width = '';
+  body.style.maxWidth = '';
+  delete body.dataset.ausfPdfFit;
+
+  const scale = computeAusfBodyFitScale(article, printDoc);
+  if (scale >= 1) {
+    body.style.overflow = '';
+    return 1;
   }
+
+  body.dataset.ausfPdfFit = '1';
+  body.style.overflow = 'hidden';
+  body.style.transformOrigin = 'top left';
+  body.style.width = `${100 / scale}%`;
+  body.style.maxWidth = 'none';
+  body.style.transform = `scale(${scale})`;
+  return scale;
+}
+
+/** @deprecated Use applyAusfBodyFit */
+export function applyAusfBodyFitForPdfCapture(article, printDoc) {
+  return applyAusfBodyFit(article, printDoc);
 }
 
 /**
@@ -68,8 +132,10 @@ function prepareAusfPdfClone(clonedDoc, clonedRoot) {
   const clonedBody = clonedPrintDoc.querySelector('.print-doc-body, .ausf-doc-body');
   if (clonedBody) {
     clonedBody.style.zoom = '';
-    clonedBody.style.transform = '';
-    clonedBody.style.overflow = 'visible';
+    if (!clonedBody.dataset.ausfPdfFit) {
+      clonedBody.style.transform = '';
+      clonedBody.style.overflow = 'visible';
+    }
   }
 
   const clonedArticle = clonedPrintDoc.closest('article');
@@ -87,6 +153,7 @@ function shouldCaptureFullScrollHeight(printDoc, article) {
   if (!printDoc || !article) return false;
   const body = printDoc.querySelector('.print-doc-body, .ausf-doc-body');
   if (!body) return false;
+  if (body.dataset.ausfPdfFit) return false;
   const header = printDoc.querySelector('.print-doc-header, .ausf-doc-header');
   const footer = printDoc.querySelector('.print-doc-footer-wrap, .ausf-doc-footer');
   const docStyle = getComputedStyle(printDoc);
@@ -120,6 +187,10 @@ export async function buildAusfPdfBase64(element, pageFormat = AUSF_PDF_PAGE_FOR
   const capturePageFrame = captureRoot === article && article;
 
   clearAusfFitForPdfCapture(printDoc);
+
+  if (printDoc && article) {
+    applyAusfBodyFit(article, printDoc);
+  }
 
   const prevDocHeight = printDoc?.style.height ?? '';
   const prevDocMinHeight = printDoc?.style.minHeight ?? '';
@@ -164,6 +235,7 @@ export async function buildAusfPdfBase64(element, pageFormat = AUSF_PDF_PAGE_FOR
     });
   } finally {
     if (printDoc?.classList) printDoc.classList.remove(PDF_CAPTURE_CLASS);
+    clearAusfFitForPdfCapture(printDoc);
     if (printDoc) {
       printDoc.style.overflow = prevDocOverflow;
       printDoc.style.height = prevDocHeight;

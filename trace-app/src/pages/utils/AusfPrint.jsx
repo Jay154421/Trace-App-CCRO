@@ -6,6 +6,7 @@ import { childrenApi } from '../../services/api';
 import { applicantDetailPath, getApplicantBasePath } from '../../utils/applicantRoutes';
 import {
   AUSF_PDF_PAGE_FORMAT,
+  applyAusfBodyFit,
   buildAusfPdfBase64,
   buildAusfSuggestedFilename,
   clearAusfFitForPdfCapture,
@@ -33,9 +34,12 @@ function getAusfPageDimensions(paperSize) {
   };
 }
 
-function useAusfPrintPageSize(paperSize) {
+function useAusfPrintPageSize(paperSize, variant) {
   useEffect(() => {
     const { pageSizeCss, width, height, dataPaper } = getAusfPageDimensions(paperSize);
+    const isA4Minor =
+      paperSize === AUSF_PDF_PAGE_FORMAT.A4 && variant === AUSF_0717_PRINT_TYPE;
+    const docPadding = isA4Minor ? '0.12in 1in 0.3in' : '0.3in 1in';
     document.documentElement.dataset.paperSize = dataPaper;
 
     let el = document.getElementById(PRINT_SIZE_STYLE_ID);
@@ -62,7 +66,7 @@ function useAusfPrintPageSize(paperSize) {
           max-height: ${height} !important;
           box-sizing: border-box !important;
           overflow: hidden !important;
-          padding: 0.3in 1in !important;
+          padding: ${docPadding} !important;
         }
         .ausf-print-page .ausf-doc.print-doc .print-doc-header,
         .ausf-print-page .ausf-doc.print-doc .ausf-doc-header {
@@ -73,6 +77,7 @@ function useAusfPrintPageSize(paperSize) {
         .ausf-print-page .ausf-doc.print-doc > .ausf-doc-body {
           flex: 1 1 0% !important;
           min-height: 0 !important;
+          overflow: hidden !important;
           display: flex !important;
           flex-direction: column !important;
         }
@@ -101,7 +106,11 @@ function useAusfPrintPageSize(paperSize) {
         max-height: ${height} !important;
         box-sizing: border-box !important;
         overflow: hidden !important;
-        padding: 0.3in 1in !important;
+        padding: ${docPadding} !important;
+      }
+      html[data-paper-size] .ausf-print-page .ausf-doc.print-doc > .print-doc-body,
+      html[data-paper-size] .ausf-print-page .ausf-doc.print-doc > .ausf-doc-body {
+        overflow: hidden !important;
       }
       html[data-paper-size] .ausf-print-page .ausf-doc.print-doc .print-doc-header,
       html[data-paper-size] .ausf-print-page .ausf-doc.print-doc .ausf-doc-header {
@@ -138,7 +147,11 @@ function useAusfPrintPageSize(paperSize) {
         min-height: ${height} !important;
         max-height: ${height} !important;
         overflow: hidden !important;
-        padding: 0.3in 1in !important;
+        padding: ${docPadding} !important;
+      }
+      body.pdf-capture .ausf-print-page .ausf-doc.print-doc > .print-doc-body,
+      body.pdf-capture .ausf-print-page .ausf-doc.print-doc > .ausf-doc-body {
+        overflow: hidden !important;
       }
       body.pdf-capture .ausf-print-page .ausf-doc.print-doc > .print-doc-body,
       body.pdf-capture .ausf-print-page .ausf-doc.print-doc > .ausf-doc-body {
@@ -166,38 +179,22 @@ function useAusfPrintPageSize(paperSize) {
       delete document.documentElement.dataset.paperSize;
       document.body.classList.remove('ausf-paper-a4', 'ausf-paper-long', 'pdf-capture');
     };
-  }, [paperSize]);
+  }, [paperSize, variant]);
 }
 
 /** Scale body only so header stays top and contact footer stays at page bottom. */
 function fitAusfDocToArticle(article, doc) {
-  const header = doc.querySelector('.print-doc-header, .ausf-doc-header');
-  const footer = doc.querySelector('.print-doc-footer-wrap, .ausf-doc-footer');
+  clearAusfFitForPdfCapture(doc);
   const body = doc.querySelector('.print-doc-body, .ausf-doc-body');
-
-  doc.style.zoom = '';
-  if (body) body.style.zoom = '';
-
-  const pageHeight = article.clientHeight;
-  const pageWidth = article.clientWidth;
-  if (!pageHeight || !pageWidth) return;
-
-  const docStyle = getComputedStyle(doc);
-  const padY =
-    (parseFloat(docStyle.paddingTop) || 0) + (parseFloat(docStyle.paddingBottom) || 0);
-  const headerH = header?.offsetHeight ?? 0;
-  const footerH = footer?.offsetHeight ?? 0;
-  const availableH = Math.max(0, pageHeight - padY - headerH - footerH);
-  const availableW = pageWidth;
-
   if (!body) {
+    const pageHeight = article.clientHeight;
+    const pageWidth = article.clientWidth;
+    if (!pageHeight || !pageWidth) return;
     const scale = Math.min(1, pageHeight / doc.scrollHeight, pageWidth / doc.scrollWidth);
-    doc.style.zoom = scale < 0.995 ? String(scale) : '';
+    doc.style.zoom = scale < 1 ? String(scale) : '';
     return;
   }
-
-  const scale = Math.min(1, availableH / body.scrollHeight, availableW / body.scrollWidth);
-  body.style.zoom = scale < 0.995 ? String(scale) : '';
+  applyAusfBodyFit(article, doc);
 }
 
 /** Scale document content so it fits the selected bond paper (A4 or long). */
@@ -221,8 +218,7 @@ function useAusfFitToPaper(docArticleRef, paperSize, printData) {
     return () => {
       cancelAnimationFrame(frameId);
       observer.disconnect();
-      doc.style.zoom = '';
-      if (body) body.style.zoom = '';
+      clearAusfFitForPdfCapture(doc);
     };
   }, [docArticleRef, paperSize, printData]);
 }
@@ -233,13 +229,15 @@ function waitForAusfLayout() {
   });
 }
 
-/** Clear fit zoom before rasterize — CSS zoom breaks html2canvas text on A4/Long PDF. */
+/** Clear screen zoom and apply transform fit before rasterize. */
 async function prepareAusfPdfCapture(articleRef) {
-  const doc = articleRef.current?.querySelector('.ausf-doc.print-doc');
-  if (!doc) return;
+  const article = articleRef.current;
+  const doc = article?.querySelector('.ausf-doc.print-doc');
+  if (!article || !doc) return;
 
   clearAusfFitForPdfCapture(doc);
   await waitForAusfLayout();
+  applyAusfBodyFit(article, doc);
   await waitForAusfLayout();
 }
 
@@ -281,7 +279,7 @@ export function AusfPrint({ variant }) {
     closePreview,
   } = usePdfPreviewUrl();
 
-  useAusfPrintPageSize(paperSize);
+  useAusfPrintPageSize(paperSize, variant);
 
   useEffect(() => {
     if (!id) return;
