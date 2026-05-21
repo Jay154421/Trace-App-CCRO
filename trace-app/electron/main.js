@@ -85,8 +85,48 @@ async function tryOpenWithBrowser(browserExe, normalized) {
   return result.ok ? { ok: true } : { ok: false };
 }
 
+async function resolveBrowserExecutable(browserChoice) {
+  if (browserChoice === 'edge') {
+    return findEdgeExecutable() || (await findExecutableOnPath('msedge.exe'));
+  }
+  if (browserChoice === 'chrome') {
+    return findChromeExecutable() || (await findExecutableOnPath('chrome.exe'));
+  }
+  return null;
+}
+
+/** Open a local PDF in a specific browser (`edge` or `chrome`). */
+async function openPdfInChosenBrowser(filePath, browserChoice) {
+  if (browserChoice !== 'edge' && browserChoice !== 'chrome') {
+    return { ok: false, error: 'Invalid browser choice.' };
+  }
+  if (typeof filePath !== 'string' || !filePath.trim()) {
+    return { ok: false, error: 'No file path provided.' };
+  }
+  const normalized = path.normalize(filePath.trim());
+  if (!fs.existsSync(normalized)) {
+    return { ok: false, error: 'PDF file not found.' };
+  }
+
+  const browserExe = await resolveBrowserExecutable(browserChoice);
+  const label = browserChoice === 'edge' ? 'Microsoft Edge' : 'Google Chrome';
+  if (!browserExe) {
+    return { ok: false, error: `${label} was not found on this computer.` };
+  }
+
+  const result = await tryOpenWithBrowser(browserExe, normalized);
+  if (result.ok) {
+    return { ok: true, browser: browserChoice };
+  }
+  return { ok: false, error: `Could not open in ${label}.` };
+}
+
 /** Open a local PDF in Microsoft Edge, or Google Chrome if Edge is missing or fails. */
-async function openPdfInBrowser(filePath) {
+async function openPdfInBrowser(filePath, browserChoice) {
+  if (browserChoice === 'edge' || browserChoice === 'chrome') {
+    return openPdfInChosenBrowser(filePath, browserChoice);
+  }
+
   if (typeof filePath !== 'string' || !filePath.trim()) {
     return { ok: false, error: 'No file path provided.' };
   }
@@ -133,7 +173,9 @@ async function openPdfInBrowser(filePath) {
   };
 }
 
-ipcMain.handle('open-pdf-in-edge', (_event, filePath) => openPdfInBrowser(filePath));
+ipcMain.handle('open-pdf-in-edge', (_event, filePath, browserChoice) =>
+  openPdfInBrowser(filePath, browserChoice)
+);
 
 const isDev = process.env.ELECTRON_DEV === '1' || !app.isPackaged;
 

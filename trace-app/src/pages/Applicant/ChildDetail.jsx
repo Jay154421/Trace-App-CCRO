@@ -203,7 +203,7 @@ export function ChildDetail() {
       const result = await window.electron.saveFieldPositionPdf(base64, suggestedFilename);
       if (result?.ok) {
         setLastFrontPdfPath(result.filePath);
-        await onPdfSavedOpenInBrowser(result.filePath, 'Front PDF');
+        onPdfSavedOpenInBrowser(result.filePath, 'Front PDF');
         return true;
       }
       return false;
@@ -260,7 +260,7 @@ export function ChildDetail() {
       const result = await window.electron.saveFieldPositionPdf(base64, suggestedFilename);
       if (result?.ok) {
         setLastBackPdfPath(result.filePath);
-        await onPdfSavedOpenInBrowser(result.filePath, 'Back PDF');
+        onPdfSavedOpenInBrowser(result.filePath, 'Back PDF');
         return true;
       }
       return false;

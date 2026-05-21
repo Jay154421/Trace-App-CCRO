@@ -381,7 +381,7 @@ export function AusfPrint({ variant }) {
       const suggestedFilename = buildAusfSuggestedFilename(child, variant, paperSize);
       const result = await window.electron.saveFieldPositionPdf(base64, suggestedFilename);
       if (result?.ok) {
-        await onPdfSavedOpenInBrowser(result.filePath, 'AUSF PDF');
+        onPdfSavedOpenInBrowser(result.filePath, 'AUSF PDF');
       }
     } catch (err) {
       toast.error(err?.message || 'Failed to save PDF.');

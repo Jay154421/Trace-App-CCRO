@@ -10,53 +10,65 @@ export function pdfBrowserLabel(browser) {
   return PDF_BROWSER_LABELS[browser] || 'your browser';
 }
 
-export async function openSavedPdfInBrowser(filePath) {
+export async function openSavedPdfInBrowser(filePath, browserChoice) {
   const openFn = window.electron?.openPdfInBrowser ?? window.electron?.openPdfInEdge;
   if (!openFn) {
     return { ok: false, error: 'Open in browser is available in the desktop app.' };
   }
   try {
-    return await openFn(filePath);
+    return await openFn(filePath, browserChoice);
   } catch (err) {
     return { ok: false, error: err?.message || 'Could not open the PDF in a browser.' };
   }
 }
 
-function showPdfOpenBrowserRetryToast(filePath, label) {
+async function openSavedPdfInChosenBrowser(filePath, browserChoice) {
+  return openSavedPdfInBrowser(filePath, browserChoice);
+}
+
+/** After Save as PDF: let the user pick Edge or Chrome (no auto-open). */
+export function showPdfSavedBrowserChoiceToast(filePath, label = 'PDF') {
+  const handleOpen = async (t, browserChoice) => {
+    toast.dismiss(t.id);
+    const result = await openSavedPdfInChosenBrowser(filePath, browserChoice);
+    if (!result?.ok) {
+      toast.error(result?.error || 'Could not open the PDF in a browser.');
+      return;
+    }
+    toast.success(`${label} opened in ${pdfBrowserLabel(result.browser)}.`, { duration: 5000 });
+  };
+
   toast.custom(
     (t) => (
       <div
-        role="button"
-        tabIndex={0}
-        className={`flex max-w-md cursor-pointer items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900 shadow-lg transition-opacity duration-300 ease-out ${t.visible ? 'opacity-100' : 'opacity-0'}`}
-        onClick={async () => {
-          toast.dismiss(t.id);
-          const result = await openSavedPdfInBrowser(filePath);
-          if (!result?.ok) {
-            toast.error(result?.error || 'Could not open the PDF in a browser.');
-          }
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            e.currentTarget.click();
-          }
-        }}
+        className={`max-w-md rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 shadow-lg transition-opacity duration-300 ease-out ${t.visible ? 'opacity-100' : 'opacity-0'}`}
+        role="status"
       >
-        {label} saved. Click here to open in Microsoft Edge or Google Chrome.
+        <p className="font-medium">{label} saved.</p>
+        <p className="mt-1 text-emerald-800">Choose a browser to open the PDF:</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => handleOpen(t, 'edge')}
+            className="rounded-md border border-emerald-300 bg-white px-3 py-1.5 text-sm font-medium text-emerald-900 hover:bg-emerald-100"
+          >
+            Microsoft Edge
+          </button>
+          <button
+            type="button"
+            onClick={() => handleOpen(t, 'chrome')}
+            className="rounded-md border border-emerald-300 bg-white px-3 py-1.5 text-sm font-medium text-emerald-900 hover:bg-emerald-100"
+          >
+            Google Chrome
+          </button>
+        </div>
       </div>
     ),
-    { duration: 12000 }
+    { duration: 30000 }
   );
 }
 
-export async function onPdfSavedOpenInBrowser(filePath, label) {
-  const openResult = await openSavedPdfInBrowser(filePath);
-  if (openResult?.ok) {
-    const browserName = pdfBrowserLabel(openResult.browser);
-    toast.success(`${label} saved and opened in ${browserName}.`, { duration: 5000 });
-    return;
-  }
-  toast.error(openResult?.error || 'PDF saved but could not open in a browser.');
-  showPdfOpenBrowserRetryToast(filePath, label);
+/** After save: notify only — open Edge/Chrome only when the user picks a browser. */
+export function onPdfSavedOpenInBrowser(filePath, label) {
+  showPdfSavedBrowserChoiceToast(filePath, label);
 }

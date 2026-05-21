@@ -1229,7 +1229,7 @@ export function FieldPositionBack() {
             const suggestedFilename = buildPdfFilename(child, cert);
             const result = await window.electron.saveFieldPositionPdf(base64, suggestedFilename);
             if (result?.ok) {
-                await onPdfSavedOpenInBrowser(result.filePath, 'PDF');
+                onPdfSavedOpenInBrowser(result.filePath, 'PDF');
             }
         } catch (err) {
             toast.error(err?.message || 'Failed to save PDF.');
@@ -1247,7 +1247,7 @@ export function FieldPositionBack() {
             const suggestedFilename = `combined-${buildPdfFilename(child, cert)}`;
             const result = await window.electron.saveFieldPositionPdf(base64, suggestedFilename);
             if (result?.ok) {
-                await onPdfSavedOpenInBrowser(result.filePath, 'Combined PDF');
+                onPdfSavedOpenInBrowser(result.filePath, 'Combined PDF');
             }
         } catch (err) {
             toast.error(err?.message || 'Failed to save combined PDF.');
