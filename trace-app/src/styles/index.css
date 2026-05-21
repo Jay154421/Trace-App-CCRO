@@ -91,6 +91,16 @@ body {
   margin-bottom: 1.25rem;
 }
 
+.witness-doc.print-doc .witness-affidavit-subtitle {
+  text-align: center !important;
+  text-align-last: center !important;
+  text-justify: auto;
+  hyphens: none;
+  -webkit-hyphens: none;
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
 /* Justified body; pretty wrapping + hyphenation keep word gaps close to a single normal space */
 .ausf-doc.print-doc .print-doc-body p,
 .ausf-doc.print-doc .ausf-doc-body p,
@@ -838,6 +848,14 @@ body.pdf-capture.ausf-paper-long .ausf-doc .ausf-signature-block__name::after,
     text-align-last: left !important;
     hyphens: auto !important;
     -webkit-hyphens: auto !important;
+  }
+
+  .witness-doc.print-doc .witness-affidavit-subtitle {
+    text-align: center !important;
+    text-align-last: center !important;
+    text-justify: auto !important;
+    hyphens: none !important;
+    -webkit-hyphens: none !important;
   }
 
   .ausf-doc.print-doc ol {

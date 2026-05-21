@@ -36,7 +36,7 @@ export default function WitnessPrintDocument({ data = {} }) {
 
       <div className="witness-doc-body print-doc-body ausf-doc-body flex flex-col text-[12pt] leading-relaxed">
         <h2 className="ausf-section-title text-center">AFFIDAVIT TWO DISINTERESTED WITNESSES</h2>
-        <p className="m-0 text-center text-[10pt] italic">(For Late registration of Birth)</p>
+        <p className="witness-affidavit-subtitle m-0 text-[10pt] italic">(For Late registration of Birth)</p>
 
         <p className="mt-4 mb-3 leading-normal">
           We, <span className={`${FILL_BOLD} px-0.5 align-baseline uppercase`}>{blank(data.witness1Name)}</span> and{' '}
