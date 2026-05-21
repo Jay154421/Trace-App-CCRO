@@ -668,40 +668,60 @@ body.pdf-capture .ausf-07-17-doc .ausf-subscribed-sworn {
   margin-bottom: 0.12in !important;
 }
 
-/* html2canvas PDF: same inline underlines as screen (keeps justify word spacing) */
-body.pdf-capture .ausf-doc.print-doc .print-doc-body .fill-blank,
-body.pdf-capture .ausf-doc.print-doc .ausf-doc-body .fill-blank,
-body.pdf-capture .ausf-doc.print-doc .ausf-subscribed-sworn .fill-blank,
-body.pdf-capture .ausf-doc.print-doc ol > li .fill-blank,
+/* AUSF PDF export (A4 + long): underline below descenders — html2canvas-safe */
+body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc,
+body.pdf-capture.ausf-paper-long .ausf-doc.print-doc,
+.ausf-doc.print-doc.ausf-pdf-capture {
+  --ausf-pdf-underline-gap: 0.5em;
+}
+
+body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc .print-doc-body .fill-blank,
+body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc .ausf-doc-body .fill-blank,
+body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc .ausf-subscribed-sworn .fill-blank,
+body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc ol > li .fill-blank,
+body.pdf-capture.ausf-paper-long .ausf-doc.print-doc .print-doc-body .fill-blank,
+body.pdf-capture.ausf-paper-long .ausf-doc.print-doc .ausf-doc-body .fill-blank,
+body.pdf-capture.ausf-paper-long .ausf-doc.print-doc .ausf-subscribed-sworn .fill-blank,
+body.pdf-capture.ausf-paper-long .ausf-doc.print-doc ol > li .fill-blank,
 .ausf-doc.print-doc.ausf-pdf-capture .print-doc-body .fill-blank,
 .ausf-doc.print-doc.ausf-pdf-capture .ausf-doc-body .fill-blank,
 .ausf-doc.print-doc.ausf-pdf-capture .ausf-subscribed-sworn .fill-blank,
 .ausf-doc.print-doc.ausf-pdf-capture ol > li .fill-blank {
-  display: inline !important;
-  position: static !important;
+  display: inline-block !important;
+  position: relative !important;
   width: auto !important;
   min-width: 0 !important;
   max-width: none !important;
-  padding: 0 0.02em !important;
+  padding: 0 0.02em var(--ausf-pdf-underline-gap) !important;
   margin: 0 !important;
-  border-bottom: none !important;
-  text-decoration: underline !important;
-  text-decoration-thickness: 1px !important;
-  text-underline-offset: 2px !important;
-  text-decoration-skip-ink: none !important;
-  -webkit-text-decoration-skip: none !important;
+  border-bottom: 1px solid #000 !important;
+  text-decoration: none !important;
   vertical-align: baseline !important;
   word-spacing: normal !important;
   letter-spacing: normal !important;
-  line-height: inherit !important;
+  line-height: 1.15 !important;
+  box-sizing: content-box !important;
+  background: none !important;
   -webkit-print-color-adjust: exact !important;
   print-color-adjust: exact !important;
 }
 
-body.pdf-capture .ausf-doc.print-doc .print-doc-body .fill-blank:empty,
-body.pdf-capture .ausf-doc.print-doc .ausf-doc-body .fill-blank:empty,
-body.pdf-capture .ausf-doc.print-doc .ausf-subscribed-sworn .fill-blank:empty,
-body.pdf-capture .ausf-doc.print-doc ol > li .fill-blank:empty,
+body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc .fill-blank.affiant-name-blank,
+body.pdf-capture.ausf-paper-long .ausf-doc.print-doc .fill-blank.affiant-name-blank,
+.ausf-doc.print-doc.ausf-pdf-capture .fill-blank.affiant-name-blank {
+  display: inline-block !important;
+  padding-left: 0.5em !important;
+  padding-right: 0.02em !important;
+}
+
+body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc .print-doc-body .fill-blank:empty,
+body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc .ausf-doc-body .fill-blank:empty,
+body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc .ausf-subscribed-sworn .fill-blank:empty,
+body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc ol > li .fill-blank:empty,
+body.pdf-capture.ausf-paper-long .ausf-doc.print-doc .print-doc-body .fill-blank:empty,
+body.pdf-capture.ausf-paper-long .ausf-doc.print-doc .ausf-doc-body .fill-blank:empty,
+body.pdf-capture.ausf-paper-long .ausf-doc.print-doc .ausf-subscribed-sworn .fill-blank:empty,
+body.pdf-capture.ausf-paper-long .ausf-doc.print-doc ol > li .fill-blank:empty,
 .ausf-doc.print-doc.ausf-pdf-capture .print-doc-body .fill-blank:empty,
 .ausf-doc.print-doc.ausf-pdf-capture .ausf-doc-body .fill-blank:empty,
 .ausf-doc.print-doc.ausf-pdf-capture .ausf-subscribed-sworn .fill-blank:empty,
@@ -709,10 +729,14 @@ body.pdf-capture .ausf-doc.print-doc ol > li .fill-blank:empty,
   min-width: 2.5em !important;
 }
 
-body.pdf-capture .ausf-doc.print-doc .print-doc-body .fill-blank::after,
-body.pdf-capture .ausf-doc.print-doc .ausf-doc-body .fill-blank::after,
-body.pdf-capture .ausf-doc.print-doc .ausf-subscribed-sworn .fill-blank::after,
-body.pdf-capture .ausf-doc.print-doc ol > li .fill-blank::after,
+body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc .print-doc-body .fill-blank::after,
+body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc .ausf-doc-body .fill-blank::after,
+body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc .ausf-subscribed-sworn .fill-blank::after,
+body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc ol > li .fill-blank::after,
+body.pdf-capture.ausf-paper-long .ausf-doc.print-doc .print-doc-body .fill-blank::after,
+body.pdf-capture.ausf-paper-long .ausf-doc.print-doc .ausf-doc-body .fill-blank::after,
+body.pdf-capture.ausf-paper-long .ausf-doc.print-doc .ausf-subscribed-sworn .fill-blank::after,
+body.pdf-capture.ausf-paper-long .ausf-doc.print-doc ol > li .fill-blank::after,
 .ausf-doc.print-doc.ausf-pdf-capture .print-doc-body .fill-blank::after,
 .ausf-doc.print-doc.ausf-pdf-capture .ausf-doc-body .fill-blank::after,
 .ausf-doc.print-doc.ausf-pdf-capture .ausf-subscribed-sworn .fill-blank::after,
@@ -721,28 +745,25 @@ body.pdf-capture .ausf-doc.print-doc ol > li .fill-blank::after,
   display: none !important;
 }
 
-body.pdf-capture .ausf-doc .ausf-signature-block__name,
+body.pdf-capture.ausf-paper-a4 .ausf-doc .ausf-signature-block__name,
+body.pdf-capture.ausf-paper-long .ausf-doc .ausf-signature-block__name,
 .ausf-doc.print-doc.ausf-pdf-capture .ausf-signature-block__name {
   display: inline-block !important;
   position: relative !important;
   width: fit-content !important;
   min-width: 0 !important;
-  padding-bottom: 0.22em !important;
-  line-height: 1.35 !important;
-  border-bottom: none !important;
+  padding: 0 0.15em var(--ausf-pdf-underline-gap) !important;
+  line-height: 1.15 !important;
+  border-bottom: 1px solid #000 !important;
+  text-decoration: none !important;
+  background: none !important;
 }
 
-body.pdf-capture .ausf-doc .ausf-signature-block__name::after,
+body.pdf-capture.ausf-paper-a4 .ausf-doc .ausf-signature-block__name::after,
+body.pdf-capture.ausf-paper-long .ausf-doc .ausf-signature-block__name::after,
 .ausf-doc.print-doc.ausf-pdf-capture .ausf-signature-block__name::after {
-  content: '' !important;
-  display: block !important;
-  position: absolute !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  width: 100% !important;
-  height: 1px !important;
-  background-color: #000 !important;
+  content: none !important;
+  display: none !important;
 }
 
 @media print {
