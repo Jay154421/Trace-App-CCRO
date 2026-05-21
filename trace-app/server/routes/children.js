@@ -21,5 +21,6 @@ router.put('/:id/checklist', idParam, [body('items').isArray()], handleValidatio
 router.put('/:id/certificate-of-live-birth', idParam, handleValidationErrors, ctrl.updateCertificateOfLiveBirth);
 router.put('/:id/paternity-affidavit', idParam, handleValidationErrors, ctrl.updatePaternityAffidavit);
 router.put('/:id/delayed-registration-affidavit', idParam, handleValidationErrors, ctrl.updateDelayedRegistrationAffidavit);
+router.put('/:id/witness-affidavit', idParam, handleValidationErrors, ctrl.updateWitnessAffidavit);
 
 module.exports = router;

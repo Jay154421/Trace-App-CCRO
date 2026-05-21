@@ -16,6 +16,8 @@ import { FieldPosition } from './pages/utils/FieldPosition';
 import { FieldPositionBack } from './pages/utils/FieldPositionBack';
 import { PaternityAffidavit } from './pages/utils/PaternityAffidavit';
 import { DelayedRegistrationAffidavit } from './pages/utils/DelayedRegistrationAffidavit';
+import { WitnessAffidavit } from './pages/utils/WitnessAffidavit';
+import { WitnessPrint } from './pages/utils/WitnessPrint';
 import { PrintCertificate } from './pages/utils/PrintCertificate';
 import { AusfPrint } from './pages/utils/AusfPrint';
 import { AUSF_06_PRINT_TYPE } from './pages/utils/ausf1';
@@ -53,6 +55,8 @@ export const router = createBrowserRouter(
         <Route path="/children/:id/field-position-back" element={<FieldPositionBack />} />
         <Route path="/children/:id/paternity-affidavit" element={<PaternityAffidavit />} />
         <Route path="/children/:id/delayed-registration-affidavit" element={<DelayedRegistrationAffidavit />} />
+        <Route path="/children/:id/witness-affidavit" element={<WitnessAffidavit />} />
+        <Route path="/children/:id/witness-affidavit/print" element={<WitnessPrint />} />
         <Route path="/children/:id/print-certificate" element={<PrintCertificate />} />
         <Route path="/children/:id/ausf-0-6" element={<AusfPrint variant={AUSF_06_PRINT_TYPE} />} />
         <Route path="/children/:id/ausf-07-17" element={<AusfPrint variant={AUSF_0717_PRINT_TYPE} />} />
@@ -67,6 +71,8 @@ export const router = createBrowserRouter(
         <Route path="/colb-brap/:id/field-position-back" element={<FieldPositionBack />} />
         <Route path="/colb-brap/:id/paternity-affidavit" element={<PaternityAffidavit />} />
         <Route path="/colb-brap/:id/delayed-registration-affidavit" element={<DelayedRegistrationAffidavit />} />
+        <Route path="/colb-brap/:id/witness-affidavit" element={<WitnessAffidavit />} />
+        <Route path="/colb-brap/:id/witness-affidavit/print" element={<WitnessPrint />} />
         <Route path="/colb-brap/:id/print-certificate" element={<PrintCertificate />} />
         <Route path="/colb-brap/:id/ausf-0-6" element={<AusfPrint variant={AUSF_06_PRINT_TYPE} />} />
         <Route path="/colb-brap/:id/ausf-07-17" element={<AusfPrint variant={AUSF_0717_PRINT_TYPE} />} />

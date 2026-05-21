@@ -352,6 +352,22 @@ body {
   text-align: center;
 }
 
+.witness-doc.print-doc .registrar-signature-zone {
+  align-items: flex-end;
+  margin-top: auto;
+  margin-bottom: 3.25em;
+}
+
+html[data-paper-size='long'] .witness-doc.print-doc .registrar-signature-zone {
+  margin-top: auto !important;
+  margin-bottom: 3.25em !important;
+}
+
+html[data-paper-size='a4'] .witness-doc.print-doc .registrar-signature-zone {
+  margin-top: auto !important;
+  margin-bottom: 4em !important;
+}
+
 html[data-paper-size='long'] .ausf-doc.print-doc,
 html[data-paper-size='a4'] .ausf-doc.print-doc {
   display: flex;

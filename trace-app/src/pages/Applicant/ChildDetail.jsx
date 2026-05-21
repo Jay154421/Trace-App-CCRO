@@ -435,6 +435,13 @@ export function ChildDetail() {
           >
             Delayed Birth Affidavit
           </Link>
+          <Link
+            to={`${basePath}/${id}/witness-affidavit/print`}
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            title="Affidavit of Two Witnesses (Legal Office)"
+          >
+            Two Witnesses Affidavit
+          </Link>
           {showAusf ? (
             <Link
               to={buildAusfPrintPath(basePath, id, ausfVariant)}

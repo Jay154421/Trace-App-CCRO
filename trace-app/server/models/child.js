@@ -89,6 +89,14 @@ function findById(id) {
       delayed_registration_affidavit = {};
     }
   }
+  let witness_affidavit = {};
+  if (row.witness_affidavit) {
+    try {
+      witness_affidavit = JSON.parse(row.witness_affidavit);
+    } catch (e) {
+      witness_affidavit = {};
+    }
+  }
   const application_type = normalizeApplicationType(row.application_type);
   const age = calculateAge(row.date_of_birth);
   const age_group = isColbBrapRow({ application_type }) ? null : (row.age_group || getAgeGroup(age));
@@ -98,6 +106,7 @@ function findById(id) {
     certificate_of_live_birth,
     paternity_affidavit,
     delayed_registration_affidavit,
+    witness_affidavit,
     age,
     age_group,
   };
@@ -138,6 +147,19 @@ function updateDelayedRegistrationAffidavit(id, data) {
   }
   const json = JSON.stringify(data || {});
   db.prepare('UPDATE children SET delayed_registration_affidavit = ?, updated_at = datetime(\'now\') WHERE id = ?').run(json, id);
+  db.close();
+  return true;
+}
+
+function updateWitnessAffidavit(id, data) {
+  const db = getDb();
+  const existing = db.prepare('SELECT id FROM children WHERE id = ?').get(id);
+  if (!existing) {
+    db.close();
+    return false;
+  }
+  const json = JSON.stringify(data || {});
+  db.prepare('UPDATE children SET witness_affidavit = ?, updated_at = datetime(\'now\') WHERE id = ?').run(json, id);
   db.close();
   return true;
 }
@@ -302,5 +324,6 @@ module.exports = {
   updateCertificateOfLiveBirth,
   updatePaternityAffidavit,
   updateDelayedRegistrationAffidavit,
+  updateWitnessAffidavit,
   updateStaffProcessStatus,
 };

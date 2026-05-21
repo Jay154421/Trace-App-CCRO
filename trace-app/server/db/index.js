@@ -106,6 +106,11 @@ async function init() {
     if (!/duplicate column name/i.test(e.message)) throw e;
   }
   try {
+    db.exec(`ALTER TABLE children ADD COLUMN witness_affidavit TEXT`);
+  } catch (e) {
+    if (!/duplicate column name/i.test(e.message)) throw e;
+  }
+  try {
     db.exec(`ALTER TABLE children ADD COLUMN staff_process_status TEXT`);
   } catch (e) {
     if (!/duplicate column name/i.test(e.message)) throw e;
