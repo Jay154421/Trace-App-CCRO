@@ -42,6 +42,15 @@ export function formatApplicantGenderLabel(value) {
   return '';
 }
 
+/** COLB/BRAP conditional document flags that were checked (empty when none selected). */
+export function getColbConditionalRequirementLabels(data) {
+  const labels = [];
+  if (isTruthyFlag(data?.has_marriage_certificate)) labels.push('Marriage certificate');
+  if (isTruthyFlag(data?.colb_requires_parent_id)) labels.push('Parent / guardian I.D.');
+  if (isTruthyFlag(data?.has_muslim_attachment)) labels.push('Muslim attachment');
+  return labels;
+}
+
 export const emptyApplicantForm = {
   first_name: '',
   middle_name: '',

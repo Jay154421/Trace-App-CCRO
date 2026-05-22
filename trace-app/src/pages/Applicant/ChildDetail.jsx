@@ -24,6 +24,7 @@ import {
   buildApplicantPayload,
   isTruthyFlag,
   formatApplicantGenderLabel,
+  getColbConditionalRequirementLabels,
 } from '../../utils/applicantForm';
 import {
   AUSF_VARIANT_LABEL,
@@ -315,10 +316,8 @@ export function ChildDetail() {
   const hasHilotDeceased = isTruthyFlag(child.hilot_deceased);
   const hasParentForeigner = isTruthyFlag(child.parent_foreigner);
   const hasOutOfTown = isTruthyFlag(child.out_of_town);
-  const hasMarriageCertificate = isTruthyFlag(child.has_marriage_certificate);
-  const colbRequiresParentId = isTruthyFlag(child.colb_requires_parent_id);
-  const hasMuslimAttachment = isTruthyFlag(child.has_muslim_attachment);
   const isColbBrap = String(child.application_type || '').toLowerCase() === 'colb_brap';
+  const colbConditionalLabels = isColbBrap ? getColbConditionalRequirementLabels(child) : [];
   const showAusf = shouldShowAusfForChild(child);
   const ausfVariant = getAusfVariantForChild(child);
   const ausfLinkLabel = AUSF_VARIANT_LABEL[ausfVariant] || 'AUSF';
@@ -556,34 +555,29 @@ export function ChildDetail() {
               <dt className="text-sm text-slate-500">Contact no.</dt>
               <dd className="mt-0.5 font-medium text-slate-800">{child.contact_no || '—'}</dd>
             </div>
-            <div className="sm:col-span-2 border-t border-slate-100 pt-4">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Conditional requirements</h3>
-              <dl className="mt-3 grid gap-x-6 gap-y-4 sm:grid-cols-2">
-                <div>
-                  <dt className="text-sm text-slate-500">Marriage certificate</dt>
-                  <dd className="mt-0.5 font-medium text-slate-800">{hasMarriageCertificate ? 'Yes' : 'No'}</dd>
-                </div>
-                <div>
-                  <dt className="text-sm text-slate-500">Parent / guardian I.D.</dt>
-                  <dd className="mt-0.5 font-medium text-slate-800">{colbRequiresParentId ? 'Yes' : 'No'}</dd>
-                </div>
-                <div>
-                  <dt className="text-sm text-slate-500">Muslim attachment</dt>
-                  <dd className="mt-0.5 font-medium text-slate-800">{hasMuslimAttachment ? 'Yes' : 'No'}</dd>
-                </div>
-              </dl>
-            </div>
-            <div className="sm:col-span-2 rounded-xl border border-amber-200/80 bg-amber-50/40 px-4 py-3">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-600">{COLB_OUT_OF_TOWN_SECTION_TITLE}</h3>
-              <dl className="mt-2">
-                <div>
-                  <dt className="text-sm text-slate-500">Out of town</dt>
-                  <dd className="mt-0.5 font-medium text-slate-800">
-                    {hasOutOfTown ? `Yes — ${OUT_OF_TOWN_VARIANT_SHORT_LABEL[outOfTownVariant]}` : 'No'}
-                  </dd>
-                </div>
-              </dl>
-            </div>
+            {colbConditionalLabels.length > 0 ? (
+              <div className="sm:col-span-2">
+                <dt className="text-sm text-slate-500 mb-1">Conditional requirements</dt>
+                <dd className="text-sm text-slate-700">
+                  {colbConditionalLabels.map((label) => (
+                    <span key={label} className="block">
+                      {label}
+                    </span>
+                  ))}
+                </dd>
+              </div>
+            ) : null}
+            {hasOutOfTown ? (
+              <div className="sm:col-span-2">
+                <dt className="text-sm text-slate-500 mb-1">{COLB_OUT_OF_TOWN_SECTION_TITLE}</dt>
+                <dd className="text-sm text-slate-700">
+                  <span className="block">
+                    Affidavit w/ Corroboration for Out-of-Town Applicant (Legal Office) —{' '}
+                    {OUT_OF_TOWN_VARIANT_SHORT_LABEL[outOfTownVariant]}
+                  </span>
+                </dd>
+              </div>
+            ) : null}
             {child.created_at ? (
               <div>
                 <dt className="text-sm text-slate-500">Created date</dt>

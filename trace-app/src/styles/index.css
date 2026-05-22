@@ -105,8 +105,7 @@ body {
 .ausf-doc.print-doc .print-doc-body p,
 .ausf-doc.print-doc .ausf-doc-body p,
 .ausf-doc.print-doc .ausf-subscribed-sworn,
-.ausf-doc.print-doc ol > li,
-.ausf-doc .ausf-place-of-birth-line {
+.ausf-doc.print-doc ol > li {
   text-align: justify;
   text-justify: inter-word;
   text-wrap: pretty;
@@ -115,6 +114,17 @@ body {
   text-align-last: left;
   hyphens: auto;
   -webkit-hyphens: auto;
+}
+
+/* Item 2 (place of birth): left-aligned — avoids stretched word gaps on short first lines in PDF */
+.ausf-doc.print-doc ol > li.ausf-place-of-birth-line,
+body.pdf-capture .ausf-doc.print-doc ol > li.ausf-place-of-birth-line,
+.ausf-doc.print-doc.ausf-pdf-capture ol > li.ausf-place-of-birth-line {
+  text-align: left;
+  text-justify: auto;
+  text-align-last: left;
+  hyphens: none;
+  -webkit-hyphens: none;
 }
 
 .ausf-doc .ausf-subscribed-sworn {
@@ -523,12 +533,8 @@ html[data-paper-size='a4'] .ausf-07-17-doc.print-doc .registrar-signature-zone {
   margin-top: 0.12in !important;
 }
 
-/* A4 only: items 2 (place of birth) & 4 (public docs) — justify + normal single-space gaps */
-html[data-paper-size='a4'] .ausf-doc.print-doc ol > li:nth-child(2),
-html[data-paper-size='a4'] .ausf-doc.print-doc ol > li.ausf-place-of-birth-line,
+/* A4 only: item 4 (public docs) — justify + normal single-space gaps */
 html[data-paper-size='a4'] .ausf-doc.print-doc ol > li:nth-child(4),
-body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc ol > li:nth-child(2),
-body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc ol > li.ausf-place-of-birth-line,
 body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc ol > li:nth-child(4) {
   margin-top: 0 !important;
   margin-bottom: 0.35em !important;
@@ -540,6 +546,16 @@ body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc ol > li:nth-child(4) {
   text-align-last: left !important;
   hyphens: auto !important;
   -webkit-hyphens: auto !important;
+}
+
+html[data-paper-size='a4'] .ausf-doc.print-doc ol > li.ausf-place-of-birth-line,
+body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc ol > li.ausf-place-of-birth-line {
+  margin-top: 0 !important;
+  margin-bottom: 0.35em !important;
+  text-align: left !important;
+  text-justify: auto !important;
+  hyphens: none !important;
+  -webkit-hyphens: none !important;
 }
 
 /* PDF capture: never use CSS zoom (html2canvas overlaps text); scale in PDF instead */
@@ -838,8 +854,7 @@ body.pdf-capture.ausf-paper-long .ausf-doc .ausf-signature-block__name::after,
   .ausf-doc.print-doc .print-doc-body p,
   .ausf-doc.print-doc .ausf-doc-body p,
   .ausf-doc.print-doc .ausf-subscribed-sworn,
-  .ausf-doc.print-doc ol > li,
-  .ausf-doc.print-doc .ausf-place-of-birth-line {
+  .ausf-doc.print-doc ol > li {
     text-align: justify !important;
     text-justify: inter-word !important;
     text-wrap: pretty !important;
@@ -848,6 +863,14 @@ body.pdf-capture.ausf-paper-long .ausf-doc .ausf-signature-block__name::after,
     text-align-last: left !important;
     hyphens: auto !important;
     -webkit-hyphens: auto !important;
+  }
+
+  .ausf-doc.print-doc ol > li.ausf-place-of-birth-line {
+    text-align: left !important;
+    text-justify: auto !important;
+    text-align-last: left !important;
+    hyphens: none !important;
+    -webkit-hyphens: none !important;
   }
 
   .witness-doc.print-doc .witness-affidavit-subtitle {
@@ -1204,8 +1227,6 @@ body.pdf-capture.ausf-paper-long .ausf-doc .ausf-signature-block__name::after,
     margin-bottom: 0 !important;
   }
 
-  html[data-paper-size='a4'] .ausf-doc.print-doc ol > li:nth-child(2),
-  html[data-paper-size='a4'] .ausf-doc.print-doc ol > li.ausf-place-of-birth-line,
   html[data-paper-size='a4'] .ausf-doc.print-doc ol > li:nth-child(4) {
     margin-top: 0 !important;
     margin-bottom: 0.35em !important;
@@ -1213,6 +1234,15 @@ body.pdf-capture.ausf-paper-long .ausf-doc .ausf-signature-block__name::after,
     text-wrap: pretty !important;
     word-spacing: normal !important;
     text-align-last: left !important;
+  }
+
+  html[data-paper-size='a4'] .ausf-doc.print-doc ol > li.ausf-place-of-birth-line {
+    margin-top: 0 !important;
+    margin-bottom: 0.35em !important;
+    text-align: left !important;
+    text-justify: auto !important;
+    hyphens: none !important;
+    -webkit-hyphens: none !important;
   }
 
   html[data-paper-size='long'] .print-doc,
