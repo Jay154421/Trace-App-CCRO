@@ -36,6 +36,8 @@ export const childrenApi = {
     request(`/children/${id}/delayed-registration-affidavit`, { method: 'PUT', body: JSON.stringify(data) }),
   updateWitnessAffidavit: (id, data) =>
     request(`/children/${id}/witness-affidavit`, { method: 'PUT', body: JSON.stringify(data) }),
+  updateOutOfTownAffidavit: (id, data) =>
+    request(`/children/${id}/out-of-town-affidavit`, { method: 'PUT', body: JSON.stringify(data) }),
   updateStaffProcessStatus: (id, staff_process_status) =>
     request(`/children/${id}/staff-process-status`, {
       method: 'PUT',

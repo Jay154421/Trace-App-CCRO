@@ -54,6 +54,7 @@ export const emptyApplicantForm = {
   hilot_deceased: false,
   parent_foreigner: false,
   out_of_town: false,
+  out_of_town_informant_is_owner: true,
   has_marriage_certificate: false,
   colb_requires_parent_id: false,
   has_muslim_attachment: false,
@@ -72,13 +73,24 @@ export function mapApplicantToForm(data) {
     hilot_deceased: isTruthyFlag(data?.hilot_deceased),
     parent_foreigner: isTruthyFlag(data?.parent_foreigner),
     out_of_town: isTruthyFlag(data?.out_of_town),
+    out_of_town_informant_is_owner: resolveOutOfTownInformantIsOwner(data),
     has_marriage_certificate: isTruthyFlag(data?.has_marriage_certificate),
     colb_requires_parent_id: isTruthyFlag(data?.colb_requires_parent_id),
     has_muslim_attachment: isTruthyFlag(data?.has_muslim_attachment),
   };
 }
 
+/** When out-of-town is set: true = informant is document owner (applicant form); false = representative (2nd person). */
+export function resolveOutOfTownInformantIsOwner(data) {
+  if (!isTruthyFlag(data?.out_of_town)) return true;
+  if (data?.out_of_town_informant_is_owner === undefined || data?.out_of_town_informant_is_owner === null) {
+    return true;
+  }
+  return isTruthyFlag(data.out_of_town_informant_is_owner);
+}
+
 export function buildApplicantPayload(form) {
+  const outOfTown = !!form.out_of_town;
   return {
     first_name: toUpperCaseTrimmed(form.first_name),
     middle_name: toUpperCaseTrimmed(form.middle_name) || undefined,
@@ -90,7 +102,8 @@ export function buildApplicantPayload(form) {
     registrant_deceased: form.registrant_deceased,
     hilot_deceased: form.hilot_deceased,
     parent_foreigner: form.parent_foreigner,
-    out_of_town: form.out_of_town,
+    out_of_town: outOfTown,
+    out_of_town_informant_is_owner: outOfTown ? !!form.out_of_town_informant_is_owner : undefined,
     has_marriage_certificate: form.has_marriage_certificate,
     colb_requires_parent_id: !!form.colb_requires_parent_id,
     has_muslim_attachment: !!form.has_muslim_attachment,

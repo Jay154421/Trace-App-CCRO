@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { childrenApi } from '../services/api';
 import { applicantInputPlaceholders, buildApplicantPayload, handleEnterKey } from '../utils/applicantForm';
+import { ColbBrapProfileFields } from './applicant/ColbBrapProfileFields';
 
 const emptyForm = {
   first_name: '',
@@ -16,6 +17,7 @@ const emptyForm = {
   hilot_deceased: false,
   parent_foreigner: false,
   out_of_town: false,
+  out_of_town_informant_is_owner: true,
   has_marriage_certificate: false,
   colb_requires_parent_id: false,
   has_muslim_attachment: false,
@@ -48,7 +50,8 @@ export function AddApplicantModal({
       registrant_deceased: isColbBrap ? false : base.registrant_deceased,
       hilot_deceased: isColbBrap ? false : base.hilot_deceased,
       parent_foreigner: isColbBrap ? false : base.parent_foreigner,
-      out_of_town: isColbBrap ? false : base.out_of_town,
+      out_of_town: base.out_of_town,
+      out_of_town_informant_is_owner: base.out_of_town ? base.out_of_town_informant_is_owner : undefined,
       has_marriage_certificate: isColbBrap ? form.has_marriage_certificate : false,
       colb_requires_parent_id: isColbBrap ? base.colb_requires_parent_id : false,
       has_muslim_attachment: isColbBrap ? base.has_muslim_attachment : false,
@@ -209,11 +212,24 @@ export function AddApplicantModal({
                     <input
                       type="checkbox"
                       checked={form.out_of_town}
-                      onChange={(e) => update('out_of_town', e.target.checked)}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setForm((f) => ({
+                          ...f,
+                          out_of_town: checked,
+                          out_of_town_informant_is_owner: checked ? f.out_of_town_informant_is_owner : true,
+                        }));
+                      }}
                       className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                     />
                     <span className="text-sm text-slate-700">Out of Town (attach Affidavit w/ Corroboration for Out-of-Town Applicant (Legal Office))</span>
                   </label>
+                  {form.out_of_town ? (
+                    <OutOfTownInformantFields
+                      informantIsOwner={form.out_of_town_informant_is_owner}
+                      onInformantIsOwnerChange={(value) => update('out_of_town_informant_is_owner', value)}
+                    />
+                  ) : null}
                   <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 transition hover:border-emerald-200 hover:bg-emerald-50/50">
                     <input
                       type="checkbox"
@@ -235,43 +251,7 @@ export function AddApplicantModal({
                 </div>
               </fieldset>
             ) : null}
-            {isColbBrap ? (
-              <fieldset className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
-                <legend className="px-1 text-sm font-semibold text-slate-700">COLB BRAP conditional requirement</legend>
-                <p className="mb-4 mt-2 text-sm text-slate-500">
-                  Choose all that apply. Checked items are added to the document checklist.
-                </p>
-                <div className="space-y-2">
-                  <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 transition hover:border-emerald-200 hover:bg-emerald-50/50">
-                    <input
-                      type="checkbox"
-                      checked={form.has_marriage_certificate}
-                      onChange={(e) => update('has_marriage_certificate', e.target.checked)}
-                      className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                    />
-                    <span className="text-sm text-slate-700">Parents are married (attach marriage contract)</span>
-                  </label>
-                  <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 transition hover:border-emerald-200 hover:bg-emerald-50/50">
-                    <input
-                      type="checkbox"
-                      checked={form.colb_requires_parent_id}
-                      onChange={(e) => update('colb_requires_parent_id', e.target.checked)}
-                      className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                    />
-                    <span className="text-sm text-slate-700">Registrant is a child (attach parent/s or guardian valid I.D.)</span>
-                  </label>
-                  <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 transition hover:border-emerald-200 hover:bg-emerald-50/50">
-                    <input
-                      type="checkbox"
-                      checked={form.has_muslim_attachment}
-                      onChange={(e) => update('has_muslim_attachment', e.target.checked)}
-                      className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                    />
-                    <span className="text-sm text-slate-700">When the registrant is Muslim (attach applicable Muslim attachment)</span>
-                  </label>
-                </div>
-              </fieldset>
-            ) : null}
+            {isColbBrap ? <ColbBrapProfileFields form={form} onFieldChange={update} /> : null}
             </div>
 
             <div className="flex flex-col-reverse gap-3 border-t border-slate-200 bg-white px-6 py-4 sm:flex-row sm:justify-end">

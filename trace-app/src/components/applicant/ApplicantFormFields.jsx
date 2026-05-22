@@ -1,4 +1,6 @@
 import { applicantInputPlaceholders as placeholders, handleEnterKey } from '../../utils/applicantForm';
+import { OutOfTownInformantFields } from './OutOfTownInformantFields';
+import { ColbBrapProfileFields } from './ColbBrapProfileFields';
 
 const inputClassName = 'mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200';
 const checkboxClassName = 'mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500';
@@ -9,7 +11,7 @@ export function ApplicantFormFields({
   onFieldChange,
   hideCoreIdentityFields = false,
   hideConditionalRequirements = false,
-  showMarriageCertificateToggle = false,
+  showColbBrapProfileFields = false,
 }) {
   return (
     <>
@@ -119,11 +121,21 @@ export function ApplicantFormFields({
               <input
                 type="checkbox"
                 checked={form.out_of_town}
-                onChange={(e) => onFieldChange('out_of_town', e.target.checked)}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  onFieldChange('out_of_town', checked);
+                  if (!checked) onFieldChange('out_of_town_informant_is_owner', true);
+                }}
                 className={checkboxClassName}
               />
               <span className="text-sm text-slate-700">Out of Town (attach Affidavit w/ Corroboration for Out-of-Town Applicant (Legal Office))</span>
             </label>
+            {form.out_of_town ? (
+              <OutOfTownInformantFields
+                informantIsOwner={form.out_of_town_informant_is_owner}
+                onInformantIsOwnerChange={(value) => onFieldChange('out_of_town_informant_is_owner', value)}
+              />
+            ) : null}
             <label className={checkboxWrapperClassName}>
               <input
                 type="checkbox"
@@ -146,43 +158,7 @@ export function ApplicantFormFields({
         </fieldset>
       ) : null}
 
-      {showMarriageCertificateToggle ? (
-        <fieldset className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
-          <legend className="px-1 text-sm font-semibold text-slate-700">COLB BRAP conditional requirement</legend>
-          <p className="mb-4 mt-2 text-sm text-slate-500">
-            Choose all that apply. Checked items are added to the document checklist.
-          </p>
-          <div className="space-y-2">
-            <label className={checkboxWrapperClassName}>
-              <input
-                type="checkbox"
-                checked={form.has_marriage_certificate}
-                onChange={(e) => onFieldChange('has_marriage_certificate', e.target.checked)}
-                className={checkboxClassName}
-              />
-              <span className="text-sm text-slate-700">Parents are married (attach marriage contract)</span>
-            </label>
-            <label className={checkboxWrapperClassName}>
-              <input
-                type="checkbox"
-                checked={form.colb_requires_parent_id}
-                onChange={(e) => onFieldChange('colb_requires_parent_id', e.target.checked)}
-                className={checkboxClassName}
-              />
-              <span className="text-sm text-slate-700">Registrant is a child (attach parent/s or guardian valid I.D.)</span>
-            </label>
-            <label className={checkboxWrapperClassName}>
-              <input
-                type="checkbox"
-                checked={form.has_muslim_attachment}
-                onChange={(e) => onFieldChange('has_muslim_attachment', e.target.checked)}
-                className={checkboxClassName}
-              />
-              <span className="text-sm text-slate-700">When the registrant is Muslim (attach applicable Muslim attachment)</span>
-            </label>
-          </div>
-        </fieldset>
-      ) : null}
+      {showColbBrapProfileFields ? <ColbBrapProfileFields form={form} onFieldChange={onFieldChange} /> : null}
     </>
   );
 }

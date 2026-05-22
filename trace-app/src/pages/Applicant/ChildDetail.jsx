@@ -31,6 +31,14 @@ import {
   getAusfVariantForChild,
   shouldShowAusfForChild,
 } from '../../utils/ausfVariant';
+import { COLB_OUT_OF_TOWN_SECTION_TITLE } from '../../utils/colbOutOfTownCopy';
+import {
+  buildOutOfTownAffidavitPrintPath,
+  getOutOfTownVariantForChild,
+  OUT_OF_TOWN_VARIANT_LABEL,
+  OUT_OF_TOWN_VARIANT_SHORT_LABEL,
+  shouldShowOutOfTownAffidavit,
+} from '../../utils/outOfTownVariant';
 import { notifyElectronSavePdfResult } from '../../utils/notifyElectronSavePdfResult';
 import { onPdfSavedOpenInBrowser, openSavedPdfInBrowser } from '../../utils/openSavedPdfInBrowser';
 
@@ -314,6 +322,9 @@ export function ChildDetail() {
   const showAusf = shouldShowAusfForChild(child);
   const ausfVariant = getAusfVariantForChild(child);
   const ausfLinkLabel = AUSF_VARIANT_LABEL[ausfVariant] || 'AUSF';
+  const showOutOfTownAffidavit = shouldShowOutOfTownAffidavit(child);
+  const outOfTownVariant = getOutOfTownVariantForChild(child);
+  const outOfTownLinkLabel = OUT_OF_TOWN_VARIANT_LABEL[outOfTownVariant] || 'Out-of-Town Affidavit';
   return (
     <div>
       {frontPdfPreviewOpen && frontPdfPreviewUrl && (
@@ -451,6 +462,15 @@ export function ChildDetail() {
               {ausfLinkLabel}
             </Link>
           ) : null}
+          {showOutOfTownAffidavit ? (
+            <Link
+              to={buildOutOfTownAffidavitPrintPath(basePath, id)}
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              title="Affidavit with corroboration for out-of-town applicant (Legal Office)"
+            >
+              {outOfTownLinkLabel}
+            </Link>
+          ) : null}
           <Link
             to={`${basePath}/${id}/print-certificate`}
             className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
@@ -536,17 +556,33 @@ export function ChildDetail() {
               <dt className="text-sm text-slate-500">Contact no.</dt>
               <dd className="mt-0.5 font-medium text-slate-800">{child.contact_no || '—'}</dd>
             </div>
-            <div>
-              <dt className="text-sm text-slate-500">Marriage certificate</dt>
-              <dd className="mt-0.5 font-medium text-slate-800">{hasMarriageCertificate ? 'Yes' : 'No'}</dd>
+            <div className="sm:col-span-2 border-t border-slate-100 pt-4">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Conditional requirements</h3>
+              <dl className="mt-3 grid gap-x-6 gap-y-4 sm:grid-cols-2">
+                <div>
+                  <dt className="text-sm text-slate-500">Marriage certificate</dt>
+                  <dd className="mt-0.5 font-medium text-slate-800">{hasMarriageCertificate ? 'Yes' : 'No'}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-slate-500">Parent / guardian I.D.</dt>
+                  <dd className="mt-0.5 font-medium text-slate-800">{colbRequiresParentId ? 'Yes' : 'No'}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-slate-500">Muslim attachment</dt>
+                  <dd className="mt-0.5 font-medium text-slate-800">{hasMuslimAttachment ? 'Yes' : 'No'}</dd>
+                </div>
+              </dl>
             </div>
-            <div>
-              <dt className="text-sm text-slate-500">Parent / guardian I.D.</dt>
-              <dd className="mt-0.5 font-medium text-slate-800">{colbRequiresParentId ? 'Yes' : 'No'}</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-slate-500">Muslim attachment</dt>
-              <dd className="mt-0.5 font-medium text-slate-800">{hasMuslimAttachment ? 'Yes' : 'No'}</dd>
+            <div className="sm:col-span-2 rounded-xl border border-amber-200/80 bg-amber-50/40 px-4 py-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-600">{COLB_OUT_OF_TOWN_SECTION_TITLE}</h3>
+              <dl className="mt-2">
+                <div>
+                  <dt className="text-sm text-slate-500">Out of town</dt>
+                  <dd className="mt-0.5 font-medium text-slate-800">
+                    {hasOutOfTown ? `Yes — ${OUT_OF_TOWN_VARIANT_SHORT_LABEL[outOfTownVariant]}` : 'No'}
+                  </dd>
+                </div>
+              </dl>
             </div>
             {child.created_at ? (
               <div>
@@ -638,7 +674,12 @@ export function ChildDetail() {
                   {hasRegistrantDeceased ? <span className="block">Death cert. (registrant)</span> : null}
                   {hasHilotDeceased && child.age <= 5 ? <span className="block">Death cert. (HILOT)</span> : null}
                   {hasParentForeigner ? <span className="block">Passport or BI cert. (foreign parent)</span> : null}
-                  {hasOutOfTown ? <span className="block">Affidavit w/ Corroboration for Out-of-Town Applicant (Legal Office)</span> : null}
+                  {hasOutOfTown ? (
+                    <span className="block">
+                      Affidavit w/ Corroboration for Out-of-Town Applicant (Legal Office) —{' '}
+                      {OUT_OF_TOWN_VARIANT_SHORT_LABEL[outOfTownVariant]}
+                    </span>
+                  ) : null}
                 </dd>
               </div>
             ) : null}
@@ -721,7 +762,7 @@ export function ChildDetail() {
                   onFieldChange={updateEditForm}
                   hideCoreIdentityFields
                   hideConditionalRequirements={isColbBrap}
-                  showMarriageCertificateToggle={isColbBrap}
+                  showColbBrapProfileFields={isColbBrap}
                 />
               </div>
               <div className="flex flex-col-reverse gap-3 border-t border-slate-200 bg-white px-6 py-4 sm:flex-row sm:justify-end">

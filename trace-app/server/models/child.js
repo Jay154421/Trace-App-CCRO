@@ -97,6 +97,14 @@ function findById(id) {
       witness_affidavit = {};
     }
   }
+  let out_of_town_affidavit = {};
+  if (row.out_of_town_affidavit) {
+    try {
+      out_of_town_affidavit = JSON.parse(row.out_of_town_affidavit);
+    } catch (e) {
+      out_of_town_affidavit = {};
+    }
+  }
   const application_type = normalizeApplicationType(row.application_type);
   const age = calculateAge(row.date_of_birth);
   const age_group = isColbBrapRow({ application_type }) ? null : (row.age_group || getAgeGroup(age));
@@ -107,6 +115,8 @@ function findById(id) {
     paternity_affidavit,
     delayed_registration_affidavit,
     witness_affidavit,
+    out_of_town_affidavit,
+    out_of_town_informant_is_owner: row.out_of_town_informant_is_owner,
     age,
     age_group,
   };
@@ -164,6 +174,24 @@ function updateWitnessAffidavit(id, data) {
   return true;
 }
 
+function updateOutOfTownAffidavit(id, data) {
+  const db = getDb();
+  const existing = db.prepare('SELECT id FROM children WHERE id = ?').get(id);
+  if (!existing) {
+    db.close();
+    return false;
+  }
+  const json = JSON.stringify(data || {});
+  db.prepare('UPDATE children SET out_of_town_affidavit = ?, updated_at = datetime(\'now\') WHERE id = ?').run(json, id);
+  db.close();
+  return true;
+}
+
+function normalizeOutOfTownInformantIsOwner(outOfTown, informantIsOwner) {
+  if (!outOfTown) return null;
+  return informantIsOwner ? 1 : 0;
+}
+
 /** @param {number} id @param {'under_process' | 'verified'} status */
 function updateStaffProcessStatus(id, status) {
   if (status !== 'under_process' && status !== 'verified') return { ok: false, reason: 'invalid_status' };
@@ -193,9 +221,14 @@ function create(data) {
   const age = calculateAge(data.date_of_birth);
   const age_group = application_type === APPLICATION_COLB_BRAP ? null : getAgeGroup(age);
   const db = getDb();
+  const outOfTown = data.out_of_town ? 1 : 0;
+  const outOfTownInformantIsOwner = normalizeOutOfTownInformantIsOwner(
+    outOfTown,
+    data.out_of_town_informant_is_owner,
+  );
   const stmt = db.prepare(`
-    INSERT INTO children (first_name, middle_name, last_name, date_of_birth, place_of_birth, contact_no, gender, age_group, registrant_deceased, hilot_deceased, parent_foreigner, out_of_town, has_marriage_certificate, colb_requires_parent_id, has_muslim_attachment, application_type)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO children (first_name, middle_name, last_name, date_of_birth, place_of_birth, contact_no, gender, age_group, registrant_deceased, hilot_deceased, parent_foreigner, out_of_town, out_of_town_informant_is_owner, has_marriage_certificate, colb_requires_parent_id, has_muslim_attachment, application_type)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const result = stmt.run(
     data.first_name,
@@ -209,7 +242,8 @@ function create(data) {
     data.registrant_deceased ? 1 : 0,
     data.hilot_deceased ? 1 : 0,
     data.parent_foreigner ? 1 : 0,
-    data.out_of_town ? 1 : 0,
+    outOfTown,
+    outOfTownInformantIsOwner,
     data.has_marriage_certificate ? 1 : 0,
     data.colb_requires_parent_id ? 1 : 0,
     data.has_muslim_attachment ? 1 : 0,
@@ -238,6 +272,18 @@ function update(id, data) {
   const hilotDeceased = data.hilot_deceased !== undefined ? (data.hilot_deceased ? 1 : 0) : (existing.hilot_deceased ? 1 : 0);
   const parentForeigner = data.parent_foreigner !== undefined ? (data.parent_foreigner ? 1 : 0) : (existing.parent_foreigner ? 1 : 0);
   const outOfTown = data.out_of_town !== undefined ? (data.out_of_town ? 1 : 0) : (existing.out_of_town ? 1 : 0);
+  let outOfTownInformantIsOwner;
+  if (outOfTown) {
+    if (data.out_of_town_informant_is_owner !== undefined) {
+      outOfTownInformantIsOwner = data.out_of_town_informant_is_owner ? 1 : 0;
+    } else if (existing.out_of_town_informant_is_owner != null) {
+      outOfTownInformantIsOwner = existing.out_of_town_informant_is_owner ? 1 : 0;
+    } else {
+      outOfTownInformantIsOwner = 1;
+    }
+  } else {
+    outOfTownInformantIsOwner = null;
+  }
   const hasMarriageCertificate =
     data.has_marriage_certificate !== undefined
       ? (data.has_marriage_certificate ? 1 : 0)
@@ -257,7 +303,7 @@ function update(id, data) {
       first_name = ?, middle_name = ?, last_name = ?,
       date_of_birth = ?, place_of_birth = ?, contact_no = ?, gender = ?,
       age_group = ?,
-      registrant_deceased = ?, hilot_deceased = ?, parent_foreigner = ?, out_of_town = ?, has_marriage_certificate = ?,
+      registrant_deceased = ?, hilot_deceased = ?, parent_foreigner = ?, out_of_town = ?, out_of_town_informant_is_owner = ?, has_marriage_certificate = ?,
       colb_requires_parent_id = ?, has_muslim_attachment = ?,
       updated_at = datetime('now')
     WHERE id = ?
@@ -275,6 +321,7 @@ function update(id, data) {
     hilotDeceased,
     parentForeigner,
     outOfTown,
+    outOfTownInformantIsOwner,
     hasMarriageCertificate,
     colbRequiresParentId,
     hasMuslimAttachment,
@@ -325,5 +372,6 @@ module.exports = {
   updatePaternityAffidavit,
   updateDelayedRegistrationAffidavit,
   updateWitnessAffidavit,
+  updateOutOfTownAffidavit,
   updateStaffProcessStatus,
 };

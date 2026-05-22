@@ -232,6 +232,16 @@ function updateWitnessAffidavit(req, res) {
   res.json({ ok: true });
 }
 
+function updateOutOfTownAffidavit(req, res) {
+  const id = Number(req.params.id);
+  const child = childModel.findById(id);
+  if (!child) return res.status(404).json({ error: 'Not found' });
+  const data = req.body && typeof req.body === 'object' ? req.body : {};
+  const ok = childModel.updateOutOfTownAffidavit(id, data);
+  if (!ok) return res.status(500).json({ error: 'Failed to save out-of-town affidavit' });
+  res.json({ ok: true });
+}
+
 function updateStaffProcessStatus(req, res) {
   const id = Number(req.params.id);
   const status = req.body?.staff_process_status;
@@ -257,5 +267,6 @@ module.exports = {
   updatePaternityAffidavit,
   updateDelayedRegistrationAffidavit,
   updateWitnessAffidavit,
+  updateOutOfTownAffidavit,
   updateStaffProcessStatus,
 };

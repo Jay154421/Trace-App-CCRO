@@ -83,7 +83,7 @@ export function ChildForm() {
           onFieldChange={update}
           hideCoreIdentityFields={isEdit}
           hideConditionalRequirements={isColbBrapSection}
-          showMarriageCertificateToggle={isColbBrapSection}
+          showColbBrapProfileFields={isColbBrapSection}
         />
 
         <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">

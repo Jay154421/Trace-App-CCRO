@@ -130,6 +130,12 @@ function isMuslimAttachmentRequirement(requirement) {
   return requirement?.id === 'muslim_attachment';
 }
 
+/** Out-of-town affidavit is print-only for COLB BRAP; never on the document checklist. */
+function isColbBrapExcludedChecklistItem(requirement, isColbBrap) {
+  if (!isColbBrap) return false;
+  return isOutOfTownAffidavitRequirement(requirement);
+}
+
 function buildPhotoFilename(child) {
   const firstName = toSafeFilenamePart(child?.first_name);
   const middleName = toSafeFilenamePart(child?.middle_name);
@@ -189,12 +195,16 @@ function buildPhotoOutputLabel(child, filename) {
 function buildChecklist(requirements, existing = [], child = null) {
   const byKey = new Map(existing.map((e) => [`${e.category}:${e.label}`, e]));
   const allRequirements = Array.isArray(requirements?.all) ? requirements.all : [];
+  const isColbBrap = String(child?.application_type || '').toLowerCase() === 'colb_brap';
   const normalizedOutOfTown = isTruthyFlag(child?.out_of_town);
   const normalizedHasMarriageCertificate = isTruthyFlag(child?.has_marriage_certificate);
   const normalizedColbParentId = isTruthyFlag(child?.colb_requires_parent_id);
   const normalizedMuslimAttachment = isTruthyFlag(child?.has_muslim_attachment);
   const hasOutOfTownAffidavit = allRequirements.some((requirement) => isOutOfTownAffidavitRequirement(requirement));
   const filteredRequirements = allRequirements.filter((requirement) => {
+    if (isColbBrapExcludedChecklistItem(requirement, isColbBrap)) {
+      return false;
+    }
     if (isOutOfTownAffidavitRequirement(requirement)) {
       return normalizedOutOfTown;
     }
@@ -217,6 +227,7 @@ function buildChecklist(requirements, existing = [], child = null) {
   });
   const missingExistingRequirements = existing.filter((item) => {
     if (!item?.label || !item?.category) return false;
+    if (isColbBrapExcludedChecklistItem(item, isColbBrap)) return false;
     if (!normalizedOutOfTown && isOutOfTownAffidavitRequirement(item)) return false;
     if (!normalizedHasMarriageCertificate && isMarriageCertificateRequirement(item)) return false;
     if (normalizedHasMarriageCertificate && isAusfRequirement(item)) return false;
@@ -227,7 +238,6 @@ function buildChecklist(requirements, existing = [], child = null) {
       requirement?.label === item.label && requirement?.category === item.category
     ));
   });
-  const isColbBrap = String(child?.application_type || '').toLowerCase() === 'colb_brap';
   const shouldRequireOutOfTownAffidavit = !isColbBrap && normalizedOutOfTown && !hasOutOfTownAffidavit;
   const requirementsList = shouldRequireOutOfTownAffidavit
     ? [...filteredRequirements, OUT_OF_TOWN_AFFIDAVIT_REQUIREMENT]
