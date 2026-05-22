@@ -41,9 +41,19 @@ export function showPdfSavedBrowserChoiceToast(filePath, label = 'PDF') {
   toast.custom(
     (t) => (
       <div
-        className={`max-w-md rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 shadow-lg transition-opacity duration-300 ease-out ${t.visible ? 'opacity-100' : 'opacity-0'}`}
+        className={`relative max-w-md rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 pr-10 text-sm text-emerald-900 shadow-lg transition-opacity duration-300 ease-out ${t.visible ? 'opacity-100' : 'opacity-0'}`}
         role="status"
       >
+        <button
+          type="button"
+          onClick={() => toast.dismiss(t.id)}
+          className="absolute right-2 top-2 flex items-center justify-center rounded-md p-1 text-emerald-700 opacity-60 hover:bg-emerald-100 hover:opacity-100 focus:outline-none transition-opacity duration-200"
+          aria-label="Close"
+        >
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
         <p className="font-medium">{label} saved.</p>
         <p className="mt-1 text-emerald-800">Choose a browser to open the PDF:</p>
         <div className="mt-3 flex flex-wrap gap-2">
