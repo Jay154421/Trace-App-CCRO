@@ -116,7 +116,7 @@ const FIELD_POSITIONS = {
   father_residence_city: { x: 1215, y: 1959, width: 330 },
   father_residence_province: { x: 1605, y: 1959, width: 375 },
   father_country: { x: 2070, y: 1959, width: 315 },
-  marriage_date_month: { x: 507, y: 2148 },
+  marriage_date_month: { x: 507, y: 2148, width: 389 },
   marriage_date_day: { x: 696, y: 2148 },
   marriage_date_year: { x: 873, y: 2148 },
   marriage_place_city: { x: 1239, y: 2148, width: 378 },

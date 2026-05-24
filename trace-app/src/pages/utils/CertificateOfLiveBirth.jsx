@@ -419,16 +419,24 @@ const ATTENDANT_SIGNATURE_SUGGESTIONS = [
   'Dont know',
 ];
 
-/** LCRO remarks/annotations templates (shown on focus when empty; filtered while typing). */
-const REMARKS_AUTOCOMPLETE_OPTIONS = [
-  'ACKNOWLEDGED BY NAME SA FATHER ON DATE REGISTER UNDER AFFIDAVIT OF PATERNITY REGISTER # PURSUANT RA 9255',
-  'ACKNOWLEDGE A FATHER WHOSE LAST NAME WAS TAKEN FROM THE MOTHER',
-  'ACKNOWLEDGE BY NAME SA FATHER ON ( W/AUSF)(NOT MARRIED) DATE REGISTER PURSUANT TO RA 9255',
-  "REGISTERED PURSUANT A.O NO. 1 SERIES 2005 (FATHER'S FIRST NAME AS TO CHILD'S LAST NAME)",
-];
+/** LCRO remarks/annotations blank slots when father name is not yet on the form. */
+const REMARKS_FATHER_NAME_BLANK_ACKNOWLEDGED = '______________________________';
+const REMARKS_FATHER_NAME_BLANK_ACKNOWLEDGE = '____________________________________';
+const REMARKS_DATE_BLANK = '_________________________';
+const REMARKS_AFFIDAVIT_REG_BLANK = '______________________________________';
+const REMARKS_REGISTERED_AO2005 =
+  "REGISTERED PURSUANT A.O NO. 1 SERIES 2005\nFATHER'S FIRST NAME AS TO CHILD'S LAST NAME";
+
+function getRemarksFatherName(form) {
+  const fatherFullName = [form.fatherFirst, form.fatherMiddle, form.fatherLast]
+    .map((s) => String(s || '').trim().toUpperCase())
+    .filter(Boolean)
+    .join(' ');
+  return fatherFullName || null;
+}
 
 /** RA 9255 affidavit template only when field 18 (father age) is a number below 17. */
-function buildRemarksAutocompleteOptions(fatherAge) {
+function buildRemarksAutocompleteOptions(fatherAge, form = {}) {
   const ageRaw = String(fatherAge ?? '').trim().toUpperCase();
   const ageNum = parseInt(ageRaw.replace(/\D/g, ''), 10);
   const fatherUnder17 =
@@ -437,9 +445,20 @@ function buildRemarksAutocompleteOptions(fatherAge) {
     ageRaw !== 'D.K' &&
     Number.isFinite(ageNum) &&
     ageNum < 17;
+
+  const fatherName = getRemarksFatherName(form);
+  const nameAcknowledged = fatherName || REMARKS_FATHER_NAME_BLANK_ACKNOWLEDGED;
+  const nameAcknowledge = fatherName || REMARKS_FATHER_NAME_BLANK_ACKNOWLEDGE;
+
+  const opt1 = `ACKNOWLEDGED BY ${nameAcknowledged} ON ${REMARKS_DATE_BLANK} UNDER ${REMARKS_AFFIDAVIT_REG_BLANK} PURSUANT RA 9255`;
+  const opt2 = `ACKNOWLEDGE BY ${nameAcknowledge} ON ${REMARKS_DATE_BLANK}`;
+  const opt3 = `ACKNOWLEDGE BY ${nameAcknowledge} ON ${REMARKS_DATE_BLANK} PURSUANT TO RA 9255`;
+
   const opts = [];
-  if (fatherUnder17) opts.push(REMARKS_AUTOCOMPLETE_OPTIONS[0]);
-  opts.push(...REMARKS_AUTOCOMPLETE_OPTIONS.slice(1));
+  if (fatherUnder17) {
+    opts.push(opt1);
+  }
+  opts.push(opt2, opt3, REMARKS_REGISTERED_AO2005);
   return opts;
 }
 
@@ -647,7 +666,7 @@ function normalizeSexSelectValue(value) {
 function normalizeAttendantAmpmValue(value) {
   const s = String(value ?? '').trim().toLowerCase();
   if (s === 'pm' || s === 'p.m.' || s === 'p.m') return 'PM';
-  return 'AM';
+  return '';
 }
 
 /** YYYY-MM-DD for the applicant row when certificate day/month/year are all set. */
@@ -2195,8 +2214,8 @@ export function CertificateOfLiveBirth() {
   const informantRelationshipSuggestions = useMemo(() => ['FATHER', 'GUARDIAN', 'MOTHER', 'MYSELF'], []);
 
   const remarksAutocompleteOptions = useMemo(
-    () => buildRemarksAutocompleteOptions(form.fatherAge),
-    [form.fatherAge],
+    () => buildRemarksAutocompleteOptions(form.fatherAge, form),
+    [form.fatherAge, form.fatherFirst, form.fatherMiddle, form.fatherLast],
   );
 
   const informantAddressSuggestions = useMemo(() => {
