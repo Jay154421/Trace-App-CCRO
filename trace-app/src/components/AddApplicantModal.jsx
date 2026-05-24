@@ -4,8 +4,6 @@ import toast from 'react-hot-toast';
 import { childrenApi } from '../services/api';
 import { applicantInputPlaceholders, buildApplicantPayload, handleEnterKey } from '../utils/applicantForm';
 import { ColbBrapProfileFields } from './applicant/ColbBrapProfileFields';
-import { OutOfTownInformantFields } from './applicant/OutOfTownInformantFields';
-
 
 const emptyForm = {
   first_name: '',
@@ -102,52 +100,52 @@ export function AddApplicantModal({
           </p>
         </div>
 
-          <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
-            <div className="space-y-6 overflow-y-auto p-6">
+        <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
+          <div className="space-y-6 overflow-y-auto p-6">
             <div className="space-y-4">
               <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Basic details</h3>
               <div className="grid gap-4 sm:grid-cols-3">
-              <label className="block">
-                <span className="text-sm font-medium text-slate-700">First name *</span>
-                <input
-                  type="text"
-                  required
-                  value={form.first_name}
-                  onChange={(e) => update('first_name', e.target.value.toUpperCase())}
-                  className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
-                  placeholder={applicantInputPlaceholders.firstName}
-                  autoComplete="given-name"
-                  aria-required="true"
-                  onKeyDown={handleEnterKey}
-                />
-              </label>
-              <label className="block">
-                <span className="text-sm font-medium text-slate-700">Middle name</span>
-                <input
-                  type="text"
-                  value={form.middle_name}
-                  onChange={(e) => update('middle_name', e.target.value.toUpperCase())}
-                  className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
-                  placeholder={applicantInputPlaceholders.middleName}
-                  autoComplete="additional-name"
-                  onKeyDown={handleEnterKey}
-                />
-              </label>
-              <label className="block">
-                <span className="text-sm font-medium text-slate-700">Last name *</span>
-                <input
-                  type="text"
-                  required
-                  value={form.last_name}
-                  onChange={(e) => update('last_name', e.target.value.toUpperCase())}
-                  className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
-                  placeholder={applicantInputPlaceholders.lastName}
-                  autoComplete="family-name"
-                  aria-required="true"
-                  onKeyDown={handleEnterKey}
-                />
-              </label>
-            </div>
+                <label className="block">
+                  <span className="text-sm font-medium text-slate-700">First name *</span>
+                  <input
+                    type="text"
+                    required
+                    value={form.first_name}
+                    onChange={(e) => update('first_name', e.target.value.toUpperCase())}
+                    className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
+                    placeholder={applicantInputPlaceholders.firstName}
+                    autoComplete="given-name"
+                    aria-required="true"
+                    onKeyDown={handleEnterKey}
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-sm font-medium text-slate-700">Middle name</span>
+                  <input
+                    type="text"
+                    value={form.middle_name}
+                    onChange={(e) => update('middle_name', e.target.value.toUpperCase())}
+                    className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
+                    placeholder={applicantInputPlaceholders.middleName}
+                    autoComplete="additional-name"
+                    onKeyDown={handleEnterKey}
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-sm font-medium text-slate-700">Last name *</span>
+                  <input
+                    type="text"
+                    required
+                    value={form.last_name}
+                    onChange={(e) => update('last_name', e.target.value.toUpperCase())}
+                    className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
+                    placeholder={applicantInputPlaceholders.lastName}
+                    autoComplete="family-name"
+                    aria-required="true"
+                    onKeyDown={handleEnterKey}
+                  />
+                </label>
+              </div>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">
@@ -254,25 +252,25 @@ export function AddApplicantModal({
               </fieldset>
             ) : null}
             {isColbBrap ? <ColbBrapProfileFields form={form} onFieldChange={update} /> : null}
-            </div>
+          </div>
 
-            <div className="flex flex-col-reverse gap-3 border-t border-slate-200 bg-white px-6 py-4 sm:flex-row sm:justify-end">
-              <button
-                type="button"
-                onClick={onClose}
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 sm:w-auto"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 disabled:opacity-50 sm:w-auto"
-              >
-                {loading ? 'Saving…' : isColbBrap ? 'Add COLB BRAP' : 'Add applicant'}
-              </button>
-            </div>
-          </form>
+          <div className="flex flex-col-reverse gap-3 border-t border-slate-200 bg-white px-6 py-4 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 sm:w-auto"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 disabled:opacity-50 sm:w-auto"
+            >
+              {loading ? 'Saving…' : isColbBrap ? 'Add COLB BRAP' : 'Add applicant'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
