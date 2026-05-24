@@ -37,7 +37,7 @@ function CorroborationBlock({ data }) {
 
   return (
     <>
-      <h3 className="ausf-section-title mt-6 text-center">CORROBORATION</h3>
+      <h3 className="ausf-section-title mt-4 text-center">CORROBORATION</h3>
       <p className="mt-3 mb-3 leading-normal">
         We,{' '}
         <span className={`${FILL_BOLD} px-0.5 align-baseline uppercase`}>{blank(data.corroborator1Name)}</span> and{' '}
@@ -51,7 +51,7 @@ function CorroborationBlock({ data }) {
         <span className={`${FILL_BOLD} px-0.5 align-baseline uppercase`}>{subjectName}</span> are true and correct to
         the best of our knowledge and beliefs having known him/her.
       </p>
-      <div className="mt-6 grid grid-cols-2 gap-8">
+      <div className="mt-4 grid grid-cols-2 gap-8">
         <div className="ausf-signature-block">
           <div className="ausf-signature-block__name uppercase">{affiant1}</div>
           <div className="ausf-signature-block__label">Affiant</div>
@@ -144,7 +144,7 @@ export default function OutOfTownPrintDocument({ data = {}, variant = OUT_OF_TOW
     : data.applicantName || data.affiantName;
 
   return (
-    <div className="ausf-doc witness-doc print-doc flex flex-col bg-white text-black">
+    <div className="ausf-doc witness-doc out-of-town-doc print-doc flex flex-col bg-white text-black">
       <DocumentHeader registryNo={data.registryNo} juratBlock={JURAT_BLOCK} />
 
       <div className="witness-doc-body print-doc-body ausf-doc-body flex flex-col text-[12pt] leading-relaxed">
@@ -158,7 +158,7 @@ export default function OutOfTownPrintDocument({ data = {}, variant = OUT_OF_TOW
           at Iligan City, Philippines.
         </p>
 
-        <div className="mt-6 flex justify-end">
+        <div className="mt-4 flex justify-end">
           <div className="ausf-signature-block w-72">
             <div className="ausf-signature-block__name uppercase">{affiantSignature}</div>
             <div className="ausf-signature-block__label">Affiant</div>
@@ -167,7 +167,7 @@ export default function OutOfTownPrintDocument({ data = {}, variant = OUT_OF_TOW
 
         <CorroborationBlock data={{ ...data, corroborationSubjectName }} />
 
-        <p className="ausf-subscribed-sworn mt-8 mb-0 leading-normal">
+        <p className="ausf-subscribed-sworn mt-6 mb-0 leading-normal">
           <span className="font-bold">SUBSCRIBED AND SWORN</span> to before me this{' '}
           <span className={`${FILL_BOLD} px-0.5 align-baseline`}>{witnessDateLine(data.swornDay, data.swornMonth)}</span>{' '}
           in the ILIGAN CITY, Philippines.
