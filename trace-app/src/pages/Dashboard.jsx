@@ -443,7 +443,7 @@ export function Dashboard() {
         ))}
       </div>
 
-      <section className="grid gap-4 lg:grid-cols-2">
+      <section className="grid gap-4 lg:grid-cols-1">
         <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex flex-col gap-3">
             <div>
@@ -547,100 +547,9 @@ export function Dashboard() {
           </div>
         </article>
 
-        <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Registration status</h2>
-          <p className="mt-1 text-xs text-slate-500">Same statuses as the applicant list: verified, under process, or incomplete checklist.</p>
-          <div className="mt-4 h-72 w-full min-h-[280px]">
-            {loading ? (
-              <div className="flex h-full items-center justify-center rounded-lg bg-slate-50">
-                <div className="h-48 w-48 animate-pulse rounded-full bg-slate-200" />
-              </div>
-            ) : list.length === 0 ? (
-              <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-500">
-                No applicants to chart yet.
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={registrationStatusPie}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={56}
-                    outerRadius={88}
-                    paddingAngle={2}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {registrationStatusPie.map((entry) => (
-                      <Cell key={entry.name} fill={entry.color} stroke="#fff" strokeWidth={1} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      borderRadius: '8px',
-                      border: '1px solid #e2e8f0',
-                      fontSize: '12px',
-                    }}
-                    formatter={(value) => [value, 'Applicants']}
-                  />
-                  <Legend wrapperStyle={{ fontSize: '12px' }} />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-        </article>
+       
       </section>
 
-      <section className="grid gap-4">
-
-        <article className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm ">
-          <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Recent Applicants</h2>
-            <Link to="/children" className="text-sm font-medium text-emerald-600 hover:text-emerald-700">
-              Open full list
-            </Link>
-          </div>
-
-          {loading ? (
-            <ul className="divide-y divide-slate-200">
-              {[1, 2, 3, 4, 5].map((item) => (
-                <li key={item} className="px-5 py-3">
-                  <div className="h-4 w-40 animate-pulse rounded bg-slate-200" />
-                  <div className="mt-2 h-3 w-56 animate-pulse rounded bg-slate-100" />
-                </li>
-              ))}
-            </ul>
-          ) : recentApplicants.length > 0 ? (
-            <ul className="divide-y divide-slate-200">
-              {recentApplicants.map((c) => (
-                <li key={c.id}>
-                  <Link
-                    to={applicantDetailPath(getApplicantBasePathForRecord(c.application_type), c.id)}
-                    className="block px-5 py-3 transition hover:bg-slate-50 focus:bg-slate-50"
-                  >
-                    <span className="font-medium text-slate-800">
-                      {c.last_name}, {c.first_name}
-                    </span>
-                    <span className="ml-2 text-sm text-slate-500">
-                      Age {c.age} ·{' '}
-                      {String(c.application_type || '').toLowerCase() === 'colb_brap'
-                        ? 'COLB BRAP'
-                        : c.age_group?.replace(/_/g, ' ') || '—'}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="px-5 py-10 text-center">
-              <p className="text-sm font-medium text-slate-700">No applicants yet</p>
-              <p className="mt-1 text-sm text-slate-500">Start by adding your first applicant record.</p>
-            </div>
-          )}
-        </article>
-      </section>
     </div>
   );
 }
