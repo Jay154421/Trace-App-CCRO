@@ -25,7 +25,7 @@ export const applicantInputPlaceholders = {
   lastName: 'Enter last name',
   dateOfBirth: 'dd/mm/yyyy',
   contactNo: '09XX XXX XXXX',
-  placeOfBirth: '(Name of Hospital/Clinic/Institution/House No., St., Barangay)',
+  placeOfBirth: 'Enter Address, City, Province',
 };
 
 /** Normalizes API/DB gender to form select value: '' | 'male' | 'female'. */

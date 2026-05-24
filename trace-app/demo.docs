@@ -1,0 +1,337 @@
+# B-TRACE Demo Presentation Script
+(Birth Tracking for Registration and Certificate Entries)
+
+**Audience:** City Civil Registry Office (CCRO) staff, supervisors, LGU stakeholders  
+**Format:** Live walkthrough (Electron desktop app recommended)  
+**Suggested length:** 18–25 minutes (full) · 8–10 minutes (short version at end)
+
+---
+
+## Before you present
+
+### Environment
+
+| Item | Recommendation |
+|------|----------------|
+| App mode | `npm run electron:dev` or installed desktop build |
+| Network | None required — emphasize **offline / local SQLite** |
+| Display | 1920×1080 or projector; zoom browser/app to 100–110% if needed |
+| Data | Use a machine with **2–3 sample applicants** (one incomplete, one checklist-complete, one verified) |
+
+### Pre-demo checklist (15 minutes before)
+
+1. Start the app and confirm the API/backend is running (dev: `npm run electron:dev`).
+2. Log in once to verify credentials (see **Login** below).
+3. Open **Dashboard** — confirm charts render (not empty if you want impact).
+4. Pick your **hero applicant** (checklist 100% + COLB filled) for PDF generation.
+5. Prepare one small image file on the desktop for **Attach file** demo.
+6. Optional: export a `.zip` backup beforehand so **Import Backup** is instant if you demo restore.
+7. Close unrelated windows; disable notifications.
+
+### Demo login (default install)
+
+| Field | Value |
+|-------|-------|
+| Username | `admin` |
+| Password | `ccro123` |
+
+> **Presenter note:** Mention that production deployments should change default credentials. Do not display the password on a public slide if security is a concern — say “use the demo account provided for this session.”
+
+---
+
+## Opening (1–2 minutes)
+
+**Say:**
+
+> Good [morning/afternoon]. Today I will demonstrate **B-TRACE** — our **Birth Tracking for Registration and Certificate Entries** system for the City Civil Registry Office.
+>
+> Delayed and late birth registration is document-heavy: requirements change by **age**, by **situation** (deceased registrant, foreign parent, out-of-town birth), and staff must produce **official forms and PDFs** that match national layouts.
+>
+> B-TRACE puts applicant records, **dynamic checklists**, form entry, and **print-ready PDFs** in one **offline** desktop application — so data stays on our machines, not in the cloud.
+
+**On screen:** Login page visible (do not log in yet).
+
+**Key message:** Document completeness is the core — tagline **Document Requirements**.
+
+---
+
+## Scene 1 — Sign in and navigation (2 minutes)
+
+### Actions
+
+1. Enter username and password → **Login**.
+2. Point to the **left sidebar**: **Dashboard**, **Applicants**, **COLB BRAP**, **Logout**.
+3. Point to the header: **B-TRACE** and **Document Requirements**.
+
+**Say:**
+
+> Staff sign in locally. Navigation is simple: overview on the Dashboard, day-to-day delayed registration under **Applicants**, and a separate track for **COLB BRAP** with a shorter checklist.
+
+---
+
+## Scene 2 — Dashboard and backups (3–4 minutes)
+
+### Actions
+
+1. Stay on **Dashboard**.
+2. Highlight **totals** (applicants, verified vs pending).
+3. Scroll to **charts**:
+   - Applicants by **age group**
+   - **Registration status** (Incomplete Checklist, Under Process, Verified)
+   - **Applications over time** — change filter (e.g. Last 7 days → Year).
+4. Point to **Recent applicants** — click one name → profile → **Back** to Dashboard.
+5. Show **Export Backup** and **Import Backup** (explain only; run export if time allows).
+
+**Say:**
+
+> Supervisors get a live picture of workload: how many cases are still missing documents versus already verified. Age-group charts help us plan staffing — for example, more school-record requests for minors.
+>
+> Everything is stored locally in SQLite. **Export Backup** packages the database and all attachments into one `.zip` — ideal for end-of-day field work, moving data to the main office, or disaster recovery. **Import Backup** merges a zip back without needing internet.
+
+**Optional live moment:** Click **Export Backup** → show the downloaded `.zip` filename.
+
+---
+
+## Scene 3 — Applicants list and search (2 minutes)
+
+### Actions
+
+1. Click **Applicants** in the sidebar.
+2. Show **Search** — type part of a name or date of birth.
+3. Toggle status filters: **All** → **Incomplete Checklist** → **Verified**.
+4. Point at a row: name, DOB, **document progress** `X/Y`, status badge.
+
+**Say:**
+
+> Clerks can find any applicant in seconds. Each row shows document progress before you even open the file — so front desk staff know if a client still owes requirements.
+
+---
+
+## Scene 4 — Add a new applicant (3–4 minutes)
+
+### Actions
+
+1. Click **Add applicant**.
+2. Fill demo data (example):
+
+   | Field | Example |
+   |-------|---------|
+   | First name | Maria |
+   | Last name | Santos |
+   | Date of birth | (pick a date → age ~25) |
+   | Contact | 0917 000 0000 |
+   | Place of birth | `Iligan City Hospital, Iligan, Lanao del Norte` |
+
+   > Use **three parts separated by two commas** so the Certificate of Live Birth auto-splits city and province.
+
+3. Under **Conditional document requirements**, check **one** flag (e.g. **Out of town** or **One parent is foreigner**).
+4. Click **Add applicant** → lands on **profile**.
+
+**Say:**
+
+> Registration starts with basic identity. The important part is **conditional flags** — the system does not use a one-size-fits-all checklist. If the client was born out of town or has a foreign parent, extra requirements appear automatically when we save.
+
+5. On the profile, point to **Age group (requirements)** and **Conditional requirements** in the identification section.
+
+---
+
+## Scene 5 — Document checklist (core demo) (5–6 minutes)
+
+### Actions
+
+1. Click **Document checklist** (green).
+2. Walk through the **steps**:
+   - General documents
+   - Age-specific requirements (name the group shown)
+   - Conditional documents (if any)
+3. On one requirement:
+   - **Attach file** → choose a sample image/PDF.
+   - On **2×2 Photo** (if visible): mention **Take Picture** / crop with white background.
+   - On another item: mention **Scan Document** for ID-sized crops.
+4. Watch the **progress bar** increase.
+5. Pause ~2 seconds — mention **auto-save** (≈1.5 s after editing stops).
+
+**Say:**
+
+> This is the heart of B-TRACE. Requirements are grouped so clerks do not miss age-specific items — baptismal and school records for adults, different sets for children.
+>
+> A requirement is complete when there is an **attachment** — upload from disk, or capture with the built-in camera and crop tool. No manual checkbox ticking; the system reflects real documents on file.
+>
+> Notes and multiple attachments per line are supported. Changes save automatically so we do not lose work if the power blips.
+
+### If demo time is short
+
+Skip attaching every file; open an **existing** applicant who is already at 100% and say: “In production, each line would have scans like this.”
+
+---
+
+## Scene 6 — Staff status workflow (1–2 minutes)
+
+### Actions
+
+1. Return to **profile** of an applicant with **100% checklist** (use prepped record if the new demo child is incomplete).
+2. Show status banner: **Incomplete Checklist** vs ready state.
+3. Click **Mark Under Process** → then **Mark Verified**.
+
+**Say:**
+
+> Document completion is automatic. Only when every required attachment is present can staff mark **Under Process** and then **Verified** — that is our internal pipeline, separate from printing PDFs.
+
+---
+
+## Scene 7 — Certificate of Live Birth (3 minutes)
+
+### Actions
+
+1. Click **Certificate of Live Birth** (green).
+2. Show that fields match **Municipal Form No. 102** layout.
+3. Point to **auto-filled** name/DOB/place from profile.
+4. Fill or show 2–3 fields (parents, birth order dropdown, citizenship suggestion).
+5. Press **Enter** once — demonstrate **keyboard navigation** to next field.
+6. Click **Save**.
+
+**Say:**
+
+> One structured COLB form feeds everything else — AUSF, certification letter, and PDF positioning. Enter key moves field to field so encoding is faster than mouse-only entry. Place of birth from add applicant flows into address fields when formatted with two commas.
+
+---
+
+## Scene 8 — Affidavits and certification (2 minutes)
+
+### Actions (pick 2, do not rush all)
+
+| Button | What to show |
+|--------|----------------|
+| **Delayed Birth Affidavit** | Open form → Save |
+| **Paternity Affidavit** | Brief open |
+| **AUSF (Adult)** / **(7–17)** / **(0–6)** | Only if parents not married; note age-based label |
+| **Print certification** | Click-to-edit request person / purpose; signatory dropdown; Preview |
+
+**Say:**
+
+> Affidavits and the delayed registration **certification letter** are separate screens but share the same applicant data. AUSF appears by age when parents are not married; if married, the checklist expects a marriage contract instead. Certification text can be edited on the preview and saves back to the record.
+
+---
+
+## Scene 9 — Front PDF and Back PDF (3–4 minutes)
+
+### Actions
+
+1. On profile with **complete checklist**, point out **Front PDF** and **Back PDF** are **enabled**.
+2. On an **incomplete** profile (optional): show buttons **disabled** — tooltip *Complete the document checklist first*.
+3. Click **Front PDF** → **Print Front** (browser preview) **or** **Save Front as PDF** (Electron).
+4. Click **Back PDF** → **Print Back** or **Save Back as PDF**.
+5. If save runs: mention PDF opens in **Edge/Chrome** via the app helper.
+
+**Say:**
+
+> Printing is gated on **document completeness**, not on supervisor verification — so clerks can produce the packet as soon as files are complete. **Front** merges COLB field data with the requirements checklist on the official front layout. **Back** maps paternity and delayed registration affidavits. One data entry path; consistent output for PSA/LGU standards.
+
+---
+
+## Scene 10 — COLB BRAP track (2 minutes)
+
+### Actions
+
+1. Sidebar → **COLB BRAP**.
+2. Briefly compare: **Add COLB BRAP**, simpler list, **no age-group step** on checklist.
+3. Open one COLB BRAP profile — same action buttons (COLB, checklist, PDFs).
+
+**Say:**
+
+> BRAP registrations use a dedicated menu and a **five-item general checklist** plus a few conditionals — Muslim attachment, child registrant ID, marriage vs AUSF. Same PDF and COLB tools, less age branching.
+
+---
+
+## Scene 11 — Edit, backup, and close (1–2 minutes)
+
+### Actions
+
+1. **Applicants** → open a record → **Edit** → show conditional flags can change checklist.
+2. **Dashboard** → **Export Backup** (if not done earlier).
+3. Sidebar → **Logout**.
+
+**Say:**
+
+> Edits to conditions add or remove checklist lines — staff should recheck attachments after changes. Regular zip backups protect both database and scanned files. Session ends with logout.
+
+---
+
+## Closing (1 minute)
+
+**Say:**
+
+> B-TRACE gives CCRO a single offline workspace: **track every delayed registration**, **enforce the right documents by age and situation**, **capture scans on site**, and **generate official PDFs** without retyping across forms.
+>
+> Questions?
+
+---
+
+## Short demo (8–10 minutes)
+
+Use this order if time is limited:
+
+1. Login → Dashboard (30 s)  
+2. Applicants list + open **pre-complete** profile (1 min)  
+3. Document checklist — show structure + one attachment (2 min)  
+4. Mark Under Process / Verified (30 s)  
+5. Certificate of Live Birth — auto-fill + Save (2 min)  
+6. Front PDF + Back PDF — Print or Save (2 min)  
+7. Export Backup + COLB BRAP mention (1 min)  
+8. Close (30 s)
+
+---
+
+## Q&A — likely questions and answers
+
+| Question | Answer |
+|----------|--------|
+| Does it need internet? | No. Local SQLite and file storage; Electron desktop. |
+| Where is data stored? | On the PC running the app; backups are `.zip` archives. |
+| Can field office merge into main office? | Yes — **Export Backup** on laptop, **Import Backup** on central PC. |
+| Who can log in? | Local user accounts (default admin for demo; configurable). |
+| What if checklist is not 100%? | Front/Back PDF stay disabled; status stays Incomplete Checklist. |
+| Verified vs PDF? | Verified is staff workflow; PDFs only need complete attachments + filled COLB. |
+| COLB BRAP vs Applicants? | Separate sidebar menu and shorter checklist; same PDF tools. |
+| Camera without internet? | Yes — browser/Electron media APIs; USB webcam works offline. |
+
+---
+
+## Troubleshooting during live demo
+
+| Problem | Quick fix |
+|---------|-----------|
+| Charts empty | Add applicants beforehand or mention “fresh install” |
+| PDF buttons grayed out | Switch to prepped 100% checklist applicant |
+| Login fails | Use `admin` / `ccro123` on default install |
+| Save PDF does nothing in browser | Say “Save as PDF requires desktop app”; use **Print** preview instead |
+| Backend error toast | Restart `npm run electron:dev`; confirm port not blocked |
+| Unsaved checklist warning | Wait 2 s after last edit before status buttons |
+
+---
+
+## Presenter cheat sheet (one slide / one card)
+
+```
+LOGIN → admin / ccro123
+FLOW  → Dashboard → Applicants → Add → Checklist → COLB → PDFs
+HOOK  → Dynamic requirements by age + conditions
+PROOF → Front/Back PDF on complete case
+TRUST → Offline + Export Backup zip
+ALT   → COLB BRAP menu (shorter track)
+```
+
+---
+
+## Related documents
+
+| File | Purpose |
+|------|---------|
+| [../Demo.md](../Demo.md) | Feature overview and use cases |
+| [../USER_GUIDE.md](../USER_GUIDE.md) | Full staff operating manual |
+| [B-Trace System Guide.docs](./B-Trace%20System%20Guide.docs) | Short system guide |
+| [README.md](./README.md) | Technical setup and stack |
+
+---
+
+*Last updated for B-TRACE demo presentations — align script with the build you are running (Applicants, COLB BRAP, Front/Back PDF, certification click-to-edit).*

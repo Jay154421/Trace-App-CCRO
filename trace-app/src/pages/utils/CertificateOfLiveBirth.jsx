@@ -419,6 +419,30 @@ const ATTENDANT_SIGNATURE_SUGGESTIONS = [
   'Dont know',
 ];
 
+/** LCRO remarks/annotations templates (shown on focus when empty; filtered while typing). */
+const REMARKS_AUTOCOMPLETE_OPTIONS = [
+  'ACKNOWLEDGED BY NAME SA FATHER ON DATE REGISTER UNDER AFFIDAVIT OF PATERNITY REGISTER # PURSUANT RA 9255',
+  'ACKNOWLEDGE A FATHER WHOSE LAST NAME WAS TAKEN FROM THE MOTHER',
+  'ACKNOWLEDGE BY NAME SA FATHER ON ( W/AUSF)(NOT MARRIED) DATE REGISTER PURSUANT TO RA 9255',
+  "REGISTERED PURSUANT A.O NO. 1 SERIES 2005 (FATHER'S FIRST NAME AS TO CHILD'S LAST NAME)",
+];
+
+/** RA 9255 affidavit template only when field 18 (father age) is a number below 17. */
+function buildRemarksAutocompleteOptions(fatherAge) {
+  const ageRaw = String(fatherAge ?? '').trim().toUpperCase();
+  const ageNum = parseInt(ageRaw.replace(/\D/g, ''), 10);
+  const fatherUnder17 =
+    ageRaw &&
+    ageRaw !== 'N/A' &&
+    ageRaw !== 'D.K' &&
+    Number.isFinite(ageNum) &&
+    ageNum < 17;
+  const opts = [];
+  if (fatherUnder17) opts.push(REMARKS_AUTOCOMPLETE_OPTIONS[0]);
+  opts.push(...REMARKS_AUTOCOMPLETE_OPTIONS.slice(1));
+  return opts;
+}
+
 function isValidNaOrDkPrefix(val) {
   const clean = String(val ?? '').trim().toUpperCase();
   if (!clean) return true;
@@ -1409,6 +1433,8 @@ function FormTextCombo({
   maxSuggestionRows = 40,
   includeNotApplicable = true,
   disabled = false,
+  multiline = false,
+  rows = 3,
 }) {
   const listboxBaseId = useId();
   const listboxId = `${listboxBaseId}-listbox`;
@@ -1471,65 +1497,70 @@ function FormTextCombo({
   const borderColor = COLORS.accentGreen;
   const showList = open && suggestions.length > 0;
 
+  const sharedFieldProps = {
+    value,
+    'aria-label': ariaLabel,
+    'aria-autocomplete': 'list',
+    'aria-expanded': showList,
+    'aria-controls': showList ? listboxId : undefined,
+    'aria-activedescendant': showList ? `${listboxId}-opt-${activeIndex}` : undefined,
+    autoComplete: 'off',
+    spellCheck: false,
+    disabled,
+    onChange: (e) => {
+      const nextValue = e.target.value.toUpperCase();
+      onInputChange(nextValue);
+      setOpen(true);
+    },
+    onFocus: () => {
+      if (canOpenIdleOnFocus || suggestions.length) setOpen(true);
+    },
+    onKeyDown: (e) => {
+      if (
+        (e.key === 'ArrowDown' || e.key === 'ArrowUp') &&
+        (canOpenIdleOnFocus || suggestions.length)
+      ) {
+        setOpen(true);
+      }
+      if (!showList) return;
+      if (e.key === 'Escape') {
+        setOpen(false);
+        e.preventDefault();
+      } else if (e.key === 'ArrowDown') {
+        setActiveIndex((i) => Math.min(i + 1, suggestions.length - 1));
+        e.preventDefault();
+      } else if (e.key === 'ArrowUp') {
+        setActiveIndex((i) => Math.max(i - 1, 0));
+        e.preventDefault();
+      } else if (e.key === 'Enter' && !multiline) {
+        e.preventDefault();
+        applyItem(suggestions[activeIndex]);
+      }
+    },
+    onBlur,
+    placeholder,
+    className: `focus:outline-none focus:ring-0 w-full ${multiline ? 'resize-none' : 'min-h-[1.25rem]'}`,
+    style: {
+      fontFamily: FONT_FAMILY,
+      fontSize: '16px',
+      backgroundColor: COLORS.white,
+      border: multiline ? `1px solid ${borderColor}` : 'none',
+      borderBottom: multiline ? undefined : `1px solid ${borderColor}`,
+      borderRadius: 0,
+      padding: multiline ? '4px 6px' : '2px 4px',
+      color: COLORS.black,
+      cursor: disabled ? 'not-allowed' : 'text',
+      opacity: disabled ? 0.7 : 1,
+    },
+  };
+
   return (
     <div className={`relative min-w-0 ${width || ''} ${className}`} ref={wrapRef}>
-      <input
-        type="text"
-        value={value}
-        aria-label={ariaLabel}
-        aria-autocomplete="list"
-        aria-expanded={showList}
-        aria-controls={showList ? listboxId : undefined}
-        aria-activedescendant={showList ? `${listboxId}-opt-${activeIndex}` : undefined}
-        autoComplete="off"
-        spellCheck={false}
-        disabled={disabled}
-        onChange={(e) => {
-          const nextValue = e.target.value.toUpperCase();
-          onInputChange(nextValue);
-          setOpen(true);
-        }}
-        onFocus={() => {
-          if (canOpenIdleOnFocus || suggestions.length) setOpen(true);
-        }}
-        onKeyDown={(e) => {
-          if (
-            (e.key === 'ArrowDown' || e.key === 'ArrowUp') &&
-            (canOpenIdleOnFocus || suggestions.length)
-          ) {
-            setOpen(true);
-          }
-          if (!showList) return;
-          if (e.key === 'Escape') {
-            setOpen(false);
-            e.preventDefault();
-          } else if (e.key === 'ArrowDown') {
-            setActiveIndex((i) => Math.min(i + 1, suggestions.length - 1));
-            e.preventDefault();
-          } else if (e.key === 'ArrowUp') {
-            setActiveIndex((i) => Math.max(i - 1, 0));
-            e.preventDefault();
-          } else if (e.key === 'Enter') {
-            e.preventDefault();
-            applyItem(suggestions[activeIndex]);
-          }
-        }}
-        onBlur={onBlur}
-        placeholder={placeholder}
-        className="focus:outline-none focus:ring-0 min-h-[1.25rem] w-full"
-        style={{
-          fontFamily: FONT_FAMILY,
-          fontSize: '16px',
-          backgroundColor: COLORS.white,
-          border: 'none',
-          borderBottom: `1px solid ${borderColor}`,
-          borderRadius: 0,
-          padding: '2px 4px',
-          color: COLORS.black,
-          cursor: disabled ? 'not-allowed' : 'text',
-          opacity: disabled ? 0.7 : 1,
-        }}
-      />
+      {multiline ? (
+        <textarea {...sharedFieldProps} rows={rows} />
+      ) : (
+        <input type="text" {...sharedFieldProps} />
+      )}
       {showList && (
         <ul
           id={listboxId}
@@ -2162,6 +2193,11 @@ export function CertificateOfLiveBirth() {
   ]);
 
   const informantRelationshipSuggestions = useMemo(() => ['FATHER', 'GUARDIAN', 'MOTHER', 'MYSELF'], []);
+
+  const remarksAutocompleteOptions = useMemo(
+    () => buildRemarksAutocompleteOptions(form.fatherAge),
+    [form.fatherAge],
+  );
 
   const informantAddressSuggestions = useMemo(() => {
     const list = [];
@@ -3342,21 +3378,18 @@ export function CertificateOfLiveBirth() {
             <p style={{ fontSize: '20px', fontWeight: 700, margin: 0 }}>
               REMARKS/ANNOTATIONS (For LCRO/OCRG Use Only)
             </p>
-            <textarea
-              value={form.remarks}
-              onChange={(e) => update('remarks', e.target.value.toUpperCase())}
-              placeholder="(Enter remarks/annotations)"
-              className="mt-2 w-full resize-none focus:outline-none focus:ring-0"
+            <FormTextCombo
+              multiline
               rows={3}
-              style={{
-                fontFamily: FONT_FAMILY,
-                fontSize: '16px',
-                backgroundColor: COLORS.white,
-                border: `1px solid ${COLORS.accentGreen}`,
-                borderRadius: 0,
-                padding: '4px 6px',
-                color: COLORS.black,
-              }}
+              value={form.remarks}
+              onInputChange={(v) => update('remarks', v)}
+              placeholder="(Enter remarks/annotations)"
+              className="mt-2 w-full"
+              ariaLabel="Remarks and annotations"
+              suggestionOptions={remarksAutocompleteOptions}
+              idleFocusSuggestions={remarksAutocompleteOptions}
+              includeNotApplicable={false}
+              maxSuggestionRows={10}
             />
           </div>
           <div style={{ padding: '8px 10px' }}>
