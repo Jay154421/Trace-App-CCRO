@@ -212,6 +212,7 @@ function buildChecklist(requirements, existing = [], child = null) {
       return normalizedHasMarriageCertificate;
     }
     if (isAusfRequirement(requirement)) {
+      if (isColbBrap) return false;
       return !normalizedHasMarriageCertificate;
     }
     if (isParentsMarriageContractRequirement(requirement)) {
@@ -228,6 +229,7 @@ function buildChecklist(requirements, existing = [], child = null) {
   const missingExistingRequirements = existing.filter((item) => {
     if (!item?.label || !item?.category) return false;
     if (isColbBrapExcludedChecklistItem(item, isColbBrap)) return false;
+    if (isColbBrap && isAusfRequirement(item)) return false;
     if (!normalizedOutOfTown && isOutOfTownAffidavitRequirement(item)) return false;
     if (!normalizedHasMarriageCertificate && isMarriageCertificateRequirement(item)) return false;
     if (normalizedHasMarriageCertificate && isAusfRequirement(item)) return false;

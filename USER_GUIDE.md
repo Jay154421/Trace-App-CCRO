@@ -98,6 +98,7 @@ Click a row to open that person's **profile**.
 1. Click **Add applicant**.
 2. Fill **Basic details** (required: first name, last name, date of birth).
 3. Under **Conditional document requirements**, check everything that applies (see [Section 16](#16-age-groups-and-conditional-flags-reference)). These add extra checklist items automatically.
+   - If you check **Out of Town**, choose **Informant role**: **Document owner** (applicant affidavit) or **Representative** (representative affidavit). This selects which out-of-town print template appears on the profile.
 4. Click **Add applicant**. You are taken to the new profile.
 
 ### Place of birth (when adding or editing)
@@ -124,7 +125,9 @@ The profile header shows the name in **LAST, FIRST** form (e.g. **RODRIGUEZ, NOR
 | **Document checklist** | Required documents, uploads, camera capture |
 | **Paternity Affidavit** | Paternity affidavit form |
 | **Delayed Birth Affidavit** | Delayed registration affidavit |
+| **Two Witnesses Affidavit** | Affidavit of Two Witnesses (Legal Office) — fill form, preview or save PDF (Long or A4) |
 | **AUSF (Adult)** / **AUSF (0–6)** / **AUSF (7–17)** | Affidavit to Use Surname of the Father — label depends on age; **hidden** if parents are marked married (marriage contract on file) |
+| **Out-of-Town Affidavit (Applicant)** / **(Representative)** | Shown only when **Out of town** is set — label matches informant role; Legal Office affidavit with corroboration (see [Section 9](#9-affidavits-and-certification)) |
 | **Print certification** | Delayed registration certification letter/PDF |
 | **Front PDF** | Generate/preview front of combined COLB + checklist PDF |
 | **Back PDF** | Generate/preview back (affidavits, etc.) |
@@ -227,6 +230,11 @@ Requirements are grouped into steps (when applicable):
 - If parents are **married** (marriage contract on file), the checklist expects **Marriage contract** instead of **AUSF**.
 - The profile's **AUSF** button is hidden when married; use marriage contract on the checklist instead.
 
+### Out of town on checklist (Applicants only)
+
+- For **Applicants** (not COLB BRAP), checking **Out of town** adds **Affidavit w/ Corroboration for Out-of-Town Applicant (Legal Office)** to the checklist — attach the signed document like any other requirement.
+- For **COLB BRAP**, the same affidavit is **not** on the checklist; use the profile's **Out-of-Town Affidavit** button to fill and print the form instead (see [Section 12](#12-colb-brap-separate-menu)).
+
 ---
 
 ## 8. Certificate of Live Birth (COLB)
@@ -258,6 +266,34 @@ Affidavit for delayed registration of birth. Fill and save; fields can appear on
   - **AUSF (Adult)** — 18+
 - Requires saved **Certificate of Live Birth** data.
 - Choose paper size (**Long** or **A4**), preview, save PDF (desktop can open in Edge/Chrome).
+
+### Two Witnesses Affidavit
+
+1. On the profile, click **Two Witnesses Affidavit** (Legal Office form for late registration of birth).
+2. Click **Edit form**, enter witness and affiant details, then **View document** when finished. Changes **auto-save** while editing.
+3. Choose **Long** or **A4**, then **Preview** or **Save as PDF** (save requires the desktop/Electron app).
+4. After saving on desktop, you can **Open in Microsoft Edge or Google Chrome** from the profile if a link appears.
+
+This affidavit is also a **checklist item** (general documents). Attach the signed copy on the checklist; use the print form to prepare the official layout.
+
+### Out-of-Town Affidavit
+
+Shown on the profile only when **Out of town** was set at add/edit (Applicants and COLB BRAP).
+
+| Informant role (at add/edit) | Profile button label |
+|------------------------------|----------------------|
+| **Document owner** | **Out-of-Town Affidavit (Applicant)** |
+| **Representative** | **Out-of-Town Affidavit (Representative)** |
+
+1. Click the out-of-town button on the profile.
+2. Click **Edit form**, complete the affidavit fields (data can pull from **Certificate of Live Birth** where applicable), then **View document**.
+3. Choose **Long** or **A4**, then **Preview** or **Save as PDF**.
+
+**Applicants:** Also attach the signed affidavit on the document checklist under the out-of-town requirement.
+
+**COLB BRAP:** There is **no** out-of-town line on the checklist — the print form is the only in-app step for this affidavit.
+
+Change informant role anytime via **Edit** on the profile (under **Out of town**).
 
 ### Print certification
 
@@ -317,7 +353,8 @@ Both require a **complete checklist** (every line has an attachment) and a fille
 |-------|------------|-----------|
 | Checklist | General + **age-specific** + conditionals | **5 general** items + up to 3 conditionals |
 | Age group | Used for extra documents | **Not used** |
-| Add/Edit flags | Out of town, deceased registrant, foreign parent | Parents married, child registrant, Muslim attachment |
+| Add/Edit flags | Out of town (+ informant role), deceased registrant, foreign parent | Document flags: parents married, child registrant, Muslim; separate **Out of town** block for print form only |
+| Out-of-town checklist item | Yes — attach signed affidavit on checklist | **No** — use **Out-of-Town Affidavit** on profile only |
 | Front / Back PDF | Enabled when checklist 100% complete | **Same rule** — not tied to staff Verified |
 | Place of birth | Three-part comma format (see Section 4) | **Same format** |
 
@@ -325,8 +362,9 @@ Both require a **complete checklist** (every line has an attachment) and a fille
 
 1. Open **COLB BRAP** → **Add COLB BRAP**.
 2. Fill basic details (name, date of birth, place of birth, contact, etc.).
-3. Under **COLB BRAP conditional requirement**, check all that apply (see [COLB BRAP flags](#colb-brap-only) in Section 16).
-4. Save—you are taken to the COLB BRAP profile.
+3. Under **Conditional document requirements**, check all that apply (marriage, child registrant, Muslim — see [COLB BRAP flags](#colb-brap-only) in Section 16). These add checklist items.
+4. If needed, under **Out of town** (separate section: *For the affidavit print form*), check **Out of town** and choose **Document owner** or **Representative**. This does **not** add a checklist row.
+5. Save—you are taken to the COLB BRAP profile.
 
 ### COLB BRAP document checklist
 
@@ -382,15 +420,16 @@ Use this for:
 3. Wait for auto-save; confirm progress shows **100%**.
 4. On profile, click **Mark Under Process** when intake review starts.
 5. Complete **Certificate of Live Birth** and affidavits as needed.
-6. Use **AUSF** (correct age variant) if parents are not married.
-7. **Front PDF** / **Back PDF** → **Print** or **Save as PDF** (buttons enabled after checklist is complete).
-8. **Print certification** → click to edit **request person** and **purpose** on the letter if needed; preview or save PDF.
-9. **Mark Verified** when the case is fully processed.
+6. Use **AUSF** (correct age variant) if parents are not married; use **Out-of-Town Affidavit** if out of town (attach checklist copy for Applicants).
+7. Use **Two Witnesses Affidavit** when that item is on the checklist.
+8. **Front PDF** / **Back PDF** → **Print** or **Save as PDF** (buttons enabled after checklist is complete).
+9. **Print certification** → click to edit **request person** and **purpose** on the letter if needed; preview or save PDF.
+10. **Mark Verified** when the case is fully processed.
 
 ### COLB BRAP
 
-1. **COLB BRAP** → **Add COLB BRAP** → set conditional flags → complete the shorter checklist (no age-specific step).
-2. **Certificate of Live Birth** and affidavits as needed.
+1. **COLB BRAP** → **Add COLB BRAP** → set document flags and **Out of town** (if needed) → complete the shorter checklist (no age-specific step; no out-of-town checklist line).
+2. **Certificate of Live Birth**, **Two Witnesses Affidavit**, **Out-of-Town Affidavit** (if flagged), and other affidavits as needed.
 3. When checklist is **100%**, use **Front PDF** / **Back PDF** and **Print certification** (same rules as above).
 4. **Mark Under Process** / **Mark Verified** when appropriate.
 
@@ -409,6 +448,9 @@ Use this for:
 | Wrong documents listed | **Edit** applicant — verify date of birth and conditional checkboxes |
 | BRAP case in wrong list | Open **COLB BRAP**, not **Applicants** |
 | Certification name/purpose won't change | Click the **bold text** on the letter (request person / purpose), not **Edit** on profile |
+| Out-of-town button missing | **Edit** profile and check **Out of town**; pick document owner vs representative |
+| Wrong out-of-town template | **Edit** profile → change **Informant role** under **Out of town** |
+| COLB BRAP has no out-of-town checklist line | Expected — use **Out-of-Town Affidavit** on the profile, not the checklist |
 | Save certification PDF fails | Use the **desktop (Electron)** app |
 | Data on another PC | Export backup on source; import on destination |
 
@@ -427,20 +469,30 @@ Use this for:
 
 ### Conditional flags when adding/editing applicants
 
-| Flag | Adds to checklist |
-|------|-------------------|
-| Out of town | Affidavit w/ Corroboration (Legal Office) |
-| Registrant deceased | Death certificate (registrant) |
-| One parent foreigner | Passport or BI certificate |
-| HILOT deceased (age ≤5) | Death certificate (HILOT) |
+| Flag | Effect |
+|------|--------|
+| Out of town | Checklist: **Affidavit w/ Corroboration (Legal Office)**. Profile: **Out-of-Town Affidavit** button (Applicant or Representative template from informant role below). |
+| ↳ Informant: **Document owner** | Print template: **Out-of-Town Affidavit (Applicant)** |
+| ↳ Informant: **Representative** | Print template: **Out-of-Town Affidavit (Representative)** |
+| Registrant deceased | Death certificate (registrant) on checklist |
+| One parent foreigner | Passport or BI certificate on checklist |
 
 ### COLB BRAP only
+
+**Conditional document requirements** (checklist):
 
 | Flag | Adds to checklist |
 |------|-------------------|
 | Parents are married | Marriage contract |
 | Registrant is a child | Valid I.D. of parent/s or guardian |
 | Muslim registrant | Muslim attachment |
+
+**Out of town** (separate section on add/edit — *For the affidavit print form*):
+
+| Setting | Effect |
+|---------|--------|
+| Out of town checked | Profile shows **Out-of-Town Affidavit**; **not** added to checklist |
+| Document owner / Representative | Same template choice as standard Applicants |
 
 When parents are **not** married on a COLB BRAP record, **AUSF** is required instead of marriage contract.
 

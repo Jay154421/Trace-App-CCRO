@@ -9,9 +9,9 @@ export function OutOfTownInformantFields({
   informantIsOwner,
   onInformantIsOwnerChange,
   legend = 'Informant role',
-  description = 'Choose which affidavit template to use for the out-of-town requirement.',
-  ownerLabel = 'Informant is the document owner (applicant) — Affidavit for Out-of-Town Applicant',
-  representativeLabel = 'Informant is not the document owner (representative) — Affidavit for Out-of-Town 2nd Person',
+  description = 'Choose which affidavit template to use for the out-of-town print form.',
+  ownerLabel = 'Document owner',
+  representativeLabel = 'Representative',
 }) {
   return (
     <fieldset className="ml-7 space-y-2 border-l-2 border-emerald-200 pl-4">

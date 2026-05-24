@@ -38,7 +38,7 @@ export function ColbBrapDocumentFlagsFields({ form, onFieldChange }) {
             onChange={(e) => onFieldChange('colb_requires_parent_id', e.target.checked)}
             className={checkboxClassName}
           />
-          <span className="text-sm text-slate-700">Registrant is a child (parent/s or guardian valid I.D.)</span>
+          <span className="text-sm text-slate-700">Registrant is a Child (parent/s or guardian valid I.D.)</span>
         </label>
         <label className={checkboxWrapperClassName}>
           <input
@@ -47,7 +47,7 @@ export function ColbBrapDocumentFlagsFields({ form, onFieldChange }) {
             onChange={(e) => onFieldChange('has_muslim_attachment', e.target.checked)}
             className={checkboxClassName}
           />
-          <span className="text-sm text-slate-700">When the registrant is Muslim (applicable Muslim attachment)</span>
+          <span className="text-sm text-slate-700">Registrant is a Muslim (Muslim attachment)</span>
         </label>
       </div>
     </fieldset>

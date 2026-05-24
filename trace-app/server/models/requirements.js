@@ -67,7 +67,6 @@ const CONDITIONAL_DOCS = {
   foreign_parent_id: { id: 'foreign_parent_id', label: 'Passport or Bureau of Immigration cert. (foreign parent)' },
   affidavit_corroboration_out_of_town: { id: 'out_of_town_affidavit_legal_office', label: 'Affidavit w/ Corroboration for Out-of-Town Applicant (Legal Office)' },
   marriage_certificate: { id: 'marriage_certificate', label: 'Marriage Certificate' },
-  ausf: { id: 'ausf', label: 'AUSF (Affidavit to Use Surname of Father)' },
   colb_parent_id: { id: 'colb_parent_id', label: 'Valid I.D. of parent/s or guardian' },
   muslim_attachment: { id: 'muslim_attachment', label: 'Muslim attachment' },
 };
@@ -109,8 +108,6 @@ function getRequirementsForChild(child) {
     const conditional = [];
     if (child.has_marriage_certificate) {
       conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.marriage_certificate), category: 'conditional' });
-    } else {
-      conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.ausf), category: 'conditional' });
     }
     if (child.colb_requires_parent_id) {
       conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.colb_parent_id), category: 'conditional' });

@@ -572,7 +572,6 @@ export function ChildDetail() {
                 <dt className="text-sm text-slate-500 mb-1">{COLB_OUT_OF_TOWN_SECTION_TITLE}</dt>
                 <dd className="text-sm text-slate-700">
                   <span className="block">
-                    Affidavit w/ Corroboration for Out-of-Town Applicant (Legal Office) —{' '}
                     {OUT_OF_TOWN_VARIANT_SHORT_LABEL[outOfTownVariant]}
                   </span>
                 </dd>
@@ -670,7 +669,6 @@ export function ChildDetail() {
                   {hasParentForeigner ? <span className="block">Passport or BI cert. (foreign parent)</span> : null}
                   {hasOutOfTown ? (
                     <span className="block">
-                      Affidavit w/ Corroboration for Out-of-Town Applicant (Legal Office) —{' '}
                       {OUT_OF_TOWN_VARIANT_SHORT_LABEL[outOfTownVariant]}
                     </span>
                   ) : null}
