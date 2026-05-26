@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { childrenApi } from '../services/api';
 import { applicantInputPlaceholders, buildApplicantPayload, handleEnterKey } from '../utils/applicantForm';
 import { ColbBrapProfileFields } from './applicant/ColbBrapProfileFields';
+import { OutOfTownInformantFields } from './applicant/OutOfTownInformantFields';
 
 const emptyForm = {
   first_name: '',

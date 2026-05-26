@@ -12,7 +12,9 @@
     "preview": "vite preview",
     "start": "npm run dev",
     "electron:dev": "cross-env PORT=3001 ELECTRON_STRICT_PORTS=1 concurrently \"npm run dev:server\" \"npm run dev:vite\" \"wait-on tcp:5174 tcp:3001 && node electron/dev-runner.js\"",
-    "electron:build": "vite build --mode electron && electron-builder",
+    "electron:build": "node scripts/electron-build.mjs",
+    "electron:build:package": "vite build --mode electron && electron-builder",
+    "verify:ausf-pdf": "node scripts/verify-ausf-witness-pdf.mjs",
     "electron:start": "electron .",
     "seed:applicants": "node server/factory/seeder.js",
     "export:user-guide-pdf": "node scripts/export-user-guide-pdf.mjs"
@@ -46,7 +48,8 @@
     "rcedit": "^5.0.2",
     "tailwindcss": "^3.3.6",
     "vite": "^5.0.0",
-    "wait-on": "^9.0.4"
+    "wait-on": "^9.0.4",
+    "playwright": "^1.58.2"
   },
   "build": {
     "appId": "com.trace.app",

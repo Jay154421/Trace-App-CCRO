@@ -14,12 +14,22 @@ export function getAusfPageDimensions(paperSize) {
   };
 }
 
+/** Match index.css AUSF margin rules (do not override variant-specific top padding). */
+export function getAusfDocPadding(paperSize, variant = null) {
+  if (paperSize === AUSF_PDF_PAGE_FORMAT.A4 && variant === AUSF_0717_PRINT_TYPE) {
+    return '0.12in 1in 0.3in';
+  }
+  if (paperSize === AUSF_PDF_PAGE_FORMAT.LONG && variant === AUSF_0717_PRINT_TYPE) {
+    return '0.15in 1in 0.3in';
+  }
+  return '0.3in 1in';
+}
+
 /** Injects @page + flex layout for `.ausf-print-page` (AUSF, witness affidavit, etc.). */
 export function useAusfPrintPageSize(paperSize, variant = null) {
   useEffect(() => {
     const { pageSizeCss, width, height, dataPaper } = getAusfPageDimensions(paperSize);
-    const isA4Minor = paperSize === AUSF_PDF_PAGE_FORMAT.A4 && variant === AUSF_0717_PRINT_TYPE;
-    const docPadding = isA4Minor ? '0.12in 1in 0.3in' : '0.3in 1in';
+    const docPadding = getAusfDocPadding(paperSize, variant);
     document.documentElement.dataset.paperSize = dataPaper;
 
     let el = document.getElementById(AUSF_PRINT_SIZE_STYLE_ID);

@@ -2,14 +2,6 @@
 
 **B-TRACE** (Birth Tracking for Registration and Certificate Entries) is a desktop/web application for the City Civil Registry Office (CCRO). It helps staff track delayed birth registration applicants, manage document requirements by age and situation, fill official forms, and generate printable PDFs.
 
-For a shorter technical walkthrough, see [Demo.md](./Demo.md). For installation and development, see [trace-app/README.md](./trace-app/README.md).
-
-**PDF:** [USER_GUIDE.pdf](./USER_GUIDE.pdf) — regenerate anytime from the `trace-app` folder:
-
-```bash
-npm run export:user-guide-pdf
-```
-
 ---
 
 ## Table of contents
@@ -66,10 +58,7 @@ After login you see:
 
 - **Totals** — How many applicants exist and how many are **Verified** vs still pending.
 - **Charts**
-  - Applicants by **age group**
-  - **Registration status** (Incomplete Checklist, Under Process, Verified)
   - **Applications over time** (filter: last 7/14 days, 12 months, year, or custom range)
-- **Recent applicants** — Quick links to open a profile.
 - **Add applicant** — Opens the same add form as on the Applicants list.
 - **Export Backup** / **Import Backup** — Download or restore a `.zip` containing the database and all attachments (for moving data between machines or disaster recovery).
 
@@ -109,7 +98,7 @@ Enter place of birth as **three parts separated by two commas**:
 
 **Example:** `Connelly - Cummings Clinic, Calamba, Lanao Del Norte`
 
-This helps the **Certificate of Live Birth** form split the address, city, and municipality/province automatically. If you use only **one comma** (city and province only), the COLB form may not fill city and province fields—you should enter the full three-part format when possible.
+This helps the **Certificate of Live Birth** form split the address, city, and municipality/province automatically. If you use only **one comma**, the COLB form may not fill city and province fields—you should enter the full three-part format when possible.
 
 ---
 
@@ -224,11 +213,6 @@ Requirements are grouped into steps (when applicable):
 - Changes **auto-save** about **1.5 seconds** after you stop editing.
 - Leaving the page with unsaved changes triggers a **navigation warning**.
 - Progress bar at top shows **% complete**.
-
-### Marriage / AUSF on checklist
-
-- If parents are **married** (marriage contract on file), the checklist expects **Marriage contract** instead of **AUSF**.
-- The profile's **AUSF** button is hidden when married; use marriage contract on the checklist instead.
 
 ### Out of town on checklist (Applicants only)
 
@@ -351,7 +335,7 @@ Both require a **complete checklist** (every line has an attachment) and a fille
 
 | Topic | Applicants | COLB BRAP |
 |-------|------------|-----------|
-| Checklist | General + **age-specific** + conditionals | **5 general** items + up to 3 conditionals |
+| Checklist | General + **age-specific** + conditionals | **5 general** items + conditional items (including **AUSF** when parents are not married) |
 | Age group | Used for extra documents | **Not used** |
 | Add/Edit flags | Out of town (+ informant role), deceased registrant, foreign parent | Document flags: parents married, child registrant, Muslim; separate **Out of town** block for print form only |
 | Out-of-town checklist item | Yes — attach signed affidavit on checklist | **No** — use **Out-of-Town Affidavit** on profile only |
@@ -376,10 +360,9 @@ Both require a **complete checklist** (every line has an attachment) and a fille
 4. Brgy. Certification (Facts of Birth)
 5. 2×2 Photo I.D. with white background
 
-**Conditional (from add/edit flags):**
+**Conditional (from add/edit flags and marriage status):**
 
-- **Parents are married** → Marriage certificate on checklist (AUSF not used).
-- **Parents not married** → AUSF on checklist; profile may show **AUSF** by age.
+- **Parents are married** → Marriage certificate on checklist.
 - **Registrant is a child** → Valid I.D. of parent/s or guardian.
 - **Muslim registrant** → Muslim attachment.
 

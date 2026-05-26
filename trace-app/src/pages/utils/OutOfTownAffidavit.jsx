@@ -359,16 +359,7 @@ export function OutOfTownAffidavit({ embedded = false, onClose }) {
         <p className="mt-1 text-xs italic text-slate-600">{title}</p>
       </div>
 
-      <div className="mb-4 flex flex-wrap items-baseline gap-2 text-sm">
-        <span className="text-slate-600">Registry no.</span>
-        <FormLine
-          value={form.registryNo}
-          onChange={(v) => update('registryNo', v)}
-          placeholder="(Registry no.)"
-          width="w-40"
-          ariaLabel="Registry number"
-        />
-      </div>
+     
 
       <div className="space-y-5 text-base leading-relaxed">
         <div className="flex flex-wrap items-baseline gap-2">

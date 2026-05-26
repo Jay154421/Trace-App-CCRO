@@ -2,8 +2,6 @@
 
 **B-TRACE** (Birth Tracking for Registration and Certificate Entries) is a desktop/web application for the City Civil Registry Office (CCRO). It helps staff track delayed birth registration applicants, manage document requirements by age and situation, fill official forms, and generate printable PDFs.
 
-For a shorter technical walkthrough, see [Demo.md](./Demo.md). For installation and development, see [trace-app/README.md](./trace-app/README.md).
-
 ---
 
 ## Table of contents
@@ -60,10 +58,7 @@ After login you see:
 
 - **Totals** — How many applicants exist and how many are **Verified** vs still pending.
 - **Charts**
-  - Applicants by **age group**
-  - **Registration status** (Incomplete Checklist, Under Process, Verified)
   - **Applications over time** (filter: last 7/14 days, 12 months, year, or custom range)
-- **Recent applicants** — Quick links to open a profile.
 - **Add applicant** — Opens the same add form as on the Applicants list.
 - **Export Backup** / **Import Backup** — Download or restore a `.zip` containing the database and all attachments (for moving data between machines or disaster recovery).
 

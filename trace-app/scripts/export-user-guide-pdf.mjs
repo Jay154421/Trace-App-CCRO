@@ -1,5 +1,6 @@
 /**
  * Export ../USER_GUIDE.md to USER_GUIDE.pdf (repo root).
+ * Optional first CLI arg: output filename (e.g. USER_GUIDE.new.pdf).
  * Uses jspdf from trace-app dependencies (no extra packages).
  */
 import { readFileSync, writeFileSync } from 'fs';
@@ -10,7 +11,8 @@ import { jsPDF } from 'jspdf';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..', '..');
 const MD_PATH = join(REPO_ROOT, 'USER_GUIDE.md');
-const PDF_PATH = join(REPO_ROOT, 'USER_GUIDE.pdf');
+const outputName = process.argv[2] || 'USER_GUIDE.pdf';
+const PDF_PATH = join(REPO_ROOT, outputName);
 
 const MARGIN = 18;
 const PAGE_W = 210;
