@@ -99,17 +99,44 @@ export function ApplicantFormFields({
       </div>
 
       {!hideCoreIdentityFields ? (
-        <label className="block">
-          <span className="text-sm font-medium text-slate-700">Place of birth</span>
-          <input
-            type="text"
-            value={form.place_of_birth}
-            onChange={(e) => onFieldChange('place_of_birth', e.target.value.toUpperCase())}
-            className={inputClassName}
-            placeholder={placeholders.placeOfBirth}
-            onKeyDown={handleEnterKey}
-          />
-        </label>
+        <fieldset className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
+          <legend className="px-1 text-sm font-semibold text-slate-700">Place of birth</legend>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <label className="block">
+              <span className="text-sm font-medium text-slate-700">Address</span>
+              <input
+                type="text"
+                value={form.place_of_birth_address}
+                onChange={(e) => onFieldChange('place_of_birth_address', e.target.value.toUpperCase())}
+                className={inputClassName}
+                placeholder={placeholders.placeOfBirthAddress}
+                onKeyDown={handleEnterKey}
+              />
+            </label>
+            <label className="block">
+              <span className="text-sm font-medium text-slate-700">City</span>
+              <input
+                type="text"
+                value={form.place_of_birth_city}
+                onChange={(e) => onFieldChange('place_of_birth_city', e.target.value.toUpperCase())}
+                className={inputClassName}
+                placeholder={placeholders.placeOfBirthCity}
+                onKeyDown={handleEnterKey}
+              />
+            </label>
+            <label className="block">
+              <span className="text-sm font-medium text-slate-700">Province</span>
+              <input
+                type="text"
+                value={form.place_of_birth_province}
+                onChange={(e) => onFieldChange('place_of_birth_province', e.target.value.toUpperCase())}
+                className={inputClassName}
+                placeholder={placeholders.placeOfBirthProvince}
+                onKeyDown={handleEnterKey}
+              />
+            </label>
+          </div>
+        </fieldset>
       ) : null}
 
       {!hideConditionalRequirements ? (

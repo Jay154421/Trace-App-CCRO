@@ -12,7 +12,9 @@ const emptyForm = {
   last_name: '',
   gender: '',
   date_of_birth: '',
-  place_of_birth: '',
+  place_of_birth_address: '',
+  place_of_birth_city: '',
+  place_of_birth_province: '',
   contact_no: '',
   registrant_deceased: false,
   hilot_deceased: false,
@@ -192,17 +194,44 @@ export function AddApplicantModal({
               </label>
             </div>
 
-            <label className="block">
-              <span className="text-sm font-medium text-slate-700">Place of birth</span>
-              <input
-                type="text"
-                value={form.place_of_birth}
-                onChange={(e) => update('place_of_birth', e.target.value.toUpperCase())}
-                className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
-                placeholder={applicantInputPlaceholders.placeOfBirth}
-                onKeyDown={handleEnterKey}
-              />
-            </label>
+            <fieldset className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
+              <legend className="px-1 text-sm font-semibold text-slate-700">Place of birth</legend>
+              <div className="grid gap-4 sm:grid-cols-3">
+                <label className="block">
+                  <span className="text-sm font-medium text-slate-700">Address</span>
+                  <input
+                    type="text"
+                    value={form.place_of_birth_address}
+                    onChange={(e) => update('place_of_birth_address', e.target.value.toUpperCase())}
+                    className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
+                    placeholder={applicantInputPlaceholders.placeOfBirthAddress}
+                    onKeyDown={handleEnterKey}
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-sm font-medium text-slate-700">City</span>
+                  <input
+                    type="text"
+                    value={form.place_of_birth_city}
+                    onChange={(e) => update('place_of_birth_city', e.target.value.toUpperCase())}
+                    className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
+                    placeholder={applicantInputPlaceholders.placeOfBirthCity}
+                    onKeyDown={handleEnterKey}
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-sm font-medium text-slate-700">Province</span>
+                  <input
+                    type="text"
+                    value={form.place_of_birth_province}
+                    onChange={(e) => update('place_of_birth_province', e.target.value.toUpperCase())}
+                    className="mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
+                    placeholder={applicantInputPlaceholders.placeOfBirthProvince}
+                    onKeyDown={handleEnterKey}
+                  />
+                </label>
+              </div>
+            </fieldset>
 
             {!isColbBrap ? (
               <fieldset className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">

@@ -25,7 +25,9 @@ export const applicantInputPlaceholders = {
   lastName: 'Enter last name',
   dateOfBirth: 'dd/mm/yyyy',
   contactNo: '09XX XXX XXXX',
-  placeOfBirth: 'Enter Address, City, Province',
+  placeOfBirthAddress: 'Enter Address',
+  placeOfBirthCity: 'Enter City',
+  placeOfBirthProvince: 'Enter Province',
 };
 
 /** Normalizes API/DB gender to form select value: '' | 'male' | 'female'. */
@@ -51,13 +53,40 @@ export function getColbConditionalRequirementLabels(data) {
   return labels;
 }
 
+/**
+ * Parse a combined place_of_birth string into { address, city, province }.
+ * Expected format: "ADDRESS, CITY, PROVINCE" (comma-separated).
+ */
+export function splitPlaceOfBirth(combined) {
+  if (!combined || !String(combined).trim()) {
+    return { place_of_birth_address: '', place_of_birth_city: '', place_of_birth_province: '' };
+  }
+  const parts = String(combined).split(',').map((s) => s.trim().toUpperCase());
+  return {
+    place_of_birth_address: parts[0] || '',
+    place_of_birth_city: parts[1] || '',
+    place_of_birth_province: parts[2] || '',
+  };
+}
+
+/**
+ * Join address, city, province into a single place_of_birth string.
+ * Skips empty segments, joins non-empty with ", ".
+ */
+export function joinPlaceOfBirth(address, city, province) {
+  const segments = [address, city, province].filter((s) => s && String(s).trim());
+  return segments.length ? segments.join(', ') : '';
+}
+
 export const emptyApplicantForm = {
   first_name: '',
   middle_name: '',
   last_name: '',
   gender: '',
   date_of_birth: '',
-  place_of_birth: '',
+  place_of_birth_address: '',
+  place_of_birth_city: '',
+  place_of_birth_province: '',
   contact_no: '',
   registrant_deceased: false,
   hilot_deceased: false,
@@ -70,13 +99,16 @@ export const emptyApplicantForm = {
 };
 
 export function mapApplicantToForm(data) {
+  const { place_of_birth_address, place_of_birth_city, place_of_birth_province } = splitPlaceOfBirth(data?.place_of_birth);
   return {
     first_name: toUpperCaseTrimmed(data?.first_name ?? ''),
     middle_name: toUpperCaseTrimmed(data?.middle_name ?? ''),
     last_name: toUpperCaseTrimmed(data?.last_name ?? ''),
     gender: normalizeApplicantGender(data?.gender),
     date_of_birth: data?.date_of_birth ?? '',
-    place_of_birth: toUpperCaseTrimmed(data?.place_of_birth ?? ''),
+    place_of_birth_address,
+    place_of_birth_city,
+    place_of_birth_province,
     contact_no: toUpperCaseTrimmed(data?.contact_no ?? ''),
     registrant_deceased: isTruthyFlag(data?.registrant_deceased),
     hilot_deceased: isTruthyFlag(data?.hilot_deceased),
@@ -106,7 +138,11 @@ export function buildApplicantPayload(form) {
     last_name: toUpperCaseTrimmed(form.last_name),
     gender: normalizeApplicantGender(form.gender),
     date_of_birth: form.date_of_birth,
-    place_of_birth: toUpperCaseTrimmed(form.place_of_birth) || undefined,
+    place_of_birth: joinPlaceOfBirth(
+      form.place_of_birth_address,
+      form.place_of_birth_city,
+      form.place_of_birth_province
+    ) || undefined,
     contact_no: toUpperCaseTrimmed(form.contact_no) || undefined,
     registrant_deceased: form.registrant_deceased,
     hilot_deceased: form.hilot_deceased,

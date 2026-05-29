@@ -25,6 +25,7 @@ import {
   isTruthyFlag,
   formatApplicantGenderLabel,
   getColbConditionalRequirementLabels,
+  splitPlaceOfBirth,
 } from '../../utils/applicantForm';
 import {
   AUSF_VARIANT_LABEL,
@@ -87,6 +88,8 @@ export function ChildDetail() {
   const [editSaving, setEditSaving] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteDeleting, setDeleteDeleting] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deletePasswordError, setDeletePasswordError] = useState(null);
   const [frontPdfMenuOpen, setFrontPdfMenuOpen] = useState(false);
   const [frontPdfSaving, setFrontPdfSaving] = useState(false);
   const [backPdfMenuOpen, setBackPdfMenuOpen] = useState(false);
@@ -173,6 +176,10 @@ export function ChildDetail() {
   };
 
   const confirmDelete = () => {
+    if (deletePassword !== 'admin1230') {
+      setDeletePasswordError('Incorrect password.');
+      return;
+    }
     const childId = Number(id);
     if (!Number.isInteger(childId) || childId < 1) {
       toast.error('Invalid applicant id.');
@@ -324,6 +331,8 @@ export function ChildDetail() {
   const showOutOfTownAffidavit = shouldShowOutOfTownAffidavit(child);
   const outOfTownVariant = getOutOfTownVariantForChild(child);
   const outOfTownLinkLabel = OUT_OF_TOWN_VARIANT_LABEL[outOfTownVariant] || 'Out-of-Town Affidavit';
+  const { place_of_birth_address: pobAddr, place_of_birth_city: pobCity, place_of_birth_province: pobProv } = splitPlaceOfBirth(child?.place_of_birth);
+  const hasPob = pobAddr || pobCity || pobProv;
   return (
     <div>
       {frontPdfPreviewOpen && frontPdfPreviewUrl && (
@@ -549,7 +558,15 @@ export function ChildDetail() {
             </div>
             <div>
               <dt className="text-sm text-slate-500">Place of birth</dt>
-              <dd className="mt-0.5 font-medium text-slate-800">{child.place_of_birth || '—'}</dd>
+              <dd className="mt-0.5 font-medium text-slate-800">
+                {hasPob ? (
+                  <span>
+                    {pobAddr ? <span className="block">{pobAddr}</span> : null}
+                    {pobCity ? <span className="block">{pobCity}</span> : null}
+                    {pobProv ? <span className="block">{pobProv}</span> : null}
+                  </span>
+                ) : '—'}
+              </dd>
             </div>
             <div>
               <dt className="text-sm text-slate-500">Contact no.</dt>
@@ -650,7 +667,15 @@ export function ChildDetail() {
             </div>
             <div>
               <dt className="text-sm text-slate-500">Place of birth</dt>
-              <dd className="font-medium text-slate-800">{child.place_of_birth || '—'}</dd>
+              <dd className="font-medium text-slate-800">
+                {hasPob ? (
+                  <span>
+                    {pobAddr ? <span className="block">{pobAddr}</span> : null}
+                    {pobCity ? <span className="block">{pobCity}</span> : null}
+                    {pobProv ? <span className="block">{pobProv}</span> : null}
+                  </span>
+                ) : '—'}
+              </dd>
             </div>
             <div>
               <dt className="text-sm text-slate-500">Contact no.</dt>
@@ -911,7 +936,7 @@ export function ChildDetail() {
       {deleteModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50"
-          onClick={() => !deleteDeleting && setDeleteModalOpen(false)}
+          onClick={() => !deleteDeleting && (setDeleteModalOpen(false), setDeletePassword(''), setDeletePasswordError(null))}
           role="dialog"
           aria-modal="true"
           aria-labelledby="delete-modal-title"
@@ -926,6 +951,25 @@ export function ChildDetail() {
             <p className="mt-2 text-sm text-slate-600">
               {isColbBrap ? 'Delete this COLB BRAP record? This cannot be undone.' : 'Delete this applicant? This cannot be undone.'}
             </p>
+            <div className="mt-4">
+              <label htmlFor="delete-password" className="block text-sm font-medium text-slate-700 mb-1">
+                Enter password to confirm deletion
+              </label>
+              <input
+                id="delete-password"
+                type="password"
+                value={deletePassword}
+                onChange={(e) => {
+                  setDeletePassword(e.target.value);
+                  if (deletePasswordError) setDeletePasswordError(null);
+                }}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-red-400"
+                placeholder="Enter Password"
+              />
+              {deletePasswordError && (
+                <p className="mt-1 text-sm text-red-600">{deletePasswordError}</p>
+              )}
+            </div>
             <div className="flex gap-3 mt-5">
               <button
                 type="button"
@@ -937,7 +981,11 @@ export function ChildDetail() {
               </button>
               <button
                 type="button"
-                onClick={() => setDeleteModalOpen(false)}
+                onClick={() => {
+                  setDeleteModalOpen(false);
+                  setDeletePassword('');
+                  setDeletePasswordError(null);
+                }}
                 disabled={deleteDeleting}
                 className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
               >
