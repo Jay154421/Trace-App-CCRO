@@ -1,6 +1,6 @@
+import { useEffect } from 'react';
 import { OutOfTownInformantFields } from './OutOfTownInformantFields';
 import {
-  COLB_OUT_OF_TOWN_CHECKBOX_LABEL,
   COLB_OUT_OF_TOWN_INFORMANT_INTRO,
   COLB_OUT_OF_TOWN_INFORMANT_LEGEND,
   COLB_OUT_OF_TOWN_INFORMANT_OWNER_LABEL,
@@ -56,44 +56,45 @@ export function ColbBrapDocumentFlagsFields({ form, onFieldChange }) {
 
 /** Out of town — Legal Office affidavit only; separate from document checklist. */
 export function ColbBrapOutOfTownFields({ form, onFieldChange }) {
-  return (
-    <fieldset className="rounded-2xl border border-amber-200/80 bg-amber-50/40 p-5">
+  const city = String(form.place_of_birth_city ?? '').trim().toUpperCase();
+  const isOutOfTown = city !== '' && city !== 'ILIGAN CITY';
+
+  /* Sync form state when the city-driven value changes. */
+  useEffect(() => {
+    if (form.out_of_town !== isOutOfTown) {
+      onFieldChange('out_of_town', isOutOfTown);
+      if (!isOutOfTown) {
+        onFieldChange('out_of_town_informant_is_owner', true);
+      }
+    }
+  }, [isOutOfTown, form.out_of_town, onFieldChange]);
+
+  return isOutOfTown ? (
+    <fieldset className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
       <legend className="px-1 text-sm font-semibold text-slate-700">{COLB_OUT_OF_TOWN_SECTION_TITLE}</legend>
       <p className="mb-4 mt-2 text-sm text-slate-500">{COLB_OUT_OF_TOWN_SECTION_INTRO}</p>
       <div className="space-y-2">
-        <label className={checkboxWrapperClassName}>
-          <input
-            type="checkbox"
-            checked={form.out_of_town}
-            onChange={(e) => {
-              const checked = e.target.checked;
-              onFieldChange('out_of_town', checked);
-              if (!checked) onFieldChange('out_of_town_informant_is_owner', true);
-            }}
-            className={checkboxClassName}
-          />
-          <span className="text-sm text-slate-700">{COLB_OUT_OF_TOWN_CHECKBOX_LABEL}</span>
-        </label>
-        {form.out_of_town ? (
-          <OutOfTownInformantFields
-            informantIsOwner={form.out_of_town_informant_is_owner}
-            onInformantIsOwnerChange={(value) => onFieldChange('out_of_town_informant_is_owner', value)}
-            legend={COLB_OUT_OF_TOWN_INFORMANT_LEGEND}
-            description={COLB_OUT_OF_TOWN_INFORMANT_INTRO}
-            ownerLabel={COLB_OUT_OF_TOWN_INFORMANT_OWNER_LABEL}
-            representativeLabel={COLB_OUT_OF_TOWN_INFORMANT_REP_LABEL}
-          />
-        ) : null}
+        <div className="flex items-start gap-3 rounded-xl border border-slate-300/80 bg-slate-100/60 px-3 py-2.5">
+          <span className="text-sm font-medium text-slate-700">Out-of-Town</span>
+        </div>
+        <OutOfTownInformantFields
+          informantIsOwner={form.out_of_town_informant_is_owner}
+          onInformantIsOwnerChange={(value) => onFieldChange('out_of_town_informant_is_owner', value)}
+          legend={COLB_OUT_OF_TOWN_INFORMANT_LEGEND}
+          description={COLB_OUT_OF_TOWN_INFORMANT_INTRO}
+          ownerLabel={COLB_OUT_OF_TOWN_INFORMANT_OWNER_LABEL}
+          representativeLabel={COLB_OUT_OF_TOWN_INFORMANT_REP_LABEL}
+        />
       </div>
     </fieldset>
-  );
+  ) : null;
 }
 
 export function ColbBrapProfileFields({ form, onFieldChange }) {
   return (
     <div className="space-y-4">
-      <ColbBrapDocumentFlagsFields form={form} onFieldChange={onFieldChange} />
       <ColbBrapOutOfTownFields form={form} onFieldChange={onFieldChange} />
+      <ColbBrapDocumentFlagsFields form={form} onFieldChange={onFieldChange} />
     </div>
   );
 }
