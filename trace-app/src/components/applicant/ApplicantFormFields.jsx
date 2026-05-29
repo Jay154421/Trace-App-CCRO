@@ -1,6 +1,7 @@
 import { applicantInputPlaceholders as placeholders, handleEnterKey } from '../../utils/applicantForm';
 import { OutOfTownInformantFields } from './OutOfTownInformantFields';
 import { ColbBrapProfileFields } from './ColbBrapProfileFields';
+import PhCityAutocomplete from './PhCityAutocomplete';
 
 const inputClassName = 'mt-1 block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200';
 const checkboxClassName = 'mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500';
@@ -115,13 +116,11 @@ export function ApplicantFormFields({
             </label>
             <label className="block">
               <span className="text-sm font-medium text-slate-700">City</span>
-              <input
-                type="text"
-                value={form.place_of_birth_city}
-                onChange={(e) => onFieldChange('place_of_birth_city', e.target.value.toUpperCase())}
-                className={inputClassName}
+              <PhCityAutocomplete
+                cityValue={form.place_of_birth_city}
+                onCityChange={(v) => onFieldChange('place_of_birth_city', v)}
+                onProvinceChange={(v) => onFieldChange('place_of_birth_province', v)}
                 placeholder={placeholders.placeOfBirthCity}
-                onKeyDown={handleEnterKey}
               />
             </label>
             <label className="block">
