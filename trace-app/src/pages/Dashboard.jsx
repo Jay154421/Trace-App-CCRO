@@ -271,7 +271,7 @@ export function Dashboard() {
   }, [registrationCounts]);
 
   const stats = [
-    { id: 'total', label: 'Total Applicants', value: list.length, hint: 'All recorded applicants' },
+    { id: 'total', label: 'Total Late Registrations', value: list.length, hint: 'All recorded late registrations' },
     { id: 'completed', label: 'Completed Registrations', value: completedCount, hint: 'Staff-verified applicants' },
     { id: 'pending', label: 'Pending Registrations', value: pendingCount, hint: 'Everyone not yet verified' },
   ];
@@ -449,7 +449,7 @@ export function Dashboard() {
             <div>
               <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Applications over time</h2>
               <p className="mt-1 text-xs text-slate-500">
-                New applicants and COLB BRAP records
+                New late registrations and BRAP records
                 {applicationsRange === 'custom' && customRangeFrom && customRangeTo
                   ? ` from ${customRangeFrom} to ${customRangeTo}.`
                   : '.'}
@@ -539,8 +539,8 @@ export function Dashboard() {
                     }}
                   />
                   <Legend wrapperStyle={{ fontSize: '12px' }} />
-                  <Bar dataKey="applicants" name="Applicants" fill="#10b981" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="colbBrap" name="COLB BRAP" fill="#0284c7" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="applicants" name="Late Registration" fill="#10b981" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="colbBrap" name="Late Registration (BRAP)" fill="#0284c7" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}

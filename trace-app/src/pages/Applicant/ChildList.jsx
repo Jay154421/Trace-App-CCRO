@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+ import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { applicantDetailPath, getApplicantBasePath } from '../../utils/applicantRoutes';
 import { useQuery } from '../../hooks/useQuery';
@@ -155,14 +155,14 @@ export function ChildList() {
     <div>
       {/* ── Header ── */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <h1 className="text-2xl font-semibold text-slate-800">{isColbBrapList ? 'COLB BRAP' : 'Applicants'}</h1>
+        <h1 className="text-2xl font-semibold text-slate-800">{isColbBrapList ? 'Late Registration (BRAP)' : 'Late Registration'}</h1>
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setModalOpen(true)}
             className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
           >
-            {isColbBrapList ? 'Add COLB BRAP' : 'Add applicant'}
+            {isColbBrapList ? 'Add Late Registration (BRAP)' : 'Add late registration'}
           </button>
         </div>
       </div>
@@ -182,7 +182,7 @@ export function ChildList() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full rounded-lg border border-slate-300 bg-white py-2 pl-10 pr-3 text-sm text-slate-800 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-shadow hover:shadow-sm"
-              aria-label={isColbBrapList ? 'Search COLB BRAP records' : 'Search applicants'}
+              aria-label={isColbBrapList ? 'Search late registration (BRAP) records' : 'Search late registrations'}
               autoComplete="off"
             />
           </div>
@@ -230,22 +230,22 @@ export function ChildList() {
       {loading ? (
         <ChildListSkeleton
           count={itemsPerPage}
-          loadingLabel={isColbBrapList ? 'Loading COLB BRAP records.' : 'Loading applicants.'}
+          loadingLabel={isColbBrapList ? 'Loading late registration (BRAP) records.' : 'Loading late registrations.'}
         />
       ) : listForSection.length === 0 ? (
         <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-slate-600">
-          <p>{isColbBrapList ? 'No COLB BRAP records yet.' : 'No applicants yet.'}</p>
+          <p>{isColbBrapList ? 'No late registration (BRAP) records yet.' : 'No late registrations yet.'}</p>
           <button
             type="button"
             onClick={() => setModalOpen(true)}
             className="mt-2 inline-block text-emerald-600 hover:text-emerald-700 font-medium"
           >
-            {isColbBrapList ? 'Add your first COLB BRAP record' : 'Add your first applicant'}
+            {isColbBrapList ? 'Add your first late registration (BRAP) record' : 'Add your first late registration'}
           </button>
         </div>
       ) : filteredList.length === 0 ? (
         <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-slate-600">
-          <p>{isColbBrapList ? 'No COLB BRAP records match your filters.' : 'No applicants match your filters.'}</p>
+          <p>{isColbBrapList ? 'No late registration (BRAP) records match your filters.' : 'No late registrations match your filters.'}</p>
           <button
             type="button"
             onClick={() => { setSearchQuery(''); setStatusFilter('all'); }}

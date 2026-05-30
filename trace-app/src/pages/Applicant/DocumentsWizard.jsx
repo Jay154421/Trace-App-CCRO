@@ -1186,7 +1186,7 @@ export function DocumentsWizard() {
             onClick={handleBackClick}
             className="text-sm text-slate-500 hover:text-slate-700"
           >
-            {isColbBrapChild ? '← Back to COLB BRAP' : '← Back to applicant'}
+            {isColbBrapChild ? '← Back to Late Registration (BRAP)' : '← Back to late registration'}
           </button>
           <Link to={`${basePath}/${id}/certificate-of-live-birth`} className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">Certificate of Live Birth</Link>
         </div>
@@ -1374,7 +1374,7 @@ export function DocumentsWizard() {
           onClick={handleBackClick}
           className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
-          Back to applicant
+          Back to late registration
         </button>
         {saving ? (
           <span className="text-sm text-slate-500" role="status" aria-live="polite">

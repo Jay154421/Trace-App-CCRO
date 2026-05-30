@@ -39,11 +39,11 @@ export function ChildForm() {
         toast.success(
           isEdit
             ? isColbBrapSection
-              ? 'COLB BRAP record updated.'
-              : 'Applicant updated.'
+              ? 'Late Registration (BRAP) record updated.'
+              : 'Late registration updated.'
             : isColbBrapSection
-              ? 'COLB BRAP record added.'
-              : 'Applicant added.'
+              ? 'Late Registration (BRAP) record added.'
+              : 'Late registration added.'
         );
         if (isEdit) {
           navigate(`${basePath}/${id}`, { replace: true });
@@ -70,11 +70,11 @@ export function ChildForm() {
       <h1 className="text-2xl font-semibold text-slate-800 mb-6">
         {isEdit
           ? isColbBrapSection
-            ? 'Edit COLB BRAP'
-            : 'Edit applicant'
+            ? 'Edit Late Registration (BRAP)'
+            : 'Edit late registration'
           : isColbBrapSection
-            ? 'Add COLB BRAP'
-            : 'Add applicant'}
+            ? 'Add Late Registration (BRAP)'
+            : 'Add late registration'}
       </h1>
 
       <form onSubmit={submit} className="max-w-3xl space-y-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -103,11 +103,11 @@ export function ChildForm() {
               ? 'Saving…'
               : isEdit
                 ? isColbBrapSection
-                  ? 'Update COLB BRAP'
-                  : 'Update applicant'
+                  ? 'Update Late Registration (BRAP)'
+                  : 'Update late registration'
                 : isColbBrapSection
-                  ? 'Add COLB BRAP'
-                  : 'Add applicant'}
+                  ? 'Add Late Registration (BRAP)'
+                  : 'Add late registration'}
           </button>
         </div>
       </form>

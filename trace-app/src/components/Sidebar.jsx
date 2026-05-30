@@ -3,8 +3,8 @@ import { useAuth } from '../auth/AuthContext';
 
 const nav = [
   { to: '/', label: 'Dashboard', icon: 'dashboard' },
-  { to: '/children', label: 'Applicants', icon: 'clipboardDocumentList' },
-  { to: '/colb-brap', label: 'COLB BRAP', icon: 'documentText' },
+  { to: '/children', label: 'Late Registration', icon: 'clipboardDocumentList' },
+  { to: '/colb-brap', label: 'Late Registration (BRAP)', icon: 'documentText' },
 ];
 
 const icons = {
