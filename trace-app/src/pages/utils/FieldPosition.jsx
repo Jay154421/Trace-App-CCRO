@@ -123,7 +123,7 @@ const FIELD_POSITIONS = {
   marriage_place_province: { x: 1667, y: 2148, width: 397 },
   marriage_place_country: { x: 2112, y: 2148, width: 342 },
   // Attendant type radio button positions
-  attendant_radio_physician: { x: 282, y: 2148 },
+  attendant_radio_physician: { x: 282, y: 2277 },
   attendant_radio_nurse: { x: 600, y: 2277 },
   attendant_radio_midwife: { x: 875, y: 2277 },
   attendant_radio_hilot: { x: 1179, y: 2277 },
@@ -804,7 +804,7 @@ function buildCombinedPdfBase64(merged) {
 
   // Draw attendant type radio button marks
   const radioPositions = {
-    physician: { x: 282, y: 2227 },
+    physician: { x: 282, y: 2277 },
     nurse: { x: 600, y: 2277 },
     midwife: { x: 875, y: 2277 },
     hilot: { x: 1179, y: 2277 },
@@ -1300,7 +1300,7 @@ export function FieldPosition() {
           <PositionedValue fieldKey="marriage_place_country" value={getVal('marriagePlaceCountry')} />
 
           {/* Attendant Type Radio Buttons - matching CertificateOfLiveBirth style */}
-          <RadioMark x={282} y={2227} show={attendantType === 'physician'} />
+          <RadioMark x={282} y={2277} show={attendantType === 'physician'} />
           <RadioMark x={600} y={2277} show={attendantType === 'nurse'} />
           <RadioMark x={875} y={2277} show={attendantType === 'midwife'} />
           <RadioMark x={1179} y={2277} show={attendantType === 'hilot'} />

@@ -117,7 +117,7 @@ export const FIELD_POSITIONS = {
   marriage_place_province: { x: 1667, y: 2148 , width: 397},
   marriage_place_country: { x: 2112, y: 2148, width: 342 },
   // Attendant type radio button positions
-  attendant_radio_physician: { x: 282, y: 2227 },
+  attendant_radio_physician: { x: 282, y: 2277 },
   attendant_radio_nurse: { x: 600, y: 2277 },
   attendant_radio_midwife: { x: 875, y: 2277 },
   attendant_radio_hilot: { x: 1179, y: 2277 },
@@ -655,7 +655,7 @@ export function buildFieldPositionPdfBase64(merged) {
 
   // Draw attendant type radio button marks
   const radioPositions = {
-    physician: { x: 282, y: 2227 },
+    physician: { x: 282, y: 2277 },
     nurse: { x: 600, y: 2277 },
     midwife: { x: 875, y: 2277 },
     hilot: { x: 1179, y: 2277 },
@@ -791,7 +791,7 @@ export function buildCombinedPdfBase64(merged) {
 
   // Draw attendant type radio button marks
   const radioPositions = {
-    physician: { x: 282, y: 2227 },
+    physician: { x: 282, y: 2277 },
     nurse: { x: 600, y: 2277 },
     midwife: { x: 875, y: 2277 },
     hilot: { x: 1179, y: 2277 },
