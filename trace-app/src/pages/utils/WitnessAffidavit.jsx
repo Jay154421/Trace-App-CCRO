@@ -270,7 +270,12 @@ export function WitnessAffidavit({ embedded = false, onClose }) {
       fatherName: [fatherFromCert].filter(Boolean),
       motherName: [motherFromCert].filter(Boolean),
       lateRegistrationName: [childName].filter(Boolean),
-      civilRegistrarOffice: ['ILIGAN CITY'].filter(Boolean),
+      civilRegistrarOffice: (() => {
+        const city = trimStr(cert?.placeOfBirthCity).toUpperCase();
+        if (city) return [city];
+        const pob = String(child?.place_of_birth || '').trim().toUpperCase();
+        return pob ? [pob] : [];
+      })(),
       residence: ['ILIGAN CITY, LANAO DEL NORTE'].filter(Boolean),
     };
   }, [certificate, child]);
