@@ -10,7 +10,7 @@ export default function Ausf0717({ data }) {
   const affiantName = data.applicantName || fullName(data.fatherFirst, data.fatherMiddle, data.fatherLast)
   const surnameSought = data.fatherLast
   const relationship = String(data.relationshipToChild || '').trim().toUpperCase()
-  const shouldAppendSurname = relationship === 'MYSELF' || relationship === 'SON'
+const shouldAppendSurname = relationship === 'MYSELF' || relationship === 'MOTHER' || relationship === 'SON'
   const affiantWithSurname = (shouldAppendSurname && affiantName && surnameSought)
     ? (affiantName.trim().toUpperCase().endsWith((surnameSought || '').trim().toUpperCase())
       ? affiantName
@@ -30,7 +30,7 @@ export default function Ausf0717({ data }) {
   const selectedRelationship = String(data.relationshipToChild || '').trim().toUpperCase()
   const attestationRelationship = selectedRelationship === 'MYSELF'
     ? 'SELF'
-    : (selectedRelationship || '—')
+    : (selectedRelationship === 'SON' ? 'MOTHER' : (selectedRelationship || '—'))
 
   return (
     <div className="ausf-doc print-doc ausf-07-17-doc flex flex-col bg-white text-black">
@@ -49,7 +49,7 @@ export default function Ausf0717({ data }) {
       <div className="ausf-07-17-doc-body ausf-doc-body print-doc-body flex flex-col">
         <h2 className="ausf-section-title">AFFIDAVIT TO USE THE SURNAME OF THE FATHER (AUSF)</h2>
         <p className="mb-2 leading-normal">
-          I, <span className={`${FILL} affiant-name-blank uppercase mx-0.5 align-baseline`}><span className="affiant-name-inner">{affiantWithSurname}</span></span>, of legal age, single/married, Filipino, and a resident of Iligan City, Philippines, after having been duly sworn to in accordance with law, do hereby declare THAT:
+          I, <span className={`${FILL} affiant-name-blank uppercase mx-0.5 align-baseline`}><span className="affiant-name-inner">{attestationName}</span></span>, of legal age, single/married, Filipino, and a resident of Iligan City, Philippines, after having been duly sworn to in accordance with law, do hereby declare THAT:
         </p>
 
         <ol className="list-decimal space-y-2 mb-2 text-left leading-normal">
