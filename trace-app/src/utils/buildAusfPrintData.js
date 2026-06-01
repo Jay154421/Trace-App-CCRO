@@ -43,7 +43,7 @@ function marriageOffice(cert) {
 function mapRelationshipToChild(cert, child) {
   const rel = trim(cert.informantRelationship || cert.informant_relationship).toUpperCase();
   if (rel === 'MYSELF') return 'MYSELF';
-  if (rel === 'GUARDIAN') return 'WARD';
+  if (rel === 'GUARDIAN') return 'GUARDIAN';
 
   const gender = trim(child?.gender || cert.sex || cert.gender).toUpperCase();
   const childLabel = gender === 'FEMALE' ? 'DAUGHTER' : 'SON';

@@ -90,7 +90,7 @@ const shouldAppendSurname = relationship === 'MYSELF' || relationship === 'MOTHE
             That I am the <span className={`${FILL_BOLD} px-0.5 align-baseline uppercase`}>{attestationRelationship}</span> of the affiant in the above affidavit;
           </li>
           <li>
-            That my above-named child/ward is fully aware of the consequences of the Affidavit to use the surname of his/her father.
+            That my above-named child/guardian is fully aware of the consequences of the Affidavit to use the surname of his/her father.
           </li>
         </ol>
         <p className="mb-0 leading-normal">

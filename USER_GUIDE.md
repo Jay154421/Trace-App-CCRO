@@ -9,7 +9,7 @@
 1. [Getting started](#1-getting-started)
 2. [Main navigation](#2-main-navigation-left-sidebar)
 3. [Dashboard](#3-dashboard)
-4. [Applicants list](#4-applicants-list)
+4. [Late Registration list](#4-late-registration-list)
 5. [Applicant profile](#5-applicant-profile)
 6. [Application status workflow](#6-application-status-workflow)
 7. [Document checklist](#7-document-checklist-core-workflow)
@@ -17,7 +17,7 @@
 9. [Affidavits and certification](#9-affidavits-and-certification)
 10. [Front PDF and Back PDF](#10-front-pdf-and-back-pdf)
 11. [Edit and delete](#11-edit-and-delete)
-12. [COLB BRAP](#12-colb-brap-separate-menu)
+12. [Late Registration (BRAP)](#12-late-registration-brap-separate-menu)
 13. [Backup and restore](#13-backup-and-restore)
 14. [Recommended daily workflow](#14-recommended-daily-workflow)
 15. [Tips and troubleshooting](#15-tips-and-troubleshooting)
@@ -41,14 +41,14 @@ Use **Logout** at the bottom of the left sidebar. You return to the login page.
 
 ## 2. Main navigation (left sidebar)
 
+The sidebar header shows **B-TRACE** with the full name *Birth Tracking for Registration and Certificate Entries*, and the tag **Document Requirements**.
+
 | Menu item | Purpose |
 |-----------|---------|
-| **Dashboard** | Overview, charts, recent applicants, database backup |
-| **Applicants** | Standard delayed registration records |
-| **COLB BRAP** | Separate workflow for COLB BRAP records (simpler checklist) |
+| **Dashboard** | Overview, statistics, applications-over-time chart, database backup |
+| **Late Registration** | Standard delayed registration records |
+| **Late Registration (BRAP)** | Separate workflow for BRAP records (simpler checklist) |
 | **Logout** | End session |
-
-The header shows **B-TRACE** and the tag **Document Requirements**, reflecting that document completeness is the core of the system.
 
 ---
 
@@ -56,17 +56,25 @@ The header shows **B-TRACE** and the tag **Document Requirements**, reflecting t
 
 After login you see:
 
-- **Totals** — How many applicants exist and how many are **Verified** vs still pending.
-- **Charts**
-  - **Applications over time** (filter: last 7/14 days, 12 months, year, or custom range)
-- **Add applicant** — Opens the same add form as on the Applicants list.
-- **Export Backup** / **Import Backup** — Download or restore a `.zip` containing the database and all attachments (for moving data between machines or disaster recovery).
+- **Summary cards**
+  - **Total Late Registrations** — All recorded late registrations (standard and BRAP combined).
+  - **Completed Registrations** — Cases marked **Verified** by staff.
+  - **Pending Registrations** — Everyone not yet verified.
+- **Applications over time** — Bar chart of new records in the selected period. Two series appear when both types exist in that period:
+  - **Late Registration** (standard track)
+  - **Late Registration (BRAP)** (BRAP track)
+
+  Use the range buttons: **Last 7 days**, **Last 14 days**, **12 months**, **Year**, or **Custom** (set **From** and **To** dates).
+
+- **Export backup** / **Import backup** — In the page header. Download or restore a `.zip` containing the database and all attachments (for moving data between machines or disaster recovery). **Import backup** asks you to confirm before merging data.
+
+To add a new person, open **Late Registration** or **Late Registration (BRAP)** from the sidebar and use **Add late registration** or **Add Late Registration (BRAP)** on that list—not from the Dashboard.
 
 ---
 
-## 4. Applicants list
+## 4. Late Registration list
 
-Open **Applicants** from the sidebar.
+Open **Late Registration** from the sidebar (standard delayed registration track).
 
 ### Find and filter
 
@@ -82,13 +90,13 @@ Each row shows:
 
 Click a row to open that person's **profile**.
 
-### Add a new applicant
+### Add a new late registration
 
-1. Click **Add applicant**.
+1. Click **Add late registration**.
 2. Fill **Basic details** (required: first name, last name, date of birth).
 3. Under **Conditional document requirements**, check everything that applies (see [Section 16](#16-age-groups-and-conditional-flags-reference)). These add extra checklist items automatically.
    - If you check **Out of Town**, choose **Informant role**: **Document owner** (applicant affidavit) or **Representative** (representative affidavit). This selects which out-of-town print template appears on the profile.
-4. Click **Add applicant**. You are taken to the new profile.
+4. Click **Add late registration**. You are taken to the new profile.
 
 ### Place of birth (when adding or editing)
 
@@ -120,7 +128,7 @@ The profile header shows the name in **LAST, FIRST** form (e.g. **RODRIGUEZ, NOR
 | **Print certification** | Delayed registration certification letter/PDF |
 | **Front PDF** | Generate/preview front of combined COLB + checklist PDF |
 | **Back PDF** | Generate/preview back (affidavits, etc.) |
-| **Edit** | Update applicant details and conditional flags |
+| **Edit** | Update profile details and conditional flags |
 | **Delete** | Remove the record (confirmation required) |
 
 **Front PDF** and **Back PDF** — After the document checklist is **100% complete** (every required item has at least one attachment), click these buttons to open options to **print/preview** or **save** the front and back pages of the generated Certificate of Live Birth PDF.
@@ -132,7 +140,7 @@ The profile header shows the name in **LAST, FIRST** form (e.g. **RODRIGUEZ, NOR
 
 > **Note:** **Front PDF** and **Back PDF** stay **disabled (grayed out)** until the checklist is fully complete. They do **not** require staff to mark the case **Under Process** or **Verified**—only completed document attachments. The tooltip says: *Complete the document checklist first*.
 
-To change the applicant’s name, date of birth, contact, or conditional flags, use **Edit** on this profile—not the certification letter screen.
+To change the person's name, date of birth, contact, or conditional flags, use **Edit** on this profile—not the certification letter screen.
 
 ### Status banner
 
@@ -154,7 +162,7 @@ Displays:
 
 - Full name, date of birth (DD-MM-YYYY), age, gender
 - **Place of birth**, contact number (see [Place of birth format](#place-of-birth-when-adding-or-editing) above)
-- **Age group (requirements)** — e.g. `18 to 59` (drives which documents are required); not shown for COLB BRAP records
+- **Age group (requirements)** — e.g. `18 to 59` (drives which documents are required); not shown for Late Registration (BRAP) records
 - **Conditional requirements** — If any were set at add/edit (deceased registrant, foreign parent, out-of-town, etc.)
 - **Created** / **Updated** dates
 - **Documents checklist** — Progress bar or link **Open document checklist to get started**
@@ -214,10 +222,10 @@ Requirements are grouped into steps (when applicable):
 - Leaving the page with unsaved changes triggers a **navigation warning**.
 - Progress bar at top shows **% complete**.
 
-### Out of town on checklist (Applicants only)
+### Out of town on checklist (Late Registration only)
 
-- For **Applicants** (not COLB BRAP), checking **Out of town** adds **Affidavit w/ Corroboration for Out-of-Town Applicant (Legal Office)** to the checklist — attach the signed document like any other requirement.
-- For **COLB BRAP**, the same affidavit is **not** on the checklist; use the profile's **Out-of-Town Affidavit** button to fill and print the form instead (see [Section 12](#12-colb-brap-separate-menu)).
+- For **Late Registration** (not BRAP), checking **Out of town** adds **Affidavit w/ Corroboration for Out-of-Town Applicant (Legal Office)** to the checklist — attach the signed document like any other requirement.
+- For **Late Registration (BRAP)**, the same affidavit is **not** on the checklist; use the profile's **Out-of-Town Affidavit** button to fill and print the form instead (see [Section 12](#12-late-registration-brap-separate-menu)).
 
 ---
 
@@ -262,7 +270,7 @@ This affidavit is also a **checklist item** (general documents). Attach the sign
 
 ### Out-of-Town Affidavit
 
-Shown on the profile only when **Out of town** was set at add/edit (Applicants and COLB BRAP).
+Shown on the profile only when **Out of town** was set at add/edit (Late Registration and BRAP).
 
 | Informant role (at add/edit) | Profile button label |
 |------------------------------|----------------------|
@@ -273,15 +281,15 @@ Shown on the profile only when **Out of town** was set at add/edit (Applicants a
 2. Click **Edit form**, complete the affidavit fields (data can pull from **Certificate of Live Birth** where applicable), then **View document**.
 3. Choose **Long** or **A4**, then **Preview** or **Save as PDF**.
 
-**Applicants:** Also attach the signed affidavit on the document checklist under the out-of-town requirement.
+**Late Registration:** Also attach the signed affidavit on the document checklist under the out-of-town requirement.
 
-**COLB BRAP:** There is **no** out-of-town line on the checklist — the print form is the only in-app step for this affidavit.
+**Late Registration (BRAP):** There is **no** out-of-town line on the checklist — the print form is the only in-app step for this affidavit.
 
 Change informant role anytime via **Edit** on the profile (under **Out of town**).
 
 ### Print certification
 
-Generates the **Delayed Registration of Birth** certification letter. Open it from **Print certification** on the applicant or COLB BRAP profile.
+Generates the **Delayed Registration of Birth** certification letter. Open it from **Print certification** on the profile (standard or BRAP).
 
 **On the letter preview:**
 
@@ -291,13 +299,13 @@ Generates the **Delayed Registration of Birth** certification letter. Open it fr
 - Changes **save automatically** (about one second after you stop editing) to the Certificate of Live Birth record.
 - **Preview** or **Save as PDF** — Long or A4 paper size (save requires the desktop/Electron app).
 
-> **Note:** To edit the **applicant’s profile** (legal name, birth date, etc.), use **Edit** on the profile page—not these click-to-edit fields on the certification letter.
+> **Note:** To edit the **profile** (legal name, birth date, etc.), use **Edit** on the profile page—not these click-to-edit fields on the certification letter.
 
 ---
 
 ## 10. Front PDF and Back PDF
 
-Available on the applicant or COLB BRAP profile **only when the document checklist is 100% complete**.
+Available on the profile **only when the document checklist is 100% complete** (standard Late Registration or BRAP).
 
 ### Front PDF
 
@@ -317,24 +325,25 @@ Both require a **complete checklist** (every line has an attachment) and a fille
 
 ### Edit
 
+- On standard Late Registration profiles, the dialog title is **Edit late registration**; on BRAP, **Edit Late Registration (BRAP)**.
 - Updates name, DOB, contact, place of birth, and **conditional requirement** checkboxes.
 - Changing conditions **updates the checklist** (new items may appear; removed conditions may drop items—confirm current attachments after edits).
 
 ### Delete
 
-- Opens a confirmation dialog.
-- **Permanent** — removes applicant, checklist, attachments, and related saved form data from the local database.
+- Opens a confirmation dialog (**Delete late registration** or **Delete Late Registration (BRAP) record**).
+- **Permanent** — removes the record, checklist, attachments, and related saved form data from the local database.
 
 ---
 
-## 12. COLB BRAP (separate menu)
+## 12. Late Registration (BRAP) (separate menu)
 
-**COLB BRAP** is a separate registration track. Use the **COLB BRAP** item in the sidebar—not **Applicants**—for these records.
+**Late Registration (BRAP)** is a separate registration track. Use the **Late Registration (BRAP)** item in the sidebar—not **Late Registration**—for these records.
 
-### How it differs from Applicants
+### How it differs from Late Registration (standard)
 
-| Topic | Applicants | COLB BRAP |
-|-------|------------|-----------|
+| Topic | Late Registration | Late Registration (BRAP) |
+|-------|-------------------|--------------------------|
 | Checklist | General + **age-specific** + conditionals | **5 general** items + conditional items (including **AUSF** when parents are not married) |
 | Age group | Used for extra documents | **Not used** |
 | Add/Edit flags | Out of town (+ informant role), deceased registrant, foreign parent | Document flags: parents married, child registrant, Muslim; separate **Out of town** block for print form only |
@@ -342,15 +351,15 @@ Both require a **complete checklist** (every line has an attachment) and a fille
 | Front / Back PDF | Enabled when checklist 100% complete | **Same rule** — not tied to staff Verified |
 | Place of birth | Three-part comma format (see Section 4) | **Same format** |
 
-### Add a COLB BRAP record
+### Add a BRAP record
 
-1. Open **COLB BRAP** → **Add COLB BRAP**.
+1. Open **Late Registration (BRAP)** → **Add Late Registration (BRAP)**.
 2. Fill basic details (name, date of birth, place of birth, contact, etc.).
-3. Under **Conditional document requirements**, check all that apply (marriage, child registrant, Muslim — see [COLB BRAP flags](#colb-brap-only) in Section 16). These add checklist items.
+3. Under **Conditional document requirements**, check all that apply (marriage, child registrant, Muslim — see [BRAP flags](#late-registration-brap-only) in Section 16). These add checklist items.
 4. If needed, under **Out of town** (separate section: *For the affidavit print form*), check **Out of town** and choose **Document owner** or **Representative**. This does **not** add a checklist row.
-5. Save—you are taken to the COLB BRAP profile.
+5. Save—you are taken to the BRAP profile.
 
-### COLB BRAP document checklist
+### BRAP document checklist
 
 **Always required (general):**
 
@@ -366,25 +375,25 @@ Both require a **complete checklist** (every line has an attachment) and a fille
 - **Registrant is a child** → Valid I.D. of parent/s or guardian.
 - **Muslim registrant** → Muslim attachment.
 
-The checklist has **no age-specific step**—only general and conditional groups. Progress, attachments, and auto-save work the same as for Applicants.
+The checklist has **no age-specific step**—only general and conditional groups. Progress, attachments, and auto-save work the same as for standard Late Registration.
 
-### COLB BRAP profile
+### BRAP profile
 
-Same action buttons as a standard applicant profile: **Certificate of Live Birth**, **Document checklist**, affidavits, **Print certification**, **Front PDF**, **Back PDF**, **Edit**, **Delete**.
+Same action buttons as a standard profile: **Certificate of Live Birth**, **Document checklist**, affidavits, **Print certification**, **Front PDF**, **Back PDF**, **Edit**, **Delete**.
 
 - **Front PDF** / **Back PDF** — Same as Section 10: enabled only when every checklist item has an attachment; use **Print** or **Save as PDF** from the dialog. Not blocked by staff **Verified** status.
 - **Place of birth** — Use `Hospital or address, City, Province` with two commas when entering on add/edit.
 
-Use **Applicants** for standard delayed registration only; use **COLB BRAP** for BRAP program records.
+Use **Late Registration** for standard delayed registration only; use **Late Registration (BRAP)** for BRAP program records.
 
 ---
 
 ## 13. Backup and restore
 
-On the **Dashboard**:
+On the **Dashboard** (header buttons):
 
-1. **Export Backup** — Downloads a `.zip` with `trace.db` and all attachment files.
-2. **Import Backup** — Upload a previously exported `.zip`; merges records and attachments without wiping unrelated data when possible.
+1. **Export backup** — Downloads a `.zip` with `trace.db` and all attachment files.
+2. **Import backup** — Choose a previously exported `.zip`, confirm in the dialog, then merge records and attachments without wiping unrelated data when possible.
 
 Use this for:
 
@@ -396,22 +405,22 @@ Use this for:
 
 ## 14. Recommended daily workflow
 
-### Standard Applicants (delayed registration)
+### Standard Late Registration (delayed registration)
 
-1. **Add applicant** — Use three-part **place of birth** (`address, city, province`) when possible.
+1. **Late Registration** → **Add late registration** — Use three-part **place of birth** (`address, city, province`) when possible.
 2. **Open document checklist** → Complete every general, age-specific, and conditional item with uploads or scans.
 3. Wait for auto-save; confirm progress shows **100%**.
 4. On profile, click **Mark Under Process** when intake review starts.
 5. Complete **Certificate of Live Birth** and affidavits as needed.
-6. Use **AUSF** (correct age variant) if parents are not married; use **Out-of-Town Affidavit** if out of town (attach checklist copy for Applicants).
+6. Use **AUSF** (correct age variant) if parents are not married; use **Out-of-Town Affidavit** if out of town (attach checklist copy for standard Late Registration).
 7. Use **Two Witnesses Affidavit** when that item is on the checklist.
 8. **Front PDF** / **Back PDF** → **Print** or **Save as PDF** (buttons enabled after checklist is complete).
 9. **Print certification** → click to edit **request person** and **purpose** on the letter if needed; preview or save PDF.
 10. **Mark Verified** when the case is fully processed.
 
-### COLB BRAP
+### Late Registration (BRAP)
 
-1. **COLB BRAP** → **Add COLB BRAP** → set document flags and **Out of town** (if needed) → complete the shorter checklist (no age-specific step; no out-of-town checklist line).
+1. **Late Registration (BRAP)** → **Add Late Registration (BRAP)** → set document flags and **Out of town** (if needed) → complete the shorter checklist (no age-specific step; no out-of-town checklist line).
 2. **Certificate of Live Birth**, **Two Witnesses Affidavit**, **Out-of-Town Affidavit** (if flagged), and other affidavits as needed.
 3. When checklist is **100%**, use **Front PDF** / **Back PDF** and **Print certification** (same rules as above).
 4. **Mark Under Process** / **Mark Verified** when appropriate.
@@ -428,12 +437,12 @@ Use this for:
 | AUSF button missing | Parents marked married — use marriage contract on checklist instead |
 | AUSF won't print | Save **Certificate of Live Birth** first |
 | Can't mark Verified on checklist page | Wait for auto-save to finish (~1.5 s after last edit) |
-| Wrong documents listed | **Edit** applicant — verify date of birth and conditional checkboxes |
-| BRAP case in wrong list | Open **COLB BRAP**, not **Applicants** |
+| Wrong documents listed | **Edit** profile — verify date of birth and conditional checkboxes |
+| BRAP case in wrong list | Open **Late Registration (BRAP)**, not **Late Registration** |
 | Certification name/purpose won't change | Click the **bold text** on the letter (request person / purpose), not **Edit** on profile |
 | Out-of-town button missing | **Edit** profile and check **Out of town**; pick document owner vs representative |
 | Wrong out-of-town template | **Edit** profile → change **Informant role** under **Out of town** |
-| COLB BRAP has no out-of-town checklist line | Expected — use **Out-of-Town Affidavit** on the profile, not the checklist |
+| BRAP has no out-of-town checklist line | Expected — use **Out-of-Town Affidavit** on the profile, not the checklist |
 | Save certification PDF fails | Use the **desktop (Electron)** app |
 | Data on another PC | Export backup on source; import on destination |
 
@@ -450,7 +459,7 @@ Use this for:
 | 18 to 59 | Adult |
 | 60 plus | Senior |
 
-### Conditional flags when adding/editing applicants
+### Conditional flags when adding/editing (Late Registration)
 
 | Flag | Effect |
 |------|--------|
@@ -460,7 +469,7 @@ Use this for:
 | Registrant deceased | Death certificate (registrant) on checklist |
 | One parent foreigner | Passport or BI certificate on checklist |
 
-### COLB BRAP only
+### Late Registration (BRAP) only
 
 **Conditional document requirements** (checklist):
 
@@ -475,9 +484,9 @@ Use this for:
 | Setting | Effect |
 |---------|--------|
 | Out of town checked | Profile shows **Out-of-Town Affidavit**; **not** added to checklist |
-| Document owner / Representative | Same template choice as standard Applicants |
+| Document owner / Representative | Same template choice as standard Late Registration |
 
-When parents are **not** married on a COLB BRAP record, **AUSF** is required instead of marriage contract.
+When parents are **not** married on a BRAP record, **AUSF** is required instead of marriage contract.
 
 ---
 

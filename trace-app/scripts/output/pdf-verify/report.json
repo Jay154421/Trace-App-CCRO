@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-05-26T08:37:09.510Z",
+  "generatedAt": "2026-05-31T12:27:41.729Z",
   "results": [
     {
-      "name": "AUSF (ausf-07-17) Long",
+      "name": "AUSF (ausf-only) Long",
       "pageW": 612,
       "pageH": 936,
       "image": {
@@ -15,19 +15,19 @@
       "ok": true,
       "dom": {
         "pad": {
-          "top": "14.4px",
+          "top": "28.8px",
           "right": "96px",
           "bottom": "28.8px",
           "left": "96px"
         },
-        "docClass": "ausf-doc print-doc ausf-07-17-doc flex flex-col bg-white text-black",
+        "docClass": "ausf-doc print-doc ausf-only-doc flex flex-col bg-white text-black",
         "docWidthIn": 8.5,
         "docHeightIn": 13,
         "articleWidthIn": 8.5,
         "articleHeightIn": 13
       },
-      "bytes": 535492,
-      "path": "C:\\Project\\Trace-App-CCRO\\trace-app\\scripts\\output\\pdf-verify\\ausf-ausf-07-17-long.pdf"
+      "bytes": 476953,
+      "path": "C:\\Project\\Trace-App-CCRO\\trace-app\\scripts\\output\\pdf-verify\\ausf-ausf-only-long.pdf"
     },
     {
       "name": "Witness Affidavit Long",
