@@ -7,15 +7,8 @@ export const AUSF_ONLY_PRINT_TYPE = 'ausf-only'
 export const AUSF_ONLY_EXCLUDED_PAPER_SIZE_IDS = new Set(['a4', 'short'])
 
 export default function AusfOnly({ data }) {
-  const affiantName = data.applicantName || fullName(data.childFirst, data.childMiddle, data.fatherLast) || fullName(data.fatherFirst, data.fatherMiddle, data.fatherLast)
+  const affiantName = fullName(data.childFirst, data.childMiddle, data.childLast) || fullName(data.fatherFirst, data.fatherMiddle, data.fatherLast)
   const surnameSought = data.fatherLast
-  const relationship = String(data.relationshipToChild || '').trim().toUpperCase()
-  const shouldAppendSurname = relationship === 'MYSELF' || relationship === 'SON'
-  const affiantWithSurname = (shouldAppendSurname && affiantName && surnameSought)
-    ? (affiantName.trim().toUpperCase().endsWith((surnameSought || '').trim().toUpperCase())
-      ? affiantName
-      : `${affiantName.trim()} ${surnameSought.trim()}`.trim())
-    : affiantName
   const dobFormatted = formatDateLong(data.dateOfBirth)
   const colbReg = String(data.colbRegistryNo ?? '').trim() || ' '
   const colbDate = formatDateLong(data.colbDateOfRegistration) || ' '
@@ -44,7 +37,7 @@ export default function AusfOnly({ data }) {
       <div className="ausf-only-doc-body ausf-doc-body print-doc-body flex flex-col">
         <h2 className="ausf-section-title">AFFIDAVIT TO USE THE SURNAME OF THE FATHER (AUSF)</h2>
         <p className="mb-2 leading-normal">
-          I, <span className={`${FILL} affiant-name-blank uppercase mx-0.5 align-baseline`}><span className="affiant-name-inner">{affiantWithSurname}</span></span>, of legal age, single/married, Filipino, and a resident of Iligan City, Philippines, after having been duly sworn to in accordance with law, do hereby declare THAT:
+          I, <span className={`${FILL} affiant-name-blank uppercase mx-0.5 align-baseline`}><span className="affiant-name-inner">{affiantName}</span></span>, of legal age, single/married, Filipino, and a resident of Iligan City, Philippines, after having been duly sworn to in accordance with law, do hereby declare THAT:
         </p>
 
         <ol className="list-decimal space-y-2 mb-2 text-left leading-normal">
@@ -72,7 +65,7 @@ export default function AusfOnly({ data }) {
           <span className="font-bold">IN WITNESS WHEREOF,</span> I have hereunto set my hand this <span className={`${FILL_BOLD} ml-1 align-baseline`}>{witnessDate}</span> at Iligan City, Philippines.
         </p>
         <div className="ausf-signature-block">
-          <div className="ausf-signature-block__name">{affiantWithSurname}</div>
+          <div className="ausf-signature-block__name">{affiantName}</div>
           <div className="ausf-signature-block__label">Affiant</div>
         </div>
         <p className="ausf-subscribed-sworn mb-0 leading-normal">
