@@ -451,8 +451,8 @@ function buildRemarksAutocompleteOptions(fatherAge, form = {}) {
   const nameAcknowledge = fatherName || REMARKS_FATHER_NAME_BLANK_ACKNOWLEDGE;
 
   const opt1 = `ACKNOWLEDGED BY ${nameAcknowledged} ON ${REMARKS_DATE_BLANK} UNDER ${REMARKS_AFFIDAVIT_REG_BLANK} PURSUANT RA 9255`;
-  const opt2 = `ACKNOWLEDGE BY ${nameAcknowledge} ON ${REMARKS_DATE_BLANK}`;
-  const opt3 = `ACKNOWLEDGE BY ${nameAcknowledge} ON ${REMARKS_DATE_BLANK} PURSUANT TO RA 9255`;
+  const opt2 = `ACKNOWLEDGED BY ${nameAcknowledge} ON ${REMARKS_DATE_BLANK}`;
+  const opt3 = `ACKNOWLEDGED BY ${nameAcknowledge} ON ${REMARKS_DATE_BLANK} PURSUANT TO RA 9255`;
 
   const opts = [];
   if (fatherUnder17) {

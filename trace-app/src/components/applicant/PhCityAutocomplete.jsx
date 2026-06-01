@@ -52,6 +52,7 @@ export default function PhCityAutocomplete({
   onCityChange,
   onProvinceChange,
   placeholder = 'Enter City',
+  required = false,
 }) {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -97,8 +98,10 @@ export default function PhCityAutocomplete({
       <input
         type="text"
         value={cityValue}
+        required={required}
         aria-autocomplete="list"
         aria-expanded={showList}
+        aria-required={required}
         aria-controls={showList ? 'city-autocomplete-listbox' : undefined}
         aria-activedescendant={
           showList ? `city-autocomplete-opt-${activeIndex}` : undefined

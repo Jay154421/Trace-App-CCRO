@@ -278,6 +278,7 @@ export function OutOfTownAffidavit({ embedded = false, onClose }) {
       return city || province;
     })();
     const pobFromRecord = trimStr(child?.place_of_birth).toUpperCase();
+    const childPlaceOfBirthCity = trimStr(cert.placeOfBirthCity).toUpperCase();
 
     return {
       affiantName: [informantName, isApplicantVariant ? applicantName : ''].filter(Boolean),
@@ -286,7 +287,7 @@ export function OutOfTownAffidavit({ embedded = false, onClose }) {
       birthPlace: [pobFromCert, pobFromRecord].filter(Boolean),
       fatherName: [fatherFromCert].filter(Boolean),
       motherName: [motherFromCert].filter(Boolean),
-      lcroOffice: ['ILIGAN CITY'].filter(Boolean),
+      lcroOffice: [childPlaceOfBirthCity].filter(Boolean),
       affiantResidence: ['ILIGAN CITY', 'ILIGAN CITY, LANAO DEL NORTE'].filter(Boolean),
       corroboratorResidence: ['ILIGAN CITY', 'ILIGAN CITY, LANAO DEL NORTE'].filter(Boolean),
     };

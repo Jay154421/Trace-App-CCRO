@@ -104,23 +104,26 @@ export function ApplicantFormFields({
           <legend className="px-1 text-sm font-semibold text-slate-700">Place of birth</legend>
           <div className="grid gap-4 sm:grid-cols-3">
             <label className="block">
-              <span className="text-sm font-medium text-slate-700">Address</span>
+              <span className="text-sm font-medium text-slate-700">Address *</span>
               <input
                 type="text"
+                required
                 value={form.place_of_birth_address}
                 onChange={(e) => onFieldChange('place_of_birth_address', e.target.value.toUpperCase())}
                 className={inputClassName}
                 placeholder={placeholders.placeOfBirthAddress}
+                aria-required="true"
                 onKeyDown={handleEnterKey}
               />
             </label>
             <label className="block">
-              <span className="text-sm font-medium text-slate-700">City</span>
+              <span className="text-sm font-medium text-slate-700">City *</span>
               <PhCityAutocomplete
                 cityValue={form.place_of_birth_city}
                 onCityChange={(v) => onFieldChange('place_of_birth_city', v)}
                 onProvinceChange={(v) => onFieldChange('place_of_birth_province', v)}
                 placeholder={placeholders.placeOfBirthCity}
+                required
               />
             </label>
             <label className="block">
