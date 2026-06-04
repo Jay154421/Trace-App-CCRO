@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-31T12:27:41.729Z",
+  "generatedAt": "2026-06-01T02:15:56.045Z",
   "results": [
     {
       "name": "AUSF (ausf-only) Long",
@@ -26,7 +26,7 @@
         "articleWidthIn": 8.5,
         "articleHeightIn": 13
       },
-      "bytes": 476953,
+      "bytes": 486091,
       "path": "C:\\Project\\Trace-App-CCRO\\trace-app\\scripts\\output\\pdf-verify\\ausf-ausf-only-long.pdf"
     },
     {

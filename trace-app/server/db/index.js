@@ -67,6 +67,12 @@ async function init() {
       notes TEXT,
       FOREIGN KEY (child_id) REFERENCES children(id)
     );
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT NOT NULL UNIQUE,
+      password TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
     CREATE INDEX IF NOT EXISTS idx_documents_child ON documents(child_id);
     CREATE INDEX IF NOT EXISTS idx_checklist_child ON checklist_items(child_id);
   `);

@@ -6,6 +6,7 @@ const helmet = require('helmet');
 const { initDb } = require('./db');
 const childrenRoutes = require('./routes/children');
 const databaseRoutes = require('./routes/database');
+const authRoutes = require('./routes/auth');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -18,6 +19,7 @@ app.use(express.json({ limit: '10mb' }));
 
 app.use('/api/children', childrenRoutes);
 app.use('/api/database', databaseRoutes);
+app.use('/api/auth', authRoutes);
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 

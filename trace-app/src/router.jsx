@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import {
   Navigate,
   createBrowserRouter,
@@ -26,6 +27,8 @@ import { AUSF_06_PRINT_TYPE } from './pages/utils/ausf1';
 import { AUSF_0717_PRINT_TYPE } from './pages/utils/ausf2';
 import { AUSF_ONLY_PRINT_TYPE } from './pages/utils/ausf3';
 import { Login } from './pages/Login';
+import { Setup } from './pages/Setup';
+import { authApi } from './services/api';
 
 function RequireAuth({ children }) {
   const { isAuthenticated } = useAuth();
@@ -35,10 +38,47 @@ function RequireAuth({ children }) {
   return children;
 }
 
+function RequireSetup({ children }) {
+  const [hasUsers, setHasUsers] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    authApi
+      .hasUsers()
+      .then((data) => {
+        if (!cancelled) setHasUsers(data.hasUsers);
+      })
+      .catch(() => {
+        if (!cancelled) setHasUsers(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (hasUsers === null) {
+    return null;
+  }
+
+  if (!hasUsers) {
+    return <Navigate to="/setup" replace />;
+  }
+
+  return children;
+}
+
 export const router = createBrowserRouter(
   createRoutesFromElements(
     <>
-      <Route path="/login" element={<Login />} />
+      <Route path="/setup" element={<Setup />} />
+      <Route
+        path="/login"
+        element={
+          <RequireSetup>
+            <Login />
+          </RequireSetup>
+        }
+      />
       <Route
         element={
           <RequireAuth>

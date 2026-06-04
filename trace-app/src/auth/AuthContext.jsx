@@ -2,8 +2,9 @@ import { createContext, useContext, useMemo, useState } from 'react';
 import {
   clearSession,
   getSessionUser,
-  loginWithCredentials,
+  saveSession,
 } from './authStorage';
+import { authApi } from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -14,10 +15,14 @@ export function AuthProvider({ children }) {
     () => ({
       user,
       isAuthenticated: Boolean(user),
-      login: (username, password) => {
-        const loggedInUser = loginWithCredentials(username, password);
-        setUser(loggedInUser);
-        return loggedInUser;
+      login: async (username, password) => {
+        const data = await authApi.login(username, password);
+        if (!data.user) {
+          return null;
+        }
+        saveSession(data.user);
+        setUser(data.user);
+        return data.user;
       },
       logout: () => {
         clearSession();

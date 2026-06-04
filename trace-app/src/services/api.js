@@ -21,6 +21,14 @@ async function request(path, options = {}) {
   return data;
 }
 
+export const authApi = {
+  hasUsers: () => request('/auth/has-users'),
+  register: (username, password) =>
+    request('/auth/register', { method: 'POST', body: JSON.stringify({ username, password }) }),
+  login: (username, password) =>
+    request('/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) }),
+};
+
 export const childrenApi = {
   list: () => request('/children'),
   get: (id) => request(`/children/${id}`),
