@@ -497,6 +497,17 @@ function buildPhGeoPickRecords(rows) {
 
 const PH_GEO_PICK_RECORDS = buildPhGeoPickRecords(provinceGeoRows);
 
+/** Look up province name from a city string, using PH_GEO_PICK_RECORDS. */
+function lookupProvinceFromCity(cityText) {
+  const q = String(cityText || '').trim().toUpperCase();
+  if (!q) return '';
+  const match = PH_GEO_PICK_RECORDS.find((r) => r.city === q);
+  if (match) return match.province;
+  // Try starts-with as fallback
+  const startsWith = PH_GEO_PICK_RECORDS.find((r) => r.city.startsWith(q));
+  return startsWith ? startsWith.province : '';
+}
+
 function getPhCityPickerSuggestions(query, maxRows = 40) {
   const q = query.trim().toUpperCase();
   if (!q) return [];
@@ -1737,6 +1748,13 @@ export function CertificateOfLiveBirth() {
           fromChild.placeOfBirthProvince = parsedPlace.province;
         }
         let merged = { ...base, ...fromChild };
+        // Sync header Province/City from place of birth data (from ChildForm)
+        if (merged.placeOfBirthCity) {
+          merged.cityMunicipality = merged.placeOfBirthCity;
+        }
+        if (merged.placeOfBirthProvince) {
+          merged.province = merged.placeOfBirthProvince;
+        }
         if (shouldAutoFillMarriageNotApplicable(data)) {
           merged = applyMarriageNotApplicableFields(merged);
         }
@@ -2467,7 +2485,11 @@ export function CertificateOfLiveBirth() {
                 <span className="mb-1">City/Municipality</span>
                 <FormPhCityCombo
                   cityValue={form.cityMunicipality}
-                  onCityInputChange={(v) => update('cityMunicipality', v)}
+                  onCityInputChange={(v) => {
+                    update('cityMunicipality', v);
+                    const province = lookupProvinceFromCity(v);
+                    if (province) update('province', province);
+                  }}
                   onCityEmptied={() => update('province', '')}
                   onGeoPick={(r) =>
                     setForm((p) => ({
@@ -2556,7 +2578,7 @@ export function CertificateOfLiveBirth() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <FormPhCityCombo
                     cityValue={form.placeOfBirthCity}
-                    onCityInputChange={(v) => update('placeOfBirthCity', v)}
+                  onCityInputChange={(v) => update('placeOfBirthCity', v)}
                     onCityEmptied={() => update('placeOfBirthProvince', '')}
                     onGeoPick={(r) =>
                       setForm((p) => ({

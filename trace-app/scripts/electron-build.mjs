@@ -85,6 +85,28 @@ function stopBackgroundChildren() {
   backgroundChildren.length = 0;
 }
 
+async function ensureVerifyUser() {
+  const username = process.env.VERIFY_USERNAME || 'admin';
+  const password = process.env.VERIFY_PASSWORD || 'ccro123';
+  const loginRes = await fetch(`${API_URL}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+  });
+  const loginData = await loginRes.json().catch(() => ({}));
+  if (loginData.user) return;
+
+  const registerRes = await fetch(`${API_URL}/api/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+  });
+  if (!registerRes.ok && registerRes.status !== 409) {
+    const body = await registerRes.text().catch(() => '');
+    throw new Error(`Could not create verify user "${username}": ${registerRes.status} ${body}`);
+  }
+}
+
 async function verifyAusfWitnessPdfs() {
   console.log('\n[electron:build] Verifying AUSF + Witness PDF layout (production build)…\n');
   startBackground('node', ['server/server.js'], {
@@ -103,10 +125,14 @@ async function verifyAusfWitnessPdfs() {
     );
   }
 
+  await ensureVerifyUser();
+
   await run('node', ['scripts/verify-ausf-witness-pdf.mjs'], {
     VERIFY_APP_URL: APP_URL,
     VERIFY_API_URL: API_URL,
     VERIFY_SKIP_SERVER_START: '1',
+    VERIFY_USERNAME: process.env.VERIFY_USERNAME || 'admin',
+    VERIFY_PASSWORD: process.env.VERIFY_PASSWORD || 'ccro123',
   });
 }
 

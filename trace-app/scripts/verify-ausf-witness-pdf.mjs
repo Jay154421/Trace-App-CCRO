@@ -14,6 +14,8 @@ const OUT_DIR = join(__dirname, 'output', 'pdf-verify');
 const VITE_URL = process.env.VERIFY_APP_URL || 'http://localhost:5174';
 const API_URL = process.env.VERIFY_API_URL || 'http://localhost:3001';
 const SKIP_SERVER_START = process.env.VERIFY_SKIP_SERVER_START === '1';
+const VERIFY_USERNAME = process.env.VERIFY_USERNAME || 'admin';
+const VERIFY_PASSWORD = process.env.VERIFY_PASSWORD || 'ccro123';
 
 const AUSF_CHILD_ID = '1';
 /** Resolved after load (redirects to age-appropriate variant). */
@@ -153,8 +155,8 @@ function analyzePdfMargins(name, pdfPath, expectedPageAspect) {
 
 async function login(page) {
   await page.goto(`${VITE_URL}/login`);
-  await page.fill('#username', 'admin');
-  await page.fill('#password', 'ccro123');
+  await page.fill('#username', VERIFY_USERNAME);
+  await page.fill('#password', VERIFY_PASSWORD);
   await page.click('button[type="submit"]');
   await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 15000 });
 }
