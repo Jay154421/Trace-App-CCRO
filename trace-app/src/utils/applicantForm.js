@@ -183,3 +183,82 @@ export function handleEnterKey(e) {
     elements[index + 1].focus();
   }
 }
+
+/**
+ * The minimum number of total attachments required across all age-specific items
+ * before the checklist can be considered complete. Defaults to 2.
+ */
+const MIN_AGE_SPECIFIC_ATTACHMENTS = 2;
+
+/**
+ * Parse the raw server `attachment` field into an array of filenames.
+ * The server stores it as a JSON string array (e.g. '["file1.jpg"]')
+ * or a single filename string.
+ */
+function parseRawServerAttachment(attachment) {
+  if (!attachment) return [];
+  if (typeof attachment === 'string' && attachment.startsWith('[')) {
+    try {
+      return JSON.parse(attachment);
+    } catch {
+      return [attachment];
+    }
+  }
+  return [attachment];
+}
+
+/**
+ * Count total attachments (pending + saved + raw server) for a single checklist item.
+ */
+function countItemAttachments(item) {
+  const pending = item.attachmentFiles?.length ?? 0;
+  const saved = item.attachmentFilenames?.length ?? 0;
+  const raw = parseRawServerAttachment(item.attachment).length;
+  return pending + saved + raw;
+}
+
+/**
+ * Count total attachments across all age-specific checklist items.
+ */
+export function countAgeSpecificAttachments(checklist) {
+  if (!Array.isArray(checklist)) return 0;
+  return checklist
+    .filter((item) => item?.category === 'age_specific')
+    .reduce((sum, item) => sum + countItemAttachments(item), 0);
+}
+
+/**
+ * Returns true when the checklist has at least MIN_AGE_SPECIFIC_ATTACHMENTS
+ * total attachments across all age-specific items.
+ * If there are no age-specific items at all, the minimum is trivially met.
+ */
+export function hasMinimumAgeSpecificAttachments(checklist) {
+  if (!Array.isArray(checklist)) return true;
+  const ageSpecificItems = checklist.filter((item) => item?.category === 'age_specific');
+  if (ageSpecificItems.length === 0) return true;
+  const totalAttachments = countAgeSpecificAttachments(checklist);
+  return totalAttachments >= MIN_AGE_SPECIFIC_ATTACHMENTS;
+}
+
+/**
+ * Returns true when the checklist is fully complete:
+ * - All general items have attachments
+ * - At least MIN_AGE_SPECIFIC_ATTACHMENTS total attachments across age-specific items
+ * - All conditional items have attachments
+ *
+ * Unlike the simpler "all items checked" logic, this allows age-specific items
+ * to be satisfied by having the minimum number of attachments rather than
+ * requiring every single age-specific item to be individually checked.
+ */
+export function isChecklistFullyComplete(checklist) {
+  if (!Array.isArray(checklist) || checklist.length === 0) return false;
+  const general = checklist.filter((item) => item?.category === 'general');
+  const ageSpecific = checklist.filter((item) => item?.category === 'age_specific');
+  const conditional = checklist.filter((item) => item?.category === 'conditional');
+  const generalAllChecked = general.every((item) => countItemAttachments(item) > 0);
+  const conditionalAllChecked = conditional.every((item) => countItemAttachments(item) > 0);
+  const ageSpecificMet = ageSpecific.length === 0
+    ? true
+    : countAgeSpecificAttachments(checklist) >= MIN_AGE_SPECIFIC_ATTACHMENTS;
+  return generalAllChecked && conditionalAllChecked && ageSpecificMet;
+}

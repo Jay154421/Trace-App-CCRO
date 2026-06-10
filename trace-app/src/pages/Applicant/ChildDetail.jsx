@@ -26,6 +26,7 @@ import {
   formatApplicantGenderLabel,
   getColbConditionalRequirementLabels,
   splitPlaceOfBirth,
+  isChecklistFullyComplete,
 } from '../../utils/applicantForm';
 import {
   AUSF_VARIANT_LABEL,
@@ -199,10 +200,7 @@ export function ChildDetail() {
   };
 
   const handleSavePdf = useCallback(async () => {
-    const checklist = child?.checklist ?? [];
-    const checklistTotal = checklist.length;
-    const checklistChecked = checklist.filter((item) => item.checked).length;
-    const isChecklistComplete = checklistTotal > 0 && checklistChecked === checklistTotal;
+    const isChecklistComplete = isChecklistFullyComplete(child?.checklist ?? []);
 
     if (!isChecklistComplete) {
       toast.error('Complete the document checklist before saving PDF.');
@@ -232,10 +230,7 @@ export function ChildDetail() {
 
   const handlePreviewPdfFront = useCallback(() => {
     if (!child) return;
-    const checklist = child.checklist ?? [];
-    const checklistTotal = checklist.length;
-    const checklistChecked = checklist.filter((item) => item.checked).length;
-    const isChecklistComplete = checklistTotal > 0 && checklistChecked === checklistTotal;
+    const isChecklistComplete = isChecklistFullyComplete(child?.checklist ?? []);
 
     if (!isChecklistComplete) {
       toast.error('Complete the document checklist before saving PDF.');
@@ -256,10 +251,7 @@ export function ChildDetail() {
   }, [child, openFrontPdfPreview]);
 
   const handleSavePdfBack = useCallback(async () => {
-    const checklist = child?.checklist ?? [];
-    const checklistTotal = checklist.length;
-    const checklistChecked = checklist.filter((item) => item.checked).length;
-    const isChecklistComplete = checklistTotal > 0 && checklistChecked === checklistTotal;
+    const isChecklistComplete = isChecklistFullyComplete(child?.checklist ?? []);
 
     if (!isChecklistComplete) {
       toast.error('Complete the document checklist before saving PDF.');
@@ -289,10 +281,7 @@ export function ChildDetail() {
 
   const handlePreviewPdfBack = useCallback(() => {
     if (!child) return;
-    const checklist = child.checklist ?? [];
-    const checklistTotal = checklist.length;
-    const checklistChecked = checklist.filter((item) => item.checked).length;
-    const isChecklistComplete = checklistTotal > 0 && checklistChecked === checklistTotal;
+    const isChecklistComplete = isChecklistFullyComplete(child?.checklist ?? []);
 
     if (!isChecklistComplete) {
       toast.error('Complete the document checklist before saving PDF.');
@@ -318,7 +307,7 @@ export function ChildDetail() {
 
   const checklistTotal = child.checklist?.length ?? 0;
   const checklistChecked = child.checklist?.filter((i) => i.checked).length ?? 0;
-  const isChecklistComplete = checklistTotal > 0 && checklistChecked === checklistTotal;
+  const isChecklistComplete = isChecklistFullyComplete(child?.checklist ?? []);
   const hasRegistrantDeceased = isTruthyFlag(child.registrant_deceased);
   const hasHilotDeceased = isTruthyFlag(child.hilot_deceased);
   const hasParentForeigner = isTruthyFlag(child.parent_foreigner);
@@ -606,7 +595,7 @@ export function ChildDetail() {
               <div>
                 <dt className="text-sm text-slate-500">Updated date</dt>
                 <dd className="mt-0.5 font-medium text-slate-800">
-                  {new Date(child.updated_at.split(' ')[0]).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                  {new Date(child.created_at.split(' ')[0]).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                 </dd>
               </div>
             ) : null}

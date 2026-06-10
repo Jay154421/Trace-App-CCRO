@@ -10,7 +10,7 @@ import toast from 'react-hot-toast';
 import { childrenApi } from '../../services/api';
 import { apiUrl } from '../../config/api';
 import { ApplicantStaffStatusPanel } from '../../components/ApplicantStaffStatusPanel';
-import { isTruthyFlag } from '../../utils/applicantForm';
+import { isTruthyFlag, hasMinimumAgeSpecificAttachments } from '../../utils/applicantForm';
 
 const PHOTO_ID_REQUIREMENT_ID = 'photo_2x2';
 const OUT_OF_TOWN_AFFIDAVIT_REQUIREMENT = {
@@ -1168,9 +1168,14 @@ export function DocumentsWizard() {
   ].filter((s) => s.items.length > 0);
 
   const currentStep = steps[step];
-  const progress = checklist.length
-    ? checklist.filter((c) => c.checked).length / checklist.length
-    : 0;
+  const checkedCount = checklist.filter((c) => c.checked).length;
+  const ageSpecificMinimumMet = hasMinimumAgeSpecificAttachments(checklist);
+  // The checklist is considered "not fully complete" if age-specific items have
+  // fewer than 2 total attachments.
+  const adjustedChecked = ageSpecificMinimumMet
+    ? checkedCount
+    : Math.min(checkedCount, Math.max(0, checklist.length - 1));
+  const progress = checklist.length ? adjustedChecked / checklist.length : 0;
   const cameraTargetItem = cameraTargetIndex !== null ? checklist[cameraTargetIndex] : null;
   const activeCaptureSize = getNormalizedCaptureSize(cameraTargetItem);
   const activeCaptureAspect = String(cameraTargetAspect || 1);
