@@ -29,7 +29,6 @@ const AGE_1M_TO_6 = [
 const AGE_7_TO_17 = [
   { id: 'baptismal', label: 'Baptismal certificate / siblings\' COLB (esp. if born at home)' },
   { id: 'form_137_sf10', label: 'Form 137 SF10-ES and/or school cert' },
-  { id: 'appearance_parents_applicant', label: 'Appearance of both parents and applicant' },
   { id: 'ausf', label: 'AUSF (Affidavit to Use Surname of Father)' },
   { id: 'marriage_contract', label: 'Marriage contract of parents' },
   { id: 'parents_id_birth', label: 'Valid I.D. & birth cert of parents' },
@@ -43,7 +42,6 @@ const AGE_18_TO_59 = [
   { id: 'service_record', label: 'Service record' },
   { id: 'marriage_cert', label: 'Marriage certificate (applicant or parents) with place of birth' },
   { id: 'sss_gsis_philhealth', label: 'SSS-E4, GSIS, or MDR-PhilHealth' },
-  { id: 'applicant_appearance', label: 'Applicant\'s appearance' },
   { id: 'siblings_birth', label: 'Siblings\' birth certificate, etc.' },
   { id: 'parents_id_birth', label: 'Valid I.D.s & birth cert of parents' },
 ];
@@ -57,7 +55,6 @@ const AGE_60_PLUS = [
   { id: 'police_nbi', label: 'Police or NBI clearance' },
   { id: 'sss_gsis_philhealth', label: 'SSS-E4, GSIS, or MDR-PhilHealth' },
   { id: 'siblings_docs', label: 'Siblings\' birth, COM, baptismal or death certificate' },
-  { id: 'applicant_appearance', label: 'Applicant\'s appearance' },
   { id: 'parents_docs', label: 'Parent\'s birth/ID/death certificate (if deceased)' },
 ];
 
