@@ -417,6 +417,7 @@ const ATTENDANT_SIGNATURE_SUGGESTIONS = [
   'Nowhere to be found at the time of registration',
   'Deceased at the time of registration',
   'Dont know',
+  'NOT APPLICABLE'
 ];
 
 /** LCRO remarks/annotations blank slots when father name is not yet on the form. */

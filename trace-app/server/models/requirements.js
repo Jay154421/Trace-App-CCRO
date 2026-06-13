@@ -107,7 +107,7 @@ function getRequirementsForChild(child) {
       conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.marriage_certificate), category: 'conditional' });
     }
     if (child.colb_requires_parent_id) {
-      conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.colb_parent_id), category: 'conditional' });
+      general.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.colb_parent_id), category: 'general' });
     }
     if (child.has_muslim_attachment) {
       conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.muslim_attachment), category: 'conditional' });
