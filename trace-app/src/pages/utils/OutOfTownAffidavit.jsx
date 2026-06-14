@@ -208,6 +208,8 @@ const EMPTY_FORM = {
   corroborator1Name: '',
   corroborator2Name: '',
   corroboratorResidence: 'ILIGAN CITY',
+  corroboratorDay: '',
+  corroboratorMonth: '',
   affixedDay: '',
   affixedMonth: '',
   affiantSignature: '',
@@ -557,6 +559,27 @@ export function OutOfTownAffidavit({ embedded = false, onClose }) {
           />{' '}
           are true and correct to the best of our knowledge and beliefs having known him/her.
         </p>
+
+        <div className="flex flex-wrap items-baseline gap-2 mt-8">
+          <span className="font-bold">IN WITNESS WHEREOF,</span>
+          <span>we have hereunto set our hands this</span>
+          <FormLine
+            value={form.corroboratorDay}
+            onChange={(v) => update('corroboratorDay', v)}
+            placeholder="(Day)"
+            width="w-16"
+            suggestionOptions={dateNowSuggestions.day}
+          />
+          <span>day of</span>
+          <FormLine
+            value={form.corroboratorMonth}
+            onChange={(v) => update('corroboratorMonth', v)}
+            placeholder="(Month)"
+            width="w-36"
+            suggestionOptions={dateNowSuggestions.month}
+          />
+          <span>at Iligan City, Philippines.</span>
+        </div>
 
         <div className="mt-8 grid grid-cols-2 gap-12">
           <div className="text-center">

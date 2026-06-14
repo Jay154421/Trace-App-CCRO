@@ -22,14 +22,6 @@ function blank(value) {
   return s || '\u00a0';
 }
 
-function witnessDateLine(day, month) {
-  const d = String(day ?? '').trim();
-  const m = String(month ?? '').trim();
-  if (!d && !m) return '\u00a0';
-  if (d && m) return `${d} day of ${m}`;
-  return d || m;
-}
-
 function CorroborationBlock({ data }) {
   const affiant1 = blank(data.corroborator1Signature || data.corroborator1Name);
   const affiant2 = blank(data.corroborator2Signature || data.corroborator2Name);
@@ -50,6 +42,12 @@ function CorroborationBlock({ data }) {
         That we personally declare that the above-statements of{' '}
         <span className={`${FILL_BOLD} px-0.5 align-baseline uppercase`}>{subjectName}</span> are true and correct to
         the best of our knowledge and beliefs having known him/her.
+      </p>
+      <p className="mb-2 leading-normal">
+        <span className="font-bold">IN WITNESS WHEREOF,</span> we have hereunto set our hands this{' '}
+        <span className={`${FILL_BOLD} px-0.5 align-baseline`}>{blank(data.corroboratorDay)}</span> day of{' '}
+        <span className={`${FILL_BOLD} px-0.5 align-baseline`}>{blank(data.corroboratorMonth)}</span>{' '}
+        at Iligan City, Philippines.
       </p>
       <div className="mt-4 grid grid-cols-2 gap-8">
         <div className="ausf-signature-block">
@@ -154,7 +152,8 @@ export default function OutOfTownPrintDocument({ data = {}, variant = OUT_OF_TOW
 
         <p className="mb-2 leading-normal">
           <span className="font-bold">IN WITNESS WHEREOF,</span> I have hereunto set my hand this{' '}
-          <span className={`${FILL_BOLD} px-0.5 align-baseline`}>{witnessDateLine(data.affixedDay, data.affixedMonth)}</span>{' '}
+          <span className={`${FILL_BOLD} px-0.5 align-baseline`}>{blank(data.affixedDay)}</span> day of{' '}
+          <span className={`${FILL_BOLD} px-0.5 align-baseline`}>{blank(data.affixedMonth)}</span>{' '}
           at Iligan City, Philippines.
         </p>
 
@@ -169,7 +168,8 @@ export default function OutOfTownPrintDocument({ data = {}, variant = OUT_OF_TOW
 
         <p className="ausf-subscribed-sworn mt-6 mb-0 leading-normal">
           <span className="font-bold">SUBSCRIBED AND SWORN</span> to before me this{' '}
-          <span className={`${FILL_BOLD} px-0.5 align-baseline`}>{witnessDateLine(data.swornDay, data.swornMonth)}</span>{' '}
+          <span className={`${FILL_BOLD} px-0.5 align-baseline`}>{blank(data.swornDay)}</span> day of{' '}
+          <span className={`${FILL_BOLD} px-0.5 align-baseline`}>{blank(data.swornMonth)}</span>{' '}
           in the ILIGAN CITY, Philippines.
         </p>
         <div className="registrar-signature-zone flex w-full flex-col items-end justify-end">
