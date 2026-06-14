@@ -112,7 +112,7 @@ export function AusfPrint({ variant }) {
   const [error, setError] = useState(null);
   const [savingPdf, setSavingPdf] = useState(false);
   const [previewingPdf, setPreviewingPdf] = useState(false);
-  const [paperSize, setPaperSize] = useState(AUSF_PDF_PAGE_FORMAT.LONG);
+  const [paperSize, setPaperSize] = useState(AUSF_PDF_PAGE_FORMAT.A4);
   const docArticleRef = useRef(null);
   const {
     url: pdfPreviewUrl,

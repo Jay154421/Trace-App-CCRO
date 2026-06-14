@@ -38,7 +38,7 @@ export function PrintCertificate() {
     openPreview,
     closePreview,
   } = usePdfPreviewUrl();
-  const [paperSize, setPaperSize] = useState(CERTIFICATION_PDF_PAGE_FORMAT.LONG);
+  const [paperSize, setPaperSize] = useState(CERTIFICATION_PDF_PAGE_FORMAT.A4);
 
   const certificateReferenceImageSrc =
     cert?.certificateReferenceImage || cert?.certificate_reference_image || null;

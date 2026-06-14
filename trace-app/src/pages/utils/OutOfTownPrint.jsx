@@ -82,7 +82,7 @@ export function OutOfTownPrint() {
   const [isEditing, setIsEditing] = useState(false);
   const [savingPdf, setSavingPdf] = useState(false);
   const [previewingPdf, setPreviewingPdf] = useState(false);
-  const [paperSize, setPaperSize] = useState(OUT_OF_TOWN_PDF_PAGE_FORMAT.LONG);
+  const [paperSize, setPaperSize] = useState(OUT_OF_TOWN_PDF_PAGE_FORMAT.A4);
   const docArticleRef = useRef(null);
   const {
     url: pdfPreviewUrl,

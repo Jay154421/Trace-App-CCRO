@@ -75,7 +75,7 @@ export function WitnessPrint() {
   const [isEditing, setIsEditing] = useState(false);
   const [savingPdf, setSavingPdf] = useState(false);
   const [previewingPdf, setPreviewingPdf] = useState(false);
-  const [paperSize, setPaperSize] = useState(WITNESS_PDF_PAGE_FORMAT.LONG);
+  const [paperSize, setPaperSize] = useState(WITNESS_PDF_PAGE_FORMAT.A4);
   const docArticleRef = useRef(null);
   const {
     url: pdfPreviewUrl,
