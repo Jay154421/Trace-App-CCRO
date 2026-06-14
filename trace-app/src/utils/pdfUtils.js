@@ -110,7 +110,7 @@ export const FIELD_POSITIONS = {
   father_residence_city: { x: 1215, y: 1959, width: 330 },
   father_residence_province: { x: 1605, y: 1959, width: 375},
   father_country: { x: 2070, y: 1959, width: 315 },
-  marriage_date_month: { x: 507, y: 2148 },
+  marriage_date_month: { x: 507, y: 2148, width: 389 },
   marriage_date_day: { x: 696, y: 2148 },
   marriage_date_year: { x: 873, y: 2148 },
   marriage_place_city: { x: 1239, y: 2148, width: 378 },
@@ -128,7 +128,7 @@ export const FIELD_POSITIONS = {
   attendant_address: { x: 1500, y: 2505, width: 905},
   attendant_date: { x: 1512, y: 2643 },
   attendant_time: { x: 1533, y: 2409 },
-  attendant_signature: { x: 471, y: 2490, width: 732 },
+  attendant_signature: { x: 471, y: 2490, width: 982 },
   informant_signature: { x: 483, y: 2916, width: 768},
   informant_relation: { x: 612, y: 3000 },
   informant_address: { x: 399, y: 3057, width: 864},
@@ -224,6 +224,11 @@ export const ATTENDANT_ADDRESS_MIN_FONT_PX = 12;
 export const ATTENDANT_ADDRESS_SHRINK_MIN_CHARS_PDF = 35;
 export const ATTENDANT_ADDRESS_SHRINK_MAX_CHARS_PDF = 60;
 export const ATTENDANT_ADDRESS_MIN_FONT_PT = 9;
+
+/** Attendant signature compact character threshold (like informant_address) */
+export const ATTENDANT_SIGNATURE_COMPACT_LENGTH = 40;
+export const ATTENDANT_SIGNATURE_COMPACT_PDF_PT = 8;
+export const ATTENDANT_SIGNATURE_MIN_FONT_PT = 8;
 
 // ============================================================================
 // UTILITY FUNCTIONS
@@ -615,6 +620,8 @@ export function buildFieldPositionPdfBase64(merged) {
       fontPt = 9;
     } else if (item.key === 'attendant_address') {
       fontPt = getAttendantAddressFontPt(rawTrimLen);
+    } else if (item.key === 'attendant_signature' && rawTrimLen >= ATTENDANT_SIGNATURE_COMPACT_LENGTH) {
+      fontPt = ATTENDANT_SIGNATURE_COMPACT_PDF_PT;
     }
     doc.setFontSize(fontPt);
     const defaultLineHeightIn = (fontPt * PDF_LAYOUT.lineHeightRatio) / 72;
@@ -751,6 +758,8 @@ export function buildCombinedPdfBase64(merged) {
       fontPt = 9;
     } else if (item.key === 'attendant_address') {
       fontPt = getAttendantAddressFontPt(rawTrimLen);
+    } else if (item.key === 'attendant_signature' && rawTrimLen >= ATTENDANT_SIGNATURE_COMPACT_LENGTH) {
+      fontPt = ATTENDANT_SIGNATURE_COMPACT_PDF_PT;
     }
     doc.setFontSize(fontPt);
     const defaultLineHeightIn = (fontPt * PDF_LAYOUT.lineHeightRatio) / 72;

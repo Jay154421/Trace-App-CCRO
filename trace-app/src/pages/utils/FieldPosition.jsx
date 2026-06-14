@@ -134,7 +134,7 @@ const FIELD_POSITIONS = {
   attendant_address: { x: 1500, y: 2505, width: 905 },
   attendant_date: { x: 1512, y: 2643 },
   attendant_time: { x: 1533, y: 2409 },
-  attendant_signature: { x: 471, y: 2490, width: 732 },
+  attendant_signature: { x: 471, y: 2490, width: 982 },
   informant_signature: { x: 483, y: 2916, width: 768 },
   informant_relation: { x: 612, y: 3000 },
   informant_address: { x: 399, y: 3057, width: 864 },
@@ -230,6 +230,13 @@ const ATTENDANT_ADDRESS_MIN_FONT_PX = 12;
 const ATTENDANT_ADDRESS_SHRINK_MIN_CHARS_PDF = 35;
 const ATTENDANT_ADDRESS_SHRINK_MAX_CHARS_PDF = 60;
 const ATTENDANT_ADDRESS_MIN_FONT_PT = 9;
+
+/** Attendant signature compact character threshold (like informant_address) */
+const ATTENDANT_SIGNATURE_COMPACT_LENGTH = 40;
+const ATTENDANT_SIGNATURE_COMPACT_PDF_PT = 8;
+const ATTENDANT_SIGNATURE_MIN_FONT_PT = 8;
+const ATTENDANT_SIGNATURE_COMPACT_OVERLAY_PX =
+  (ATTENDANT_SIGNATURE_COMPACT_PDF_PT / 10) * PDF_LAYOUT.fieldFontSize;
 
 // ============================================================================
 // UTILITY FUNCTIONS
@@ -628,6 +635,8 @@ function buildFieldPositionPdfBase64(merged) {
       fontPt = 9;
     } else if (item.key === 'attendant_address') {
       fontPt = getAttendantAddressFontPt(rawTrimLen);
+    } else if (item.key === 'attendant_signature' && rawTrimLen >= ATTENDANT_SIGNATURE_COMPACT_LENGTH) {
+      fontPt = ATTENDANT_SIGNATURE_COMPACT_PDF_PT;
     }
     doc.setFontSize(fontPt);
     const defaultLineHeightIn = (fontPt * PDF_LAYOUT.lineHeightRatio) / 72;
@@ -764,6 +773,8 @@ function buildCombinedPdfBase64(merged) {
       fontPt = 9;
     } else if (item.key === 'attendant_address') {
       fontPt = getAttendantAddressFontPt(rawTrimLen);
+    } else if (item.key === 'attendant_signature' && rawTrimLen >= ATTENDANT_SIGNATURE_COMPACT_LENGTH) {
+      fontPt = ATTENDANT_SIGNATURE_COMPACT_PDF_PT;
     }
     doc.setFontSize(fontPt);
     const defaultLineHeightIn = (fontPt * PDF_LAYOUT.lineHeightRatio) / 72;
@@ -1044,16 +1055,18 @@ function PositionedValue({ fieldKey, value, fontLenSource }) {
       ? String(fontLenSource).trim().length
       : String(value ?? '').trim().length;
 
+  const isCentered = CENTERED_FIELD_KEYS.includes(fieldKey);
+  const colW = getEffectiveColumnWidthPx(fieldKey);
+  const boxWidth = field.width ?? colW ?? undefined;
+
   let fontPx = PDF_LAYOUT.fieldFontSize;
   if (fieldKey === 'informant_address' && lenForFont >= INFORMANT_ADDRESS_COMPACT_LENGTH) {
     fontPx = INFORMANT_ADDRESS_COMPACT_OVERLAY_PX;
   } else if (fieldKey === 'attendant_address') {
     fontPx = getAttendantAddressFontPx(lenForFont);
+  } else if (fieldKey === 'attendant_signature' && lenForFont >= ATTENDANT_SIGNATURE_COMPACT_LENGTH) {
+    fontPx = ATTENDANT_SIGNATURE_COMPACT_OVERLAY_PX;
   }
-
-  const isCentered = CENTERED_FIELD_KEYS.includes(fieldKey);
-  const colW = getEffectiveColumnWidthPx(fieldKey);
-  const boxWidth = field.width ?? colW ?? undefined;
   const useWrap = boxWidth != null;
 
   return (
