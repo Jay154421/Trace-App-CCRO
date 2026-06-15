@@ -591,6 +591,7 @@ export function ChildDetail() {
               if (hasRegistrantDeceased) items.push('Death cert. (registrant)');
               if (hasHilotDeceased && child.age <= 5) items.push('Death cert. (HILOT)');
               if (hasParentForeigner) items.push('Passport or BI cert. (foreign parent)');
+              if (typeof child.age === 'number' && child.age >= 80) items.push('Verification Results');
             } else {
               colbConditionalLabels.forEach((l) => items.push(l));
             }

@@ -66,6 +66,7 @@ const CONDITIONAL_DOCS = {
   marriage_certificate: { id: 'marriage_certificate', label: 'Marriage Certificate' },
   colb_parent_id: { id: 'colb_parent_id', label: 'Valid I.D. of parent/s or guardian' },
   muslim_attachment: { id: 'muslim_attachment', label: 'Muslim attachment' },
+  verification_results: { id: 'verification_results', label: 'Verification Results' },
 };
 
 const PHOTO_ID_SCANNER_CAPTURE_SIZE = { width: 600, height: 600, label: '2 x 2 in' };
@@ -112,6 +113,13 @@ function getRequirementsForChild(child) {
     if (child.has_muslim_attachment) {
       conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.muslim_attachment), category: 'conditional' });
     }
+    /* Age 80+ → Verification Results */
+    const brapAge = typeof child.age === 'number'
+      ? child.age
+      : (child.date_of_birth ? require('./child').calculateAge(child.date_of_birth) : 0);
+    if (brapAge >= 80) {
+      conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.verification_results), category: 'conditional' });
+    }
     return {
       general,
       ageSpecific: [],
@@ -145,6 +153,10 @@ function getRequirementsForChild(child) {
   }
   if (child.out_of_town) {
     conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.affidavit_corroboration_out_of_town), category: 'conditional' });
+  }
+  /* Age 80+ → Verification Results */
+  if (age >= 80) {
+    conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.verification_results), category: 'conditional' });
   }
   const all = [...filteredAll, ...conditional];
   return {

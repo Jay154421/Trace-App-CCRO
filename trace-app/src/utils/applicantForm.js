@@ -50,7 +50,23 @@ export function getColbConditionalRequirementLabels(data) {
   if (isTruthyFlag(data?.has_marriage_certificate)) labels.push('Marriage certificate');
   if (isTruthyFlag(data?.colb_requires_parent_id)) labels.push('Parent / guardian I.D.');
   if (isTruthyFlag(data?.has_muslim_attachment)) labels.push('Muslim attachment');
+  /* Age 80+ → Verification Results */
+  const age = typeof data?.age === 'number'
+    ? data.age
+    : (data?.date_of_birth ? calculateAgeFromDate(data.date_of_birth) : 0);
+  if (age >= 80) labels.push('Verification Results');
   return labels;
+}
+
+/** Calculate age in whole years from a date string (YYYY-MM-DD or similar). */
+function calculateAgeFromDate(dob) {
+  if (!dob) return 0;
+  const birth = new Date(dob.split(' ')[0]);
+  const now = new Date();
+  let age = now.getFullYear() - birth.getFullYear();
+  const m = now.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) age--;
+  return age;
 }
 
 /**
