@@ -76,6 +76,30 @@ function SavedPdfOpenLink({ filePath, label }) {
   );
 }
 
+/* ── helper to format dates consistently ── */
+function formatChildDate(dateStr) {
+  if (!dateStr) return null;
+  try {
+    return new Date(dateStr.split(' ')[0]).toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  } catch {
+    return dateStr;
+  }
+}
+
+/* ── compact field row for the stacked layout ── */
+function FieldRow({ label, children, fullWidth = false }) {
+  return (
+    <div className={`flex flex-col gap-0.5 py-2.5 border-b border-slate-100 last:border-b-0 ${fullWidth ? '' : 'sm:flex-row sm:gap-4'}`}>
+      <span className="text-xs font-medium text-slate-500 uppercase tracking-wide sm:w-44 sm:shrink-0">{label}</span>
+      <span className="text-sm font-medium text-slate-800 leading-relaxed">{children || '—'}</span>
+    </div>
+  );
+}
+
 export function ChildDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -521,93 +545,96 @@ export function ChildDetail() {
         onUpdateStaffStatus={handleStaffProcessStatus}
       />
 
-      <section className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 mb-6" aria-labelledby="info-heading">
-        <h2 id="info-heading" className="text-sm font-medium text-slate-500 uppercase tracking-wide mb-4">
-          Child identification
-        </h2>
-        {isColbBrap ? (
-          <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-              <dt className="text-sm text-slate-500">Name</dt>
-              <dd className="mt-0.5 font-medium text-slate-800">
-                {[child.first_name, child.middle_name, child.last_name].filter(Boolean).join(' ') || '—'}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-sm text-slate-500">Date of birth</dt>
-              <dd className="mt-0.5 font-medium text-slate-800">{formatDateDDMMYYYY(child.date_of_birth)}</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-slate-500">Gender</dt>
-              <dd className="mt-0.5 font-medium text-slate-800">{formatApplicantGenderLabel(child.gender) || '—'}</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-slate-500">Age</dt>
-              <dd className="mt-0.5 font-medium text-slate-800">{child.age} years</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-slate-500">Place of birth</dt>
-              <dd className="mt-0.5 font-medium text-slate-800">
-                {hasPob ? (
-                  <span>
-                    {pobAddr ? <span className="block">{pobAddr}</span> : null}
-                    {pobCity ? <span className="block">{pobCity}</span> : null}
-                    {pobProv ? <span className="block">{pobProv}</span> : null}
-                  </span>
-                ) : '—'}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-sm text-slate-500">Contact no.</dt>
-              <dd className="mt-0.5 font-medium text-slate-800">{child.contact_no || '—'}</dd>
-            </div>
-            {colbConditionalLabels.length > 0 ? (
-              <div className="sm:col-span-2">
-                <dt className="text-sm text-slate-500 mb-1">Conditional requirements</dt>
-                <dd className="text-sm text-slate-700">
-                  {colbConditionalLabels.map((label) => (
-                    <span key={label} className="block">
-                      {label}
-                    </span>
-                  ))}
-                </dd>
-              </div>
-            ) : null}
-            {hasOutOfTown ? (
-              <div className="sm:col-span-2">
-                <dt className="text-sm text-slate-500 mb-1">{COLB_OUT_OF_TOWN_SECTION_TITLE}</dt>
-                <dd className="text-sm text-slate-700">
-                  <span className="block">
-                    {OUT_OF_TOWN_VARIANT_SHORT_LABEL[outOfTownVariant]}
-                  </span>
-                </dd>
-              </div>
-            ) : null}
-            {child.created_at ? (
-              <div>
-                <dt className="text-sm text-slate-500">Created date</dt>
-                <dd className="mt-0.5 font-medium text-slate-800">
-                  {new Date(child.created_at.split(' ')[0]).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                </dd>
-              </div>
-            ) : null}
-            {child.updated_at ? (
-              <div>
-                <dt className="text-sm text-slate-500">Updated date</dt>
-                <dd className="mt-0.5 font-medium text-slate-800">
-                  {new Date(child.created_at.split(' ')[0]).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                </dd>
-              </div>
-            ) : null}
-            <div className="sm:col-span-2 border-t border-slate-100 pt-4">
-              <dt className="text-sm text-slate-500">Documents checklist</dt>
-              <dd className="mt-1">
-                {checklistTotal > 0 ? (
-                  <div>
-                    <p className="font-medium text-slate-800">
-                      {checklistChecked}/{checklistTotal} complete
-                    </p>
-                    <div className="mt-2 h-2 w-full max-w-md rounded-full bg-slate-200 overflow-hidden">
+      {/* ── Child Identification (compact stacked layout) ── */}
+      <section className="bg-white rounded-xl border border-slate-200 shadow-sm mb-6 overflow-hidden" aria-labelledby="info-heading">
+        <div className="border-b border-slate-100 bg-slate-50/60 px-5 py-2.5">
+          <h2 id="info-heading" className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+            Child identification
+          </h2>
+        </div>
+        <div className="divide-y divide-slate-100 px-5">
+          {/* Full name */}
+          <FieldRow label="Full name">
+            {[child.first_name, child.middle_name, child.last_name].filter(Boolean).join(' ') || null}
+          </FieldRow>
+
+          {/* Personal info */}
+          <FieldRow label="Date of birth">
+            {formatDateDDMMYYYY(child.date_of_birth)}
+          </FieldRow>
+          <FieldRow label="Gender">
+            {formatApplicantGenderLabel(child.gender) || null}
+          </FieldRow>
+          <FieldRow label="Age">
+            {child.age ? `${child.age} years` : null}
+          </FieldRow>
+
+          {/* Birth & Contact */}
+          <FieldRow label="Place of birth">
+            {hasPob ? [pobAddr, pobCity, pobProv].filter(Boolean).join(', ') : null}
+          </FieldRow>
+          <FieldRow label="Contact no.">
+            {child.contact_no || null}
+          </FieldRow>
+
+          {/* Requirements */}
+          {!isColbBrap ? (
+            <FieldRow label="Age group">
+              {child.age_group?.replace(/_/g, ' ') || null}
+            </FieldRow>
+          ) : null}
+
+          {/* Conditional requirements */}
+          {(() => {
+            const items = [];
+            if (!isColbBrap) {
+              if (hasRegistrantDeceased) items.push('Death cert. (registrant)');
+              if (hasHilotDeceased && child.age <= 5) items.push('Death cert. (HILOT)');
+              if (hasParentForeigner) items.push('Passport or BI cert. (foreign parent)');
+            } else {
+              colbConditionalLabels.forEach((l) => items.push(l));
+            }
+            const allReqs = [...items, ...(hasOutOfTown ? [OUT_OF_TOWN_VARIANT_SHORT_LABEL[outOfTownVariant]] : [])].filter(Boolean);
+            if (allReqs.length > 0) {
+              return (
+                <div className="py-2.5 border-b border-slate-100 sm:flex sm:gap-4">
+                  <span className="text-xs font-medium text-slate-500 uppercase tracking-wide sm:w-44 sm:shrink-0">Conditional reqs.</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 mt-1 sm:mt-0">
+                    {allReqs.map((req) => (
+                      <span key={req} className="text-sm text-slate-800">{req}</span>
+                    ))}
+                  </div>
+                </div>
+              );
+            }
+            return null;
+          })()}
+
+          {/* System Dates */}
+          {child.created_at ? (
+            <FieldRow label="Created">
+              {formatChildDate(child.created_at)}
+            </FieldRow>
+          ) : null}
+          {child.updated_at ? (
+            <FieldRow label="Updated">
+              {formatChildDate(child.updated_at)}
+            </FieldRow>
+          ) : null}
+
+          {/* Documents Checklist */}
+          <FieldRow label="Checklist" fullWidth>
+            <div className="flex items-center gap-3">
+              {checklistTotal > 0 ? (
+                <div className="flex flex-1 items-center gap-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-slate-700">
+                        {checklistChecked}/{checklistTotal}
+                      </span>
+                      <span className="text-xs text-slate-400">complete</span>
+                    </div>
+                    <div className="mt-1 h-1.5 w-full max-w-40 rounded-full bg-slate-200 overflow-hidden">
                       <div
                         className="h-full rounded-full bg-emerald-500 transition-[width]"
                         style={{
@@ -615,128 +642,25 @@ export function ChildDetail() {
                         }}
                       />
                     </div>
-                    <Link
-                      to={applicantDocumentsPath(basePath, id)}
-                      className="inline-block mt-2 text-sm font-medium text-emerald-600 hover:text-emerald-700"
-                    >
-                      View checklist →
-                    </Link>
                   </div>
-                ) : (
-                  <p className="text-slate-600">
-                    —{' '}
-                    <Link to={applicantDocumentsPath(basePath, id)} className="text-emerald-600 hover:underline">
-                      Open document checklist
-                    </Link>{' '}
-                    to get started.
-                  </p>
-                )}
-              </dd>
+                  <Link
+                    to={applicantDocumentsPath(basePath, id)}
+                    className="shrink-0 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700"
+                  >
+                    View →
+                  </Link>
+                </div>
+              ) : (
+                <Link
+                  to={applicantDocumentsPath(basePath, id)}
+                  className="text-xs font-medium text-emerald-600 hover:text-emerald-700"
+                >
+                  Open document checklist →
+                </Link>
+              )}
             </div>
-          </dl>
-        ) : (
-          <dl className="grid gap-3 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-              <dt className="text-sm text-slate-500">Name</dt>
-              <dd className="font-medium text-slate-800">
-                {[child.first_name, child.middle_name, child.last_name].filter(Boolean).join(' ') || '—'}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-sm text-slate-500">Date of birth</dt>
-              <dd className="font-medium text-slate-800">{formatDateDDMMYYYY(child.date_of_birth)}</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-slate-500">Gender</dt>
-              <dd className="font-medium text-slate-800">{formatApplicantGenderLabel(child.gender) || '—'}</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-slate-500">Age</dt>
-              <dd className="font-medium text-slate-800">{child.age} years</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-slate-500">Place of birth</dt>
-              <dd className="font-medium text-slate-800">
-                {hasPob ? (
-                  <span>
-                    {pobAddr ? <span className="block">{pobAddr}</span> : null}
-                    {pobCity ? <span className="block">{pobCity}</span> : null}
-                    {pobProv ? <span className="block">{pobProv}</span> : null}
-                  </span>
-                ) : '—'}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-sm text-slate-500">Contact no.</dt>
-              <dd className="font-medium text-slate-800">{child.contact_no || '—'}</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-slate-500">Age group (requirements)</dt>
-              <dd className="font-medium text-slate-800">{child.age_group?.replace(/_/g, ' ') || '—'}</dd>
-            </div>
-            {hasRegistrantDeceased || hasHilotDeceased || hasParentForeigner || hasOutOfTown ? (
-              <div className="sm:col-span-2">
-                <dt className="text-sm text-slate-500 mb-1">Conditional requirements</dt>
-                <dd className="text-sm text-slate-700">
-                  {hasRegistrantDeceased ? <span className="block">Death cert. (registrant)</span> : null}
-                  {hasHilotDeceased && child.age <= 5 ? <span className="block">Death cert. (HILOT)</span> : null}
-                  {hasParentForeigner ? <span className="block">Passport or BI cert. (foreign parent)</span> : null}
-                  {hasOutOfTown ? (
-                    <span className="block">
-                      {OUT_OF_TOWN_VARIANT_SHORT_LABEL[outOfTownVariant]}
-                    </span>
-                  ) : null}
-                </dd>
-              </div>
-            ) : null}
-            {child.created_at && (
-              <div>
-                <dt className="text-sm text-slate-500">Created date</dt>
-                <dd className="font-medium text-slate-800">
-                  {new Date(child.created_at.split(' ')[0]).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                </dd>
-              </div>
-            )}
-            {child.updated_at && (
-              <div>
-                <dt className="text-sm text-slate-500">Updated date</dt>
-                <dd className="font-medium text-slate-800">
-                  {new Date(child.updated_at.split(' ')[0]).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                </dd>
-              </div>
-            )}
-            <div className="sm:col-span-2">
-              <dt className="text-sm text-slate-500 mb-1">Documents checklist</dt>
-              <dd className="mt-0.5">
-                {checklistTotal > 0 ? (
-                  <div>
-                    <p className="font-medium text-slate-800">
-                      {checklistChecked}/{checklistTotal} complete
-                    </p>
-                    <div className="mt-1.5 h-2 w-full max-w-[200px] rounded-full bg-slate-200 overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-emerald-500 transition-[width]"
-                        style={{
-                          width: `${checklistTotal ? Math.round((checklistChecked / checklistTotal) * 100) : 0}%`,
-                        }}
-                      />
-                    </div>
-                    <Link
-                      to={applicantDocumentsPath(basePath, id)}
-                      className="inline-block mt-1.5 text-sm text-emerald-600 hover:text-emerald-700 font-medium"
-                    >
-                      View checklist →
-                    </Link>
-                  </div>
-                ) : (
-                  <p className="text-slate-600">
-                    — <Link to={applicantDocumentsPath(basePath, id)} className="text-emerald-600 hover:underline">Open document checklist</Link> to get started.
-                  </p>
-                )}
-              </dd>
-            </div>
-          </dl>
-        )}
+          </FieldRow>
+        </div>
       </section>
 
       {editModalOpen && (
