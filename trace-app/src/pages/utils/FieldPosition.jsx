@@ -322,6 +322,22 @@ function toCobDisplay(value) {
   return String(value).toUpperCase();
 }
 
+/** Uppercase month names indexed by 1-based month number. */
+const MONTH_NAMES = [
+  '', 'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
+  'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER',
+];
+
+/**
+ * Convert a numeric month string (1-12) to its full uppercase month name.
+ * Returns the original value if it is not a valid month number.
+ */
+function monthNumberToName(value) {
+  if (!value) return '';
+  const idx = parseInt(String(value).trim(), 10);
+  return idx >= 1 && idx <= 12 ? MONTH_NAMES[idx] : String(value).toUpperCase();
+}
+
 /**
  * Parse date string into day, month, year components
  */
@@ -416,7 +432,7 @@ const FIELD_VALUE_MAP = [
   { key: 'child_name_last', valueKey: 'childLast' },
   { key: 'sex', valueKey: 'sex' },
   { key: 'date_of_birth_day', valueKey: 'birthDay' },
-  { key: 'date_of_birth_month', valueKey: 'birthMonth' },
+  { key: 'date_of_birth_month', getValue: (getVal) => monthNumberToName(getVal('birthMonth')) },
   { key: 'date_of_birth_year', valueKey: 'birthYear' },
   { key: 'place_of_birth_hospital', valueKey: 'placeOfBirthName' },
   { key: 'place_of_birth_city', valueKey: 'placeOfBirthCity' },
@@ -855,7 +871,7 @@ function buildCombinedPdfBase64(merged) {
   doc.setFontSize(10);
   const childName = `${merged.childFirst || ''} ${merged.childMiddle || ''} ${merged.childLast || ''}`.trim();
   doc.text(`Applicant: ${childName}`, 0.5, checklistStartY + 0.3);
-  doc.text(`Date of Birth: ${merged.birthMonth || ''}/${merged.birthDay || ''}/${merged.birthYear || ''}`, 0.5, checklistStartY + 0.5);
+  doc.text(`Date of Birth: ${monthNumberToName(merged.birthMonth) || ''}/${merged.birthDay || ''}/${merged.birthYear || ''}`, 0.5, checklistStartY + 0.5);
 
   // Sample requirements data with checkmarks
   const requirementsData = [
@@ -1265,7 +1281,7 @@ export function FieldPosition() {
           {/* Child Birth Info */}
           <PositionedValue fieldKey="sex" value={getVal('sex')} />
           <PositionedValue fieldKey="date_of_birth_day" value={getVal('birthDay')} />
-          <PositionedValue fieldKey="date_of_birth_month" value={getVal('birthMonth')} />
+          <PositionedValue fieldKey="date_of_birth_month" value={monthNumberToName(getVal('birthMonth'))} />
           <PositionedValue fieldKey="date_of_birth_year" value={getVal('birthYear')} />
           <PositionedValue fieldKey="place_of_birth_hospital" value={getAbbrevVal('placeOfBirthName')} />
           <PositionedValue fieldKey="place_of_birth_city" value={getVal('placeOfBirthCity')} />

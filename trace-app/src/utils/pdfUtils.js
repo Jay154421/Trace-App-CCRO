@@ -142,7 +142,7 @@ export const FIELD_POSITIONS = {
   registered_by: { x: 1665, y: 3306 },
   registered_by_title: { x: 1665, y: 3375 },
   registered_by_date: { x: 1665, y: 3447 },
-  remarks: { x: 246, y: 3600, width: 2292, height: 210 },
+  remarks: { x: 234, y: 3588, width: 2292, height: 210 },
   ...REGISTRAR_BOX_FIELD_POSITIONS,
 };
 
@@ -229,6 +229,8 @@ export const ATTENDANT_ADDRESS_MIN_FONT_PT = 9;
 export const ATTENDANT_SIGNATURE_COMPACT_LENGTH = 40;
 export const ATTENDANT_SIGNATURE_COMPACT_PDF_PT = 8;
 export const ATTENDANT_SIGNATURE_MIN_FONT_PT = 8;
+export const ATTENDANT_SIGNATURE_COMPACT_OVERLAY_PX =
+  (ATTENDANT_SIGNATURE_COMPACT_PDF_PT / 10) * PDF_LAYOUT.fieldFontSize;
 
 // ============================================================================
 // UTILITY FUNCTIONS
@@ -306,6 +308,22 @@ export function abbreviateAddressText(value) {
     .replace(/\bLot\b/gi, 'Lt.');
 }
 
+/** Uppercase month names indexed by 1-based month number. */
+const MONTH_NAMES = [
+  '', 'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
+  'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER',
+];
+
+/**
+ * Convert a numeric month string (1-12) to its full uppercase month name.
+ * Returns the original value if it is not a valid month number.
+ */
+export function monthNumberToName(value) {
+  if (!value) return '';
+  const idx = parseInt(String(value).trim(), 10);
+  return idx >= 1 && idx <= 12 ? MONTH_NAMES[idx] : String(value).toUpperCase();
+}
+
 /**
  * Convert value to Certificate of Live Birth display format (uppercase)
  */
@@ -343,14 +361,15 @@ export function parseDateOfBirth(dateStr) {
 export function countryDisplayFromCodeOrText(codeOrText) {
   if (!codeOrText || typeof codeOrText !== 'string') return '';
   const text = codeOrText.trim();
+  let out = text;
   if (text.length === 2 && /^[A-Za-z]{2}$/.test(text)) {
     try {
       const displayNames = new Intl.DisplayNames(['en'], { type: 'region' });
       const name = displayNames.of(text.toUpperCase());
-      if (name && name !== text.toUpperCase()) return name;
-    } catch (_) { /* ignore */ }  
+      if (name && name !== text.toUpperCase()) out = name;
+    } catch (_) { /* ignore */ }
   }
-  return text;
+  return String(out).toUpperCase();
 }
 
 /**
@@ -407,7 +426,7 @@ export const FIELD_VALUE_MAP = [
   { key: 'child_name_last', valueKey: 'childLast' },
   { key: 'sex', valueKey: 'sex' },
   { key: 'date_of_birth_day', valueKey: 'birthDay' },
-  { key: 'date_of_birth_month', valueKey: 'birthMonth' },
+  { key: 'date_of_birth_month', getValue: (getVal) => monthNumberToName(getVal('birthMonth')) },
   { key: 'date_of_birth_year', valueKey: 'birthYear' },
   { key: 'place_of_birth_hospital', valueKey: 'placeOfBirthName' },
   { key: 'place_of_birth_city', valueKey: 'placeOfBirthCity' },
@@ -496,6 +515,11 @@ export function buildMergedCertData(child, cert) {
     (cert.father_country && String(cert.father_country).trim()) ||
     countryDisplayFromCodeOrText(resFather);
 
+  const marriageCountry =
+    (cert.marriagePlaceCountry && String(cert.marriagePlaceCountry).trim()) ||
+    (cert.marriage_place_country && String(cert.marriage_place_country).trim()) ||
+    '';
+
   return {
     ...cert,
     childFirst: cert.childFirst ?? cert.child_first ?? child?.first_name ?? '',
@@ -504,8 +528,9 @@ export function buildMergedCertData(child, cert) {
     birthDay: cert.birthDay ?? cert.birth_day ?? birth.day ?? '',
     birthMonth: cert.birthMonth ?? cert.birth_month ?? birth.month ?? '',
     birthYear: cert.birthYear ?? cert.birth_year ?? birth.year ?? '',
-    motherCountry: mc,
-    fatherCountry: fc,
+    motherCountry: String(mc || '').trim().toUpperCase(),
+    fatherCountry: String(fc || '').trim().toUpperCase(),
+    marriagePlaceCountry: String(marriageCountry || '').trim().toUpperCase(),
   };
 }
 
@@ -840,7 +865,7 @@ export function buildCombinedPdfBase64(merged) {
   doc.setFontSize(10);
   const childName = `${merged.childFirst || ''} ${merged.childMiddle || ''} ${merged.childLast || ''}`.trim();
   doc.text(`Applicant: ${childName}`, 0.5, checklistStartY + 0.3);
-  doc.text(`Date of Birth: ${merged.birthMonth || ''}/${merged.birthDay || ''}/${merged.birthYear || ''}`, 0.5, checklistStartY + 0.5);
+  doc.text(`Date of Birth: ${monthNumberToName(merged.birthMonth) || ''}/${merged.birthDay || ''}/${merged.birthYear || ''}`, 0.5, checklistStartY + 0.5);
 
   // Sample requirements data with checkmarks
   const requirementsData = [
