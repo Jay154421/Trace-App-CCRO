@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, nativeImage, Menu, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, nativeImage, Menu, shell, session } = require('electron');
 const { execFile } = require('child_process');
 const path = require('path');
 const fs = require('fs');
@@ -233,6 +233,27 @@ function createWindow(url) {
       preload: PRELOAD_PATH,
     },
   });
+
+  // Clear any corrupted Chromium disk cache that causes ERR_CACHE_READ_FAILURE.
+  // Since all assets are served from localhost, disk caching is unnecessary.
+  session.defaultSession.clearCache().catch(() => {
+    // Non-fatal — cache clearing may fail if it's already in use, but we continue.
+  });
+
+  // Disable HTTP cache entirely to prevent recurrences of ERR_CACHE_READ_FAILURE.
+  // Localhost-served files don't benefit from disk caching and it's a recurring
+  // failure point in Electron on Windows.
+  win.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      },
+    });
+  });
+
   win.loadURL(url);
   if (isDev) win.webContents.openDevTools();
 
