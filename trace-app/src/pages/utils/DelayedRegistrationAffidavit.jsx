@@ -357,6 +357,7 @@ export function DelayedRegistrationAffidavit() {
     relationship: '',
     affixedDay: '',
     affixedMonth: '',
+    affixedYear: '',
     affixedAt: '',
     swornDay: '',
     swornMonth: '',
@@ -838,13 +839,21 @@ export function DelayedRegistrationAffidavit() {
                 width="w-16"
                 suggestionOptions={dateNowSuggestions.day}
               />
-              <span>day of</span>
+                <span>day of</span>
               <FormLine
                 value={form.affixedMonth}
                 onChange={v => update('affixedMonth', v)}
                 placeholder="(Month)"
                 width="w-32"
                 suggestionOptions={dateNowSuggestions.month}
+              />
+              <span>,</span>
+              <FormLine
+                value={form.affixedYear}
+                onChange={v => update('affixedYear', v)}
+                placeholder="(Year)"
+                width="w-20"
+                suggestionOptions={dateNowSuggestions.year}
               />
             </div>
             <div className="flex flex-wrap items-baseline gap-2">

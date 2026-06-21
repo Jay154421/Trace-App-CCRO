@@ -97,6 +97,7 @@ const FIELD_POSITIONS = {
     dra_affiant_signature: { x: 1428, y: 3399, width: 825 },
     dra_affixed_day: { x: 1251, y: 3192 },
     dra_affixed_month: { x: 1521, y: 3192, width: 675 },
+    dra_affixed_year: { x: 1641, y: 3192, width: 189 },
     dra_affixed_at: { x: 1139, y: 3266, width: 840 },
     dra_sworn_day: { x: 1179, y: 3588 },
     dra_sworn_month: { x: 1488, y: 3588, width: 483 },
@@ -160,7 +161,7 @@ const PDF_COLUMN_GUTTER_PX = 20;
 const PDF_MULTI_COLUMN_ROWS = [
     ['pa_mother_name', 'pa_father_name'],
     ['pa_sworn_day', 'pa_sworn_month', 'pa_sworn_year'],
-    ['dra_affixed_day', 'dra_affixed_month'],
+    ['dra_affixed_day', 'dra_affixed_month', 'dra_affixed_year'],
     ['dra_sworn_day', 'dra_sworn_month', 'dra_sworn_year'],
 ];
 
@@ -441,6 +442,7 @@ const FIELD_VALUE_MAP = [
     { key: 'dra_affiant_signature', getValue: (getVal) => getVal('delayed_registration_affidavit')?.affiantSignature || '' },
     { key: 'dra_affixed_day', getValue: (getVal) => getVal('delayed_registration_affidavit')?.affixedDay || '' },
     { key: 'dra_affixed_month', getValue: (getVal) => getVal('delayed_registration_affidavit')?.affixedMonth || '' },
+    { key: 'dra_affixed_year', getValue: (getVal) => getVal('delayed_registration_affidavit')?.affixedYear || '' },
     { key: 'dra_affixed_at', getValue: (getVal) => getVal('delayed_registration_affidavit')?.affixedAt || '' },
     { key: 'dra_sworn_day', getValue: (getVal) => getVal('delayed_registration_affidavit')?.swornDay || '' },
     { key: 'dra_sworn_month', getValue: (getVal) => getVal('delayed_registration_affidavit')?.swornMonth || '' },
@@ -1397,6 +1399,7 @@ export function FieldPositionBack() {
                     <PositionedValue fieldKey="dra_affiant_signature" value={getVal('delayed_registration_affidavit')?.affiantSignature} />
                     <PositionedValue fieldKey="dra_affixed_day" value={getVal('delayed_registration_affidavit')?.affixedDay} />
                     <PositionedValue fieldKey="dra_affixed_month" value={getVal('delayed_registration_affidavit')?.affixedMonth} />
+                    <PositionedValue fieldKey="dra_affixed_year" value={getVal('delayed_registration_affidavit')?.affixedYear} />
                     <PositionedValue fieldKey="dra_affixed_at" value={getVal('delayed_registration_affidavit')?.affixedAt} />
                     <PositionedValue fieldKey="dra_sworn_day" value={getVal('delayed_registration_affidavit')?.swornDay} />
                     <PositionedValue fieldKey="dra_sworn_month" value={getVal('delayed_registration_affidavit')?.swornMonth} />
