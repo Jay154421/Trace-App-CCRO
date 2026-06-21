@@ -1163,7 +1163,7 @@ export function DocumentsWizard() {
 
   const steps = [
     { name: 'General documents', items: checklist.filter((c) => c.category === 'general') },
-    { name: 'Age-specific requirements', items: checklist.filter((c) => c.category === 'age_specific') },
+    { name: ' 2 Documentary evidence', items: checklist.filter((c) => c.category === 'age_specific') },
     { name: 'Conditional documents', items: checklist.filter((c) => c.category === 'conditional') },
   ].filter((s) => s.items.length > 0);
 

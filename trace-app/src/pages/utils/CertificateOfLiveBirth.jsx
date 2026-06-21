@@ -323,6 +323,8 @@ const PH_GEO_PROVINCE_DATALIST_ID = 'certificate-of-live-birth-ph-province-datal
 const PH_JSON_COUNTRY_DATALIST_ID = 'certificate-of-live-birth-ph-json-country-datalist';
 const GENERIC_NOT_APPLICABLE_DATALIST_ID = 'certificate-of-live-birth-not-applicable-datalist';
 const NOT_APPLICABLE_LABEL = 'NOT APPLICABLE';
+const MARRIAGE_MONTH_SUGGESTIONS = ['NOT APPLICABLE', "DON'T KNOW"];
+const MARRIAGE_CITY_SUGGESTIONS = ['NOT APPLICABLE', "DON'T KNOW"];
 
 function isColbBrapChild(child) {
   return String(child?.application_type || '').toLowerCase() === 'colb_brap';
@@ -1175,6 +1177,8 @@ function FormPhCityCombo({
   crossFieldSeedRef,
   /** When empty on focus, suggest from this city first (e.g. place of birth → residence). */
   idleFocusSeed,
+  /** Synthetic non-PSA suggestions shown alongside geo results (e.g. NOT APPLICABLE). */
+  syntheticSuggestions,
 }) {
   const listboxBaseId = useId();
   const listboxId = `${listboxBaseId}-listbox`;
@@ -1187,10 +1191,38 @@ function FormPhCityCombo({
   const trimmedCity = String(cityValue ?? '').trim();
   const effectiveQuery = trimmedCity || pendingCrossFieldSeed;
 
-  const suggestions = useMemo(
-    () => getPhCityPickerSuggestions(effectiveQuery, maxSuggestionRows),
-    [effectiveQuery, maxSuggestionRows],
-  );
+  const syntheticItems = useMemo(() => {
+    if (!syntheticSuggestions || !syntheticSuggestions.length) return [];
+    const q = effectiveQuery.toUpperCase();
+    return syntheticSuggestions
+      .filter((s) => !q || String(s).toUpperCase().includes(q))
+      .map((s, idx) => ({
+        key: `synthetic-${String(s).toUpperCase()}-${idx}`,
+        label: String(s).toUpperCase(),
+        isSynthetic: true,
+        value: String(s).toUpperCase(),
+      }));
+  }, [syntheticSuggestions, effectiveQuery]);
+
+  const suggestions = useMemo(() => {
+    const geo = getPhCityPickerSuggestions(effectiveQuery, maxSuggestionRows);
+    if (!syntheticItems.length && !geo.length) return [];
+    const seen = new Set();
+    const merged = [];
+    for (const si of syntheticItems) {
+      const u = si.value.toUpperCase();
+      if (seen.has(u)) continue;
+      seen.add(u);
+      merged.push(si);
+    }
+    for (const gi of geo) {
+      const u = gi.label.split(',')[0].trim().toUpperCase();
+      if (seen.has(u)) continue;
+      seen.add(u);
+      merged.push(gi);
+    }
+    return merged;
+  }, [syntheticItems, effectiveQuery, maxSuggestionRows]);
 
   useEffect(() => {
     setActiveIndex(0);
@@ -1215,13 +1247,19 @@ function FormPhCityCombo({
   const applyItem = useCallback(
     (item) => {
       if (!item) return;
+      if (item.isSynthetic) {
+        onCityInputChange(item.value);
+        setOpen(false);
+        setPendingCrossFieldSeed('');
+        return;
+      }
       const { record } = item;
       if (crossFieldSeedRef && record.city) crossFieldSeedRef.current = record.city;
       onGeoPick({ ...record });
       setOpen(false);
       setPendingCrossFieldSeed('');
     },
-    [crossFieldSeedRef, onGeoPick],
+    [crossFieldSeedRef, onGeoPick, onCityInputChange],
   );
 
   const borderColor = COLORS.accentGreen;
@@ -2927,14 +2965,25 @@ export function CertificateOfLiveBirth() {
             <div>
               <label className="block mb-1 font-normal">20a. DATE</label>
               <div className="flex flex-wrap items-center gap-2">
-                <FormLine
+                <FormTextCombo
                   value={form.marriageMonth}
-                  onChange={(v) => updateNumericMaxTwoDigits('marriageMonth', v, '20a. DATE (MONTH)')}
+                  onInputChange={(v) => {
+                    const next = String(v ?? '').trim().toUpperCase();
+                    if (next === 'NOT APPLICABLE' || next === "DON'T KNOW") {
+                      setForm((p) => ({ ...p, marriageMonth: next, marriageDay: '', marriageYear: '', marriagePlaceCity: next, marriagePlaceProvince: '', marriagePlaceCountry: '' }));
+                    } else {
+                      updateNumericMaxTwoDigits('marriageMonth', v, '20a. DATE (MONTH)');
+                    }
+                  }}
                   onBlur={() => commitPaddedMonthDayPart('marriageMonth')}
                   placeholder="(Month)"
+                  suggestionOptions={MARRIAGE_MONTH_SUGGESTIONS}
+                  idleFocusSuggestions={MARRIAGE_MONTH_SUGGESTIONS}
                   className={parentsMarriageNotApplicable ? 'min-w-[12rem] flex-1' : 'w-28'}
                   width={parentsMarriageNotApplicable ? 'min-w-[12rem] flex-1' : 'w-28'}
                   disabled={parentsMarriageNotApplicable}
+                  includeNotApplicable={false}
+                  ariaLabel="Parents marriage month"
                 />
                 <FormLine
                   value={form.marriageDay}
@@ -3004,6 +3053,7 @@ export function CertificateOfLiveBirth() {
                     width="w-full"
                     ariaLabel="Parents marriage place city or municipality"
                     crossFieldSeedRef={phCityCrossSeedRef}
+                    syntheticSuggestions={MARRIAGE_CITY_SUGGESTIONS}
                   />
                 )}
                 <FormLine

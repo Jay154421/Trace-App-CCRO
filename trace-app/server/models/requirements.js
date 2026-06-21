@@ -14,6 +14,7 @@ const GENERAL_DOCS = [
   { id: 'affidavit_guardianship', label: 'Affidavit of Guardianship (Legal Office)' },
   { id: 'brgy_facts_birth', label: 'Brgy. Certification (Facts of Birth)' },
   { id: 'brgy_residency', label: 'Brgy. Residency' },
+  { id: 'parents_id_birth', label: 'Valid I.D. & birth cert of parents' },
   { id: 'photo_2x2', label: '2x2 Photo I.D. with white background (studio copy: 1, out-of-town: 2)' },
 ];
 
@@ -23,7 +24,6 @@ const AGE_1M_TO_6 = [
   { id: 'form_137', label: 'Form 137/school records or certification' },
   { id: 'ausf', label: 'AUSF (Affidavit to Use Surname of Father) / Appearance of both parents (married/not married)' },
   { id: 'marriage_contract', label: 'Marriage contract of parents (if married)' },
-  { id: 'parents_id_birth', label: 'Valid I.D. & birth cert of parents' },
 ];
 
 const AGE_7_TO_17 = [
@@ -31,7 +31,6 @@ const AGE_7_TO_17 = [
   { id: 'form_137_sf10', label: 'Form 137 SF10-ES and/or school cert' },
   { id: 'ausf', label: 'AUSF (Affidavit to Use Surname of Father)' },
   { id: 'marriage_contract', label: 'Marriage contract of parents' },
-  { id: 'parents_id_birth', label: 'Valid I.D. & birth cert of parents' },
 ];
 
 const AGE_18_TO_59 = [
@@ -43,7 +42,6 @@ const AGE_18_TO_59 = [
   { id: 'marriage_cert', label: 'Marriage certificate (applicant or parents) with place of birth' },
   { id: 'sss_gsis_philhealth', label: 'SSS-E4, GSIS, or MDR-PhilHealth' },
   { id: 'siblings_birth', label: 'Siblings\' birth certificate, etc.' },
-  { id: 'parents_id_birth', label: 'Valid I.D.s & birth cert of parents' },
 ];
 
 const AGE_60_PLUS = [
