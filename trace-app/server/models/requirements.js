@@ -65,6 +65,9 @@ const CONDITIONAL_DOCS = {
   colb_parent_id: { id: 'colb_parent_id', label: 'Valid I.D. of parent/s or guardian' },
   muslim_attachment: { id: 'muslim_attachment', label: 'Muslim attachment' },
   verification_results: { id: 'verification_results', label: 'Verification Results' },
+  affidavit_discrepancy: { id: 'affidavit_discrepancy', label: 'Affidavit of Discrepancy' },
+  affidavit_one_same_person: { id: 'affidavit_one_same_person', label: 'Affidavit of One and the Same Person' },
+  affidavit_discrep_one_same_person: { id: 'affidavit_discrep_one_same_person', label: 'Affidavit of Discrep (One and the Same Person)' },
 };
 
 const PHOTO_ID_SCANNER_CAPTURE_SIZE = { width: 600, height: 600, label: '2 x 2 in' };
@@ -111,6 +114,10 @@ function getRequirementsForChild(child) {
     if (child.has_muslim_attachment) {
       conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.muslim_attachment), category: 'conditional' });
     }
+    /* Affidavit documents (always available, not required) */
+    conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.affidavit_discrepancy), category: 'conditional' });
+    conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.affidavit_one_same_person), category: 'conditional' });
+    conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.affidavit_discrep_one_same_person), category: 'conditional' });
     /* Age 80+ → Verification Results */
     const brapAge = typeof child.age === 'number'
       ? child.age
@@ -152,6 +159,10 @@ function getRequirementsForChild(child) {
   if (child.out_of_town) {
     conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.affidavit_corroboration_out_of_town), category: 'conditional' });
   }
+  /* Affidavit documents (always available, not required) */
+  conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.affidavit_discrepancy), category: 'conditional' });
+  conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.affidavit_one_same_person), category: 'conditional' });
+  conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.affidavit_discrep_one_same_person), category: 'conditional' });
   /* Age 80+ → Verification Results */
   if (age >= 80) {
     conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.verification_results), category: 'conditional' });

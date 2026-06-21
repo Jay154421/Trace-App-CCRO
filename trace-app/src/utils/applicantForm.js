@@ -257,10 +257,23 @@ export function hasMinimumAgeSpecificAttachments(checklist) {
 }
 
 /**
+ * Labels of conditional documents that are informational only and NOT required
+ * for the checklist to be considered "fully complete". These never block
+ * PDF generation (Front PDF / Back PDF).
+ * Note: labels are used instead of IDs because stored checklist items persist
+ * only category, label, checked, notes, and attachmentFilenames — not the `id` field.
+ */
+const NON_REQUIRED_CONDITIONAL_LABELS = new Set([
+  'Affidavit of Discrepancy',
+  'Affidavit of One and the Same Person',
+  'Affidavit of Discrep (One and the Same Person)',
+]);
+
+/**
  * Returns true when the checklist is fully complete:
  * - All general items have attachments
  * - At least MIN_AGE_SPECIFIC_ATTACHMENTS total attachments across age-specific items
- * - All conditional items have attachments
+ * - All conditional items have attachments (except non-required conditional docs)
  *
  * Unlike the simpler "all items checked" logic, this allows age-specific items
  * to be satisfied by having the minimum number of attachments rather than
@@ -270,7 +283,7 @@ export function isChecklistFullyComplete(checklist) {
   if (!Array.isArray(checklist) || checklist.length === 0) return false;
   const general = checklist.filter((item) => item?.category === 'general');
   const ageSpecific = checklist.filter((item) => item?.category === 'age_specific');
-  const conditional = checklist.filter((item) => item?.category === 'conditional');
+  const conditional = checklist.filter((item) => item?.category === 'conditional' && !NON_REQUIRED_CONDITIONAL_LABELS.has(item?.label));
   const generalAllChecked = general.every((item) => countItemAttachments(item) > 0);
   const conditionalAllChecked = conditional.every((item) => countItemAttachments(item) > 0);
   const ageSpecificMet = ageSpecific.length === 0
