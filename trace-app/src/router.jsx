@@ -23,6 +23,8 @@ import { OutOfTownAffidavit } from './pages/utils/OutOfTownAffidavit';
 import { OutOfTownPrint } from './pages/utils/OutOfTownPrint';
 import { PrintCertificate } from './pages/utils/PrintCertificate';
 import { AusfPrint } from './pages/utils/AusfPrint';
+import { MuslimAttachment } from './pages/utils/MuslimAttachment';
+import { MuslimAttachmentPrint } from './pages/utils/MuslimAttachmentPrint';
 import { AUSF_06_PRINT_TYPE } from './pages/utils/ausf1';
 import { AUSF_0717_PRINT_TYPE } from './pages/utils/ausf2';
 import { AUSF_ONLY_PRINT_TYPE } from './pages/utils/ausf3';
@@ -105,6 +107,8 @@ export const router = createBrowserRouter(
         <Route path="/children/:id/ausf-0-6" element={<AusfPrint variant={AUSF_06_PRINT_TYPE} />} />
         <Route path="/children/:id/ausf-07-17" element={<AusfPrint variant={AUSF_0717_PRINT_TYPE} />} />
         <Route path="/children/:id/ausf-only" element={<AusfPrint variant={AUSF_ONLY_PRINT_TYPE} />} />
+        <Route path="/children/:id/muslim-attachment" element={<MuslimAttachment />} />
+        <Route path="/children/:id/muslim-attachment/print" element={<MuslimAttachmentPrint />} />
         <Route path="/colb-brap" element={<ChildList />} />
         <Route path="/colb-brap/new" element={<ChildForm />} />
         <Route path="/colb-brap/:id" element={<ChildDetail />} />
@@ -123,6 +127,8 @@ export const router = createBrowserRouter(
         <Route path="/colb-brap/:id/ausf-0-6" element={<AusfPrint variant={AUSF_06_PRINT_TYPE} />} />
         <Route path="/colb-brap/:id/ausf-07-17" element={<AusfPrint variant={AUSF_0717_PRINT_TYPE} />} />
         <Route path="/colb-brap/:id/ausf-only" element={<AusfPrint variant={AUSF_ONLY_PRINT_TYPE} />} />
+        <Route path="/colb-brap/:id/muslim-attachment" element={<MuslimAttachment />} />
+        <Route path="/colb-brap/:id/muslim-attachment/print" element={<MuslimAttachmentPrint />} />
       </Route>
     </>
   )

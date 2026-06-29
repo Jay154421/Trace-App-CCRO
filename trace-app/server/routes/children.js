@@ -23,5 +23,6 @@ router.put('/:id/paternity-affidavit', idParam, handleValidationErrors, ctrl.upd
 router.put('/:id/delayed-registration-affidavit', idParam, handleValidationErrors, ctrl.updateDelayedRegistrationAffidavit);
 router.put('/:id/witness-affidavit', idParam, handleValidationErrors, ctrl.updateWitnessAffidavit);
 router.put('/:id/out-of-town-affidavit', idParam, handleValidationErrors, ctrl.updateOutOfTownAffidavit);
+router.put('/:id/muslim-attachment', idParam, handleValidationErrors, ctrl.updateMuslimAttachment);
 
 module.exports = router;

@@ -105,6 +105,14 @@ function findById(id) {
       out_of_town_affidavit = {};
     }
   }
+  let muslim_attachment = {};
+  if (row.muslim_attachment) {
+    try {
+      muslim_attachment = JSON.parse(row.muslim_attachment);
+    } catch (e) {
+      muslim_attachment = {};
+    }
+  }
   const application_type = normalizeApplicationType(row.application_type);
   const age = calculateAge(row.date_of_birth);
   const age_group = isColbBrapRow({ application_type }) ? null : (row.age_group || getAgeGroup(age));
@@ -117,6 +125,7 @@ function findById(id) {
     witness_affidavit,
     out_of_town_affidavit,
     out_of_town_informant_is_owner: row.out_of_town_informant_is_owner,
+    muslim_attachment,
     age,
     age_group,
   };
@@ -183,6 +192,19 @@ function updateOutOfTownAffidavit(id, data) {
   }
   const json = JSON.stringify(data || {});
   db.prepare('UPDATE children SET out_of_town_affidavit = ?, updated_at = datetime(\'now\') WHERE id = ?').run(json, id);
+  db.close();
+  return true;
+}
+
+function updateMuslimAttachment(id, data) {
+  const db = getDb();
+  const existing = db.prepare('SELECT id FROM children WHERE id = ?').get(id);
+  if (!existing) {
+    db.close();
+    return false;
+  }
+  const json = JSON.stringify(data || {});
+  db.prepare('UPDATE children SET muslim_attachment = ?, updated_at = datetime(\'now\') WHERE id = ?').run(json, id);
   db.close();
   return true;
 }
@@ -373,5 +395,6 @@ module.exports = {
   updateDelayedRegistrationAffidavit,
   updateWitnessAffidavit,
   updateOutOfTownAffidavit,
+  updateMuslimAttachment,
   updateStaffProcessStatus,
 };

@@ -493,6 +493,13 @@ export function ChildDetail() {
             </Link>
           ) : null}
           <Link
+            to={`${basePath}/${id}/muslim-attachment/print`}
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            title="Muslim Attachment (Municipal Form No. 102)"
+          >
+            Muslim Attachment
+          </Link>
+          <Link
             to={`${basePath}/${id}/print-certificate`}
             className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
