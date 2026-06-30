@@ -242,7 +242,11 @@ export function MuslimAttachment() {
         </div>
 
         <form onSubmit={handleSave}>
-          <table className="form">
+          <table className="form" style={{ tableLayout: 'fixed' }}>
+            <colgroup>
+              <col style={{ width: '50%' }} />
+              <col style={{ width: '50%' }} />
+            </colgroup>
             <tbody>
               <tr>
                 <td style={{ width: '75%' }}>

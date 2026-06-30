@@ -87,7 +87,11 @@ export default function MuslimAttachmentPrintDocument({ data = {} }) {
         </div>
       </div>
 
-      <table className="form">
+      <table className="form" style={{ tableLayout: 'fixed' }}>
+        <colgroup>
+          <col style={{ width: '50%' }} />
+          <col style={{ width: '50%' }} />
+        </colgroup>
         <tbody>
           <tr>
             <td style={{ width: '75%' }}>
