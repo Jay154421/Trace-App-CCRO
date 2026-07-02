@@ -22,8 +22,9 @@ function witnessDateLine(day, month) {
   const d = String(day ?? '').trim();
   const m = String(month ?? '').trim();
   if (!d && !m) return '\u00a0';
-  if (d && m) return `${d} day of ${m}`;
-  return d || m;
+  if (d && m) return <><span className={`${FILL_BOLD} px-0.5 align-baseline`}>{d}</span> day of <span className={`${FILL_BOLD} px-0.5 align-baseline`}>{m}</span></>;
+  if (d) return <span className={`${FILL_BOLD} px-0.5 align-baseline`}>{d}</span>;
+  return <span className={`${FILL_BOLD} px-0.5 align-baseline`}>{m}</span>;
 }
 
 export default function WitnessPrintDocument({ data = {} }) {
@@ -47,7 +48,7 @@ export default function WitnessPrintDocument({ data = {} }) {
         </p>
 
         <p className="mb-3 leading-normal">
-          That we personally know{' '}
+        1.  That we personally know{' '}
           <span className={`${FILL_BOLD} px-0.5 align-baseline uppercase`}>{blank(data.childName)}</span> born on{' '}
           <span className={`${FILL_BOLD} px-0.5 align-baseline`}>{blank(data.childDob)}</span> at{' '}
           <span className={`${FILL_BOLD} px-0.5 align-baseline uppercase`}>{blank(data.childPob)}</span> to parents{' '}
@@ -56,7 +57,7 @@ export default function WitnessPrintDocument({ data = {} }) {
         </p>
 
         <p className="mb-3 leading-normal">
-          That the fact of birth of{' '}
+        2. That the fact of birth of{' '}
           <span className={`${FILL_BOLD} px-0.5 align-baseline uppercase`}>{blank(data.lateRegistrationName)}</span> was
           not promptly recorded at the Civil Registrar&apos;s Office of{' '}
           <span className={`${FILL_BOLD} px-0.5 align-baseline uppercase`}>{blank(data.civilRegistrarOffice)}</span>, as
@@ -64,18 +65,18 @@ export default function WitnessPrintDocument({ data = {} }) {
         </p>
 
         <p className="mb-3 leading-normal">
-          That we have knowledge of the foregoing facts because we are close friends of their family;
+        3. That we have knowledge of the foregoing facts because we are close friends of their family;
         </p>
 
         <p className="mb-3 leading-normal">
-          That we are executing this affidavit to attest to the veracity and truthfulness of the foregoing statements and
+        4. That we are executing this affidavit to attest to the veracity and truthfulness of the foregoing statements and
           for the purpose of late registration of birth of{' '}
           <span className={`${FILL_BOLD} px-0.5 align-baseline uppercase`}>{blank(data.lateRegistrationName)}</span>.
         </p>
 
         <p className="mb-2 leading-normal">
           <span className="font-bold">IN WITNESS WHEREOF,</span> we have hereunto set our hands this{' '}
-          <span className={`${FILL_BOLD} px-0.5 align-baseline`}>{witnessDateLine(data.affixedDay, data.affixedMonth)}</span>{' '}
+          {witnessDateLine(data.affixedDay, data.affixedMonth)}{' '}
           at Iligan City, Philippines.
         </p>
 
@@ -92,7 +93,7 @@ export default function WitnessPrintDocument({ data = {} }) {
 
         <p className="ausf-subscribed-sworn mt-8 mb-0 leading-normal">
           <span className="font-bold">SUBSCRIBED AND SWORN</span> to before me this{' '}
-          <span className={`${FILL_BOLD} px-0.5 align-baseline`}>{witnessDateLine(data.swornDay, data.swornMonth)}</span>{' '}
+          {witnessDateLine(data.swornDay, data.swornMonth)}{' '}
           in the ILIGAN CITY, Philippines.
         </p>
         <div className="registrar-signature-zone flex w-full flex-col items-end justify-end">
