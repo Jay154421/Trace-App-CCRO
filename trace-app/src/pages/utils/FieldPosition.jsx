@@ -145,7 +145,7 @@ const FIELD_POSITIONS = {
   prepared_by: { x: 1665, y: 2928 },
   prepared_by_title: { x: 1665, y: 3000 },
   prepared_by_date: { x: 1665, y: 3069 },
-  registered_by: { x: 1665, y: 3306 },
+  registered_by: { x: 1665, y: 3306, width: 600 },
   registered_by_title: { x: 1665, y: 3375 },
   registered_by_date: { x: 1665, y: 3447 },
   remarks: { x: 234, y: 3588, width: 2292, height: 210 },
