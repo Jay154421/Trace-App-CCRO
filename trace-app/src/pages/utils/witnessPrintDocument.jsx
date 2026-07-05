@@ -33,7 +33,7 @@ export default function WitnessPrintDocument({ data = {} }) {
 
   return (
     <div className="ausf-doc witness-doc print-doc flex flex-col bg-white text-black">
-      <DocumentHeader registryNo={data.registryNo} juratBlock={JURAT_BLOCK} />
+      <DocumentHeader registryNo={data.registryNo} juratBlock={JURAT_BLOCK} showRegistryNo={false} />
 
       <div className="witness-doc-body print-doc-body ausf-doc-body flex flex-col text-[12pt] leading-relaxed">
         <h2 className="ausf-section-title text-center">AFFIDAVIT TWO DISINTERESTED WITNESSES</h2>
