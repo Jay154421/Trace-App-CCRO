@@ -466,7 +466,7 @@ const FIELD_VALUE_MAP = [
   { key: 'father_residence_city', valueKey: 'fatherResidenceCity' },
   { key: 'father_residence_province', valueKey: 'fatherResidenceProvince' },
   { key: 'father_country', valueKey: 'fatherCountry' },
-  { key: 'marriage_date_month', valueKey: 'marriageMonth' },
+  { key: 'marriage_date_month', getValue: (getVal) => monthNumberToName(getVal('marriageMonth')) },
   { key: 'marriage_date_day', valueKey: 'marriageDay' },
   { key: 'marriage_date_year', valueKey: 'marriageYear' },
   { key: 'marriage_place_city', valueKey: 'marriagePlaceCity' },
@@ -1321,7 +1321,7 @@ export function FieldPosition() {
           <PositionedValue fieldKey="father_country" value={getVal('fatherCountry')} />
 
           {/* Marriage */}
-          <PositionedValue fieldKey="marriage_date_month" value={getVal('marriageMonth')} />
+          <PositionedValue fieldKey="marriage_date_month" value={monthNumberToName(getVal('marriageMonth'))} />
           <PositionedValue fieldKey="marriage_date_day" value={getVal('marriageDay')} />
           <PositionedValue fieldKey="marriage_date_year" value={getVal('marriageYear')} />
           <PositionedValue fieldKey="marriage_place_city" value={getVal('marriagePlaceCity')} />

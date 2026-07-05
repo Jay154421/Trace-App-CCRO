@@ -1,0 +1,155 @@
+---
+description: Enforce clean, readable, modular, comment-free code with meaningful naming and no unused complexity.
+alwaysApply: true
+globs: "**/*.{js,jsx,ts,tsx,mjs,cjs,css,scss,html,py,php,rs,go,java,kt,sql,sh,ps1,yaml,yml,json,md,mdx}"
+---
+
+# Clean Coding Standards
+
+## 1. Clean & Readable Code
+
+Write code that is self-explanatory and easy to follow. Prefer clarity over cleverness.
+
+```javascript
+// ❌ BAD – cryptic and dense
+const r = (x, y) => x * y + (x > 0 ? a : b) - (y > 0 ? c : d);
+
+// ✅ GOOD – clear intent with named intermediates
+const product = width * height;
+const adjustPositiveX = width > 0 ? adjustmentA : adjustmentB;
+const adjustPositiveY = height > 0 ? adjustmentC : adjustmentD;
+const result = product + adjustPositiveX - adjustPositiveY;
+```
+
+Structure logic in small, predictable steps. Flat is better than nested.
+
+## 2. No Comments
+
+The code itself must be the documentation. Do not add inline comments, block comments, JSDoc, or any explanatory text.
+
+```javascript
+// ❌ BAD – comments explaining the obvious
+// Increment the counter by 1
+counter += 1;
+
+// ✅ GOOD – code that speaks for itself
+counter += 1;
+```
+
+Instead of commenting what something does, extract it to a well-named function or variable.
+
+```javascript
+// ❌ BAD – comment explains a block
+// Apply 12% VAT to subtotal
+const total = subtotal * 1.12;
+
+// ✅ GOOD – named constant and variable make intent clear
+const VAT_RATE = 1.12;
+const totalIncludingVat = subtotal * VAT_RATE;
+```
+
+**Exceptions:** The only allowable comment is a single `eslint-disable` or similar directive if absolutely required by the toolchain.
+
+## 3. Modular & Well-Structured
+
+Organize code into small, focused modules and functions.
+
+- **One responsibility per function** — if a function does more than one thing, split it.
+- **One responsibility per file** — a file should export one primary thing (function, class, component) with closely related helpers.
+- **Flat structure** — keep nesting deep (callbacks, conditionals, ternaries) to a maximum of 3 levels.
+- **Colocation** — place related logic close together; avoid unnecessary abstractions that scatter behavior across 10 files.
+
+```javascript
+// ❌ BAD – doing too much in one function
+function processOrder(order) {
+  validateOrder(order);
+  const total = calculateTotal(order.items);
+  const tax = applyTax(total);
+  const discounted = applyDiscount(tax, order.coupon);
+  saveOrder(order, discounted);
+  sendConfirmation(order.email);
+  updateInventory(order.items);
+  return discounted;
+}
+
+// ✅ GOOD – orchestrator delegates to focused helpers
+function processOrder(order) {
+  validateOrder(order);
+  const finalAmount = calculateFinalAmount(order);
+  saveOrder(order, finalAmount);
+  notifyCustomer(order.email);
+  updateInventory(order.items);
+  return finalAmount;
+}
+```
+
+## 4. Clear & Meaningful Naming
+
+Names must reveal intent at a glance.
+
+| ❌ Bad Name | ✅ Good Name | Reason |
+|---|---|---|
+| `data` | `orderData` / `userProfile` | Be specific, not generic |
+| `handleClick` | `handleSubmitOrder` | Include the action |
+| `getIt` | `fetchUserPermissions` | Describe what and from where |
+| `tmp` | `normalizedPhoneNumber` | Never use `tmp`, `temp`, `foo`, `bar` |
+| `isGood` | `isPaymentComplete` | Predicates must be unambiguous |
+| `doStuff` | `syncPendingInvoices` | Verbs must be precise |
+| `val` | `discountPercentage` | Include the unit/type in the name |
+| `arr` | `activeProductList` | Describe the collection's content |
+
+**Naming conventions:**
+- **Booleans:** prefix with `is`, `has`, `should`, `can`, `will` (e.g., `isLoading`, `hasPermission`)
+- **Functions:** verb-prefixed (`get`, `set`, `fetch`, `calculate`, `transform`, `validate`)
+- **Constants:** `UPPER_SNAKE_CASE` for magic values, configuration, or enums
+- **Variables:** `camelCase` for local variables, parameters, and properties
+- **Classes/Components:** `PascalCase`
+
+## 5. Avoid Unnecessary Complexity & Unused Code
+
+Every line must earn its place.
+
+```javascript
+// ❌ BAD – unused variables, dead code path
+function calculateTotal(items) {
+  const TAX_RATE = 0.1; // never used
+  let total = 0;
+  let oldTotal = 0; // unused
+  for (const item of items) {
+    total += item.price;
+  }
+  // dead code below
+  if (false) {
+    total *= 1.05;
+  }
+  return total;
+}
+
+// ✅ GOOD – minimal, everything serves a purpose
+function calculateTotal(items) {
+  return items.reduce((sum, item) => sum + item.price, 0);
+}
+```
+
+**Rules of thumb:**
+- Delete dead code immediately — do not comment it out "just in case"
+- Avoid premature abstractions (don't create a factory, builder, or HOC before you have 3+ concrete cases)
+- Prefer simple conditionals over ternaries for anything beyond a single `value = cond ? a : b`
+- Don't import entire libraries for one utility — write a 3-line helper instead
+- No empty callbacks, no unused parameters (prefix skipped params with `_`)
+
+## 6. Enforcement Summary
+
+| Rule | How to Enforce |
+|---|---|
+| Clean & readable | Keep functions under 20 lines; max nesting depth of 3 |
+| No comments | Write self-documenting code with clear names |
+| Modular | One primary export per file; single-responsibility functions |
+| Meaningful names | Names must describe intent, not implementation |
+| No unused code | No dead code, no commented-out code, no unused imports/variables |
+
+## Exceptions
+
+- **Generated files** (e.g., `*.min.js`, lockfiles, build output) are exempt
+- **Configuration files** (e.g., `webpack.config.js`, `.eslintrc.js`) may contain brief comments for tool-required explanations
+- **Third-party patches** may retain original comments

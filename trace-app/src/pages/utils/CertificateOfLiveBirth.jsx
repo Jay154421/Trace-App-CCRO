@@ -323,8 +323,8 @@ const PH_GEO_PROVINCE_DATALIST_ID = 'certificate-of-live-birth-ph-province-datal
 const PH_JSON_COUNTRY_DATALIST_ID = 'certificate-of-live-birth-ph-json-country-datalist';
 const GENERIC_NOT_APPLICABLE_DATALIST_ID = 'certificate-of-live-birth-not-applicable-datalist';
 const NOT_APPLICABLE_LABEL = 'NOT APPLICABLE';
-const MARRIAGE_MONTH_SUGGESTIONS = ['NOT APPLICABLE', "DON'T KNOW"];
-const MARRIAGE_CITY_SUGGESTIONS = ['NOT APPLICABLE', "DON'T KNOW"];
+const MARRIAGE_MONTH_SUGGESTIONS = ["NOT APPLICABLE", "DON'T KNOW", "NOT MARRIED"];
+const MARRIAGE_CITY_SUGGESTIONS = ["NOT APPLICABLE", "DON'T KNOW", "NOT MARRIED"];
 
 function isColbBrapChild(child) {
   return String(child?.application_type || '').toLowerCase() === 'colb_brap';
@@ -336,6 +336,15 @@ function shouldAutoFillMarriageNotApplicable(child) {
 
 function isMarriageNotApplicableValue(value) {
   return String(value ?? '').trim().toUpperCase() === NOT_APPLICABLE_LABEL;
+}
+
+function isMarriageSpecialValue(value) {
+  const upper = String(value ?? '').trim().toUpperCase();
+  return (
+    upper === NOT_APPLICABLE_LABEL ||
+    upper === "DON'T KNOW" ||
+    upper === 'NOT MARRIED'
+  );
 }
 
 function applyMarriageNotApplicableFields(cert) {
@@ -1824,10 +1833,13 @@ export function CertificateOfLiveBirth() {
     if (!child || loading) return;
     if (shouldAutoFillMarriageNotApplicable(child)) {
       setForm((prev) => {
-        if (
-          isMarriageNotApplicableValue(prev.marriageMonth) &&
-          isMarriageNotApplicableValue(prev.marriagePlaceCity)
-        ) {
+        const marriageSpecial = MARRIAGE_MONTH_SUGGESTIONS.some(
+          (s) => prev.marriageMonth === s
+        );
+        const placeSpecial = MARRIAGE_CITY_SUGGESTIONS.some(
+          (s) => prev.marriagePlaceCity === s
+        );
+        if (marriageSpecial && placeSpecial) {
           return prev;
         }
         return applyMarriageNotApplicableFields(prev);
@@ -1836,10 +1848,13 @@ export function CertificateOfLiveBirth() {
     }
     if (!isColbBrapChild(child)) return;
     setForm((prev) => {
-      if (
-        !isMarriageNotApplicableValue(prev.marriageMonth) &&
-        !isMarriageNotApplicableValue(prev.marriagePlaceCity)
-      ) {
+      const marriageSpecial = MARRIAGE_MONTH_SUGGESTIONS.some(
+        (s) => prev.marriageMonth === s
+      );
+      const placeSpecial = MARRIAGE_CITY_SUGGESTIONS.some(
+        (s) => prev.marriagePlaceCity === s
+      );
+      if (!marriageSpecial && !placeSpecial) {
         return prev;
       }
       return clearMarriageNotApplicableFields(prev);
@@ -2969,7 +2984,7 @@ export function CertificateOfLiveBirth() {
                   value={form.marriageMonth}
                   onInputChange={(v) => {
                     const next = String(v ?? '').trim().toUpperCase();
-                    if (next === 'NOT APPLICABLE' || next === "DON'T KNOW") {
+                    if (next === 'NOT APPLICABLE' || next === "DON'T KNOW" || next === "NOT MARRIED") {
                       setForm((p) => ({ ...p, marriageMonth: next, marriageDay: '', marriageYear: '', marriagePlaceCity: next, marriagePlaceProvince: '', marriagePlaceCountry: '' }));
                     } else {
                       updateNumericMaxTwoDigits('marriageMonth', v, '20a. DATE (MONTH)');
