@@ -1763,8 +1763,8 @@ export function CertificateOfLiveBirth() {
         base.certificationPurpose = loadedPurpose || DEFAULT_CERTIFICATION_PURPOSE;
         base.sex = normalizeSexSelectValue(base.sex);
         base.attendantAmpm = normalizeAttendantAmpmValue(base.attendantAmpm);
-        const marriageDateIsNa = isMarriageNotApplicableValue(base.marriageMonth);
-        if (!marriageDateIsNa) {
+        const marriageDateIsSpecial = isMarriageSpecialValue(base.marriageMonth);
+        if (!marriageDateIsSpecial) {
           base.marriageMonth = padCertificateMonthDayPart(base.marriageMonth);
           base.marriageDay = padCertificateMonthDayPart(base.marriageDay);
           base.marriageYear = certificateYearDigitsOnly(base.marriageYear);
@@ -1804,7 +1804,11 @@ export function CertificateOfLiveBirth() {
           merged.province = merged.placeOfBirthProvince;
         }
         if (shouldAutoFillMarriageNotApplicable(data)) {
-          merged = applyMarriageNotApplicableFields(merged);
+          const marriageMonthIsSpecial = isMarriageSpecialValue(merged.marriageMonth);
+          const placeCityIsSpecial = isMarriageSpecialValue(merged.marriagePlaceCity);
+          if (!marriageMonthIsSpecial && !placeCityIsSpecial) {
+            merged = applyMarriageNotApplicableFields(merged);
+          }
         }
         setForm(merged);
         const phCitySeedKeys = [
@@ -1839,7 +1843,7 @@ export function CertificateOfLiveBirth() {
         const placeSpecial = MARRIAGE_CITY_SUGGESTIONS.some(
           (s) => prev.marriagePlaceCity === s
         );
-        if (marriageSpecial && placeSpecial) {
+        if (marriageSpecial || placeSpecial) {
           return prev;
         }
         return applyMarriageNotApplicableFields(prev);
@@ -1928,9 +1932,14 @@ export function CertificateOfLiveBirth() {
 
   const save = useCallback(async () => {
     if (!id) return;
-    let certFields = shouldAutoFillMarriageNotApplicable(child)
-      ? applyMarriageNotApplicableFields(form)
-      : form;
+    let certFields = form;
+    if (shouldAutoFillMarriageNotApplicable(child)) {
+      const marriageMonthIsSpecial = isMarriageSpecialValue(form.marriageMonth);
+      const placeCityIsSpecial = isMarriageSpecialValue(form.marriagePlaceCity);
+      if (!marriageMonthIsSpecial && !placeCityIsSpecial) {
+        certFields = applyMarriageNotApplicableFields(form);
+      }
+    }
     if (shouldAutoFillAttendantNotApplicable(child)) {
       certFields = applyAttendantNotApplicableFields(certFields);
     }
@@ -2994,8 +3003,8 @@ export function CertificateOfLiveBirth() {
                   placeholder="(Month)"
                   suggestionOptions={MARRIAGE_MONTH_SUGGESTIONS}
                   idleFocusSuggestions={MARRIAGE_MONTH_SUGGESTIONS}
-                  className={parentsMarriageNotApplicable ? 'min-w-[12rem] flex-1' : 'w-28'}
-                  width={parentsMarriageNotApplicable ? 'min-w-[12rem] flex-1' : 'w-28'}
+                  className="min-w-[12rem] flex-1"
+                  width="min-w-[12rem] flex-1"
                   disabled={parentsMarriageNotApplicable}
                   includeNotApplicable={false}
                   ariaLabel="Parents marriage month"
