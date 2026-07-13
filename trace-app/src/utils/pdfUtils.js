@@ -469,7 +469,7 @@ export const FIELD_VALUE_MAP = [
   { key: 'attendant_type_specify', getValue: (getVal) => getVal('attendantTypeSpecify') ?? getVal('attendantOthersSpecify') ?? '' },
   { key: 'attendant_title', valueKey: 'attendantTitle' },
   { key: 'attendant_name', valueKey: 'attendantName' },
-  { key: 'attendant_signature', getValue: (getVal) => getSignatureOrName(getVal('attendantSignature'), getVal('attendantName')) },
+  { key: 'attendant_signature', getValue: (getVal) => getSignatureOrName(getVal('attendantSignature')) },
   { key: 'attendant_address', valueKey: 'attendantAddress' },
   { key: 'attendant_date', valueKey: 'attendantDate' },
   { key: 'attendant_time', getValue: (getVal) => joinTimeParts(getVal('attendantTime'), getVal('attendantAmpm')) },
