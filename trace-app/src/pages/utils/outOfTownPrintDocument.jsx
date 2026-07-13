@@ -72,25 +72,28 @@ function ApplicantBody({ data }) {
         <span className={`${FILL_BOLD} px-0.5 align-baseline uppercase`}>{blank(data.affiantResidence)}</span>,
         Philippines, after having been duly sworn to in accordance with law depose and say:
       </p>
-      <p className="mb-3 leading-normal">That I am an applicant for the late registration of my birth;</p>
       <p className="mb-3 leading-normal">
-        That I was born on <span className={`${FILL_BOLD} px-0.5 align-baseline`}>{blank(data.birthDate)}</span> at{' '}
+        <span className="font-bold">1.</span> That I am an applicant for the late registration of my birth;
+      </p>
+      <p className="mb-3 leading-normal">
+        <span className="font-bold">2.</span> That I was born on{' '}
+        <span className={`${FILL_BOLD} px-0.5 align-baseline`}>{blank(data.birthDate)}</span> at{' '}
         <span className={`${FILL_BOLD} px-0.5 align-baseline uppercase`}>{blank(data.birthPlace)}</span>;
       </p>
       <p className="mb-3 leading-normal">
-        That my parents are{' '}
+        <span className="font-bold">3.</span> That my parents are{' '}
         <span className={`${FILL_BOLD} px-0.5 align-baseline uppercase`}>{blank(data.fatherName)}</span> and{' '}
         <span className={`${FILL_BOLD} px-0.5 align-baseline uppercase`}>{blank(data.motherName)}</span>;
       </p>
       <p className="mb-3 leading-normal">
-        That the facts of my birth were not duly registered with the Local Civil Registry Office of{' '}
-        <span className={`${FILL_BOLD} px-0.5 align-baseline uppercase`}>{blank(data.lcroOffice)}</span> within the
-        period required by law due to inadvertence of my parents and not knowing the adverse consequence it may bring
-        about;
+        <span className="font-bold">4.</span> That the facts of my birth were not duly registered with the Local Civil
+        Registry Office of <span className={`${FILL_BOLD} px-0.5 align-baseline uppercase`}>{blank(data.lcroOffice)}</span>{' '}
+        within the period required by law due to inadvertence of my parents and not knowing the adverse consequence it may
+        bring about;
       </p>
       <p className="mb-3 leading-normal">
-        That I execute this affidavit to attest to the truth of the foregoing statements and for any lawful purpose which
-        it may serve.
+        <span className="font-bold">5.</span> That I execute this affidavit to attest to the truth of the foregoing
+        statements and for any lawful purpose which it may serve.
       </p>
     </>
   );
@@ -106,29 +109,30 @@ function RepresentativeBody({ data }) {
         Philippines, after having been duly sworn to in accordance with law depose and say:
       </p>
       <p className="mb-3 leading-normal">
-        That I am the{' '}
+        <span className="font-bold">1.</span> That I am the{' '}
         <span className={`${FILL_BOLD} px-0.5 align-baseline uppercase`}>{blank(data.relationshipToApplicant)}</span> of{' '}
         <span className={`${FILL_BOLD} px-0.5 align-baseline uppercase`}>{blank(data.applicantName)}</span> who is an
         applicant for late registration of birth;
       </p>
       <p className="mb-3 leading-normal">
-        That he/she was born on <span className={`${FILL_BOLD} px-0.5 align-baseline`}>{blank(data.birthDate)}</span> at{' '}
+        <span className="font-bold">2.</span> That he/she was born on{' '}
+        <span className={`${FILL_BOLD} px-0.5 align-baseline`}>{blank(data.birthDate)}</span> at{' '}
         <span className={`${FILL_BOLD} px-0.5 align-baseline uppercase`}>{blank(data.birthPlace)}</span>;
       </p>
       <p className="mb-3 leading-normal">
-        That his/her parents are{' '}
+        <span className="font-bold">3.</span> That his/her parents are{' '}
         <span className={`${FILL_BOLD} px-0.5 align-baseline uppercase`}>{blank(data.fatherName)}</span> and{' '}
         <span className={`${FILL_BOLD} px-0.5 align-baseline uppercase`}>{blank(data.motherName)}</span>;
       </p>
       <p className="mb-3 leading-normal">
-        That the facts of his/her birth were not duly registered with the Local Civil Registry Office of{' '}
-        <span className={`${FILL_BOLD} px-0.5 align-baseline uppercase`}>{blank(data.lcroOffice)}</span> within the
-        period required by law due to inadvertence of my parents and not knowing the adverse consequence it may bring
-        about;
+        <span className="font-bold">4.</span> That the facts of his/her birth were not duly registered with the Local
+        Civil Registry Office of <span className={`${FILL_BOLD} px-0.5 align-baseline uppercase`}>{blank(data.lcroOffice)}</span>{' '}
+        within the period required by law due to inadvertence of my parents and not knowing the adverse consequence it may
+        bring about;
       </p>
       <p className="mb-3 leading-normal">
-        That I execute this affidavit to attest to the truth of the foregoing statements and for any lawful purpose which
-        it may serve.
+        <span className="font-bold">5.</span> That I execute this affidavit to attest to the truth of the foregoing
+        statements and for any lawful purpose which it may serve.
       </p>
     </>
   );
