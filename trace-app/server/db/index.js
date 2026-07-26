@@ -67,6 +67,12 @@ async function init() {
       notes TEXT,
       FOREIGN KEY (child_id) REFERENCES children(id)
     );
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT NOT NULL UNIQUE,
+      password TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
     CREATE INDEX IF NOT EXISTS idx_documents_child ON documents(child_id);
     CREATE INDEX IF NOT EXISTS idx_checklist_child ON checklist_items(child_id);
   `);
@@ -75,7 +81,15 @@ async function init() {
   } catch (e) {
     if (!/duplicate column name/i.test(e.message)) throw e;
   }
-  for (const col of ['registrant_deceased', 'hilot_deceased', 'parent_foreigner']) {
+  for (const col of [
+    'registrant_deceased',
+    'hilot_deceased',
+    'parent_foreigner',
+    'out_of_town',
+    'has_marriage_certificate',
+    'colb_requires_parent_id',
+    'has_muslim_attachment',
+  ]) {
     try {
       db.exec(`ALTER TABLE children ADD COLUMN ${col} INTEGER DEFAULT 0`);
     } catch (e) {
@@ -86,6 +100,56 @@ async function init() {
     db.exec(`ALTER TABLE children ADD COLUMN certificate_of_live_birth TEXT`);
   } catch (e) {
     if (!/duplicate column name/i.test(e.message)) throw e;
+  }
+  try {
+    db.exec(`ALTER TABLE children ADD COLUMN paternity_affidavit TEXT`);
+  } catch (e) {
+    if (!/duplicate column name/i.test(e.message)) throw e;
+  }
+  try {
+    db.exec(`ALTER TABLE children ADD COLUMN delayed_registration_affidavit TEXT`);
+  } catch (e) {
+    if (!/duplicate column name/i.test(e.message)) throw e;
+  }
+  try {
+    db.exec(`ALTER TABLE children ADD COLUMN witness_affidavit TEXT`);
+  } catch (e) {
+    if (!/duplicate column name/i.test(e.message)) throw e;
+  }
+  try {
+    db.exec(`ALTER TABLE children ADD COLUMN out_of_town_informant_is_owner INTEGER`);
+  } catch (e) {
+    if (!/duplicate column name/i.test(e.message)) throw e;
+  }
+  try {
+    db.exec(`ALTER TABLE children ADD COLUMN out_of_town_affidavit TEXT`);
+  } catch (e) {
+    if (!/duplicate column name/i.test(e.message)) throw e;
+  }
+  try {
+    db.exec(`ALTER TABLE children ADD COLUMN muslim_attachment TEXT`);
+  } catch (e) {
+    if (!/duplicate column name/i.test(e.message)) throw e;
+  }
+  try {
+    db.exec(`ALTER TABLE children ADD COLUMN staff_process_status TEXT`);
+  } catch (e) {
+    if (!/duplicate column name/i.test(e.message)) throw e;
+  }
+  try {
+    db.exec(`ALTER TABLE children ADD COLUMN application_type TEXT DEFAULT 'applicant'`);
+  } catch (e) {
+    if (!/duplicate column name/i.test(e.message)) throw e;
+  }
+  try {
+    db.exec(`ALTER TABLE children ADD COLUMN gender TEXT`);
+  } catch (e) {
+    if (!/duplicate column name/i.test(e.message)) throw e;
+  }
+  try {
+    db.exec(`UPDATE children SET application_type = 'applicant' WHERE application_type IS NULL OR application_type = ''`);
+  } catch (e) {
+    /* ignore if column missing in very old state */
   }
   ensureDataDir();
   const attachmentsDir = path.join(path.dirname(dbPath), 'attachments');
@@ -118,7 +182,7 @@ function getDb() {
         } catch (e) {
           console.error('Db run: lastInsertRowid/changes read error', e);
         }
-        saveDb();
+        if (!db._inBatch) saveDb();
         return { lastInsertRowid, changes };
       };
       const get = (...params) => {
@@ -138,7 +202,23 @@ function getDb() {
     },
     exec(sql) {
       db.run(sql);
-      saveDb();
+      if (!db._inBatch) saveDb();
+    },
+    transaction(fn) {
+      const prev = !!db._inBatch;
+      db._inBatch = true;
+      try {
+        db.run('BEGIN TRANSACTION');
+        const result = fn();
+        db.run('COMMIT');
+        return result;
+      } catch (e) {
+        db.run('ROLLBACK');
+        throw e;
+      } finally {
+        db._inBatch = prev;
+        if (!db._inBatch) saveDb();
+      }
     },
   };
 }

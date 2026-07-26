@@ -10,3 +10,1462 @@ body {
 *:focus-visible {
   @apply outline-2 outline-offset-2 outline-emerald-500;
 }
+
+/* --- AUSF print: underline below text (::after), reliable in html2canvas PDF --- */
+
+.fill-blank {
+  display: inline-block;
+  position: relative;
+  border-bottom: none;
+  text-decoration: none;
+  padding: 0 0.15em 0.22em;
+  font-weight: 700;
+  text-align: left;
+  line-height: 1.35;
+  vertical-align: baseline;
+  box-sizing: content-box;
+  width: fit-content;
+  min-width: 2em;
+  max-width: 100%;
+}
+
+.fill-blank::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background-color: #000;
+  pointer-events: none;
+}
+
+.fill-blank.empty-blank {
+  min-width: 8rem;
+}
+
+.ausf-doc .fill-blank.affiant-name-blank {
+  display: inline !important;
+  min-width: 0;
+  width: auto !important;
+  max-width: none !important;
+  text-align: left !important;
+  padding-left: 0.5em !important;
+  padding-right: 0.02em !important;
+}
+
+.ausf-doc .fill-blank.affiant-name-blank .affiant-name-inner {
+  display: inline;
+  text-align: left;
+  padding: 0;
+  margin: 0;
+  font-weight: bold;
+}
+
+.ausf-doc .ausf-place-of-birth-line .fill-blank {
+  display: inline !important;
+  min-width: 0;
+  text-align: left;
+}
+
+.empty-blank:empty::before {
+  content: '\00a0';
+}
+
+.ausf-doc {
+  line-height: 1.5;
+}
+
+.ausf-doc p,
+.ausf-doc ol,
+.ausf-doc ol li {
+  line-height: 1.5;
+}
+
+.ausf-doc .ausf-section-title {
+  font-size: 14pt;
+  font-weight: 700;
+  text-align: center;
+  text-transform: uppercase;
+  margin-top: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.witness-doc.print-doc .witness-affidavit-subtitle {
+  text-align: center !important;
+  text-align-last: center !important;
+  text-justify: auto;
+  hyphens: none;
+  -webkit-hyphens: none;
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+/* Justified body; pretty wrapping + hyphenation keep word gaps close to a single normal space */
+.ausf-doc.print-doc .print-doc-body p,
+.ausf-doc.print-doc .ausf-doc-body p,
+.ausf-doc.print-doc .ausf-subscribed-sworn,
+.ausf-doc.print-doc ol > li {
+  text-align: justify;
+  text-justify: inter-word;
+  text-wrap: pretty;
+  word-spacing: normal;
+  letter-spacing: normal;
+  text-align-last: left;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+}
+
+/* Item 2 (place of birth): left-aligned — avoids stretched word gaps on short first lines in PDF */
+.ausf-doc.print-doc ol > li.ausf-place-of-birth-line,
+body.pdf-capture .ausf-doc.print-doc ol > li.ausf-place-of-birth-line,
+.ausf-doc.print-doc.ausf-pdf-capture ol > li.ausf-place-of-birth-line {
+  text-align: left;
+  text-justify: auto;
+  text-align-last: left;
+  hyphens: none;
+  -webkit-hyphens: none;
+}
+
+.ausf-doc .ausf-subscribed-sworn {
+  line-height: 1.5;
+}
+
+.print-doc-footer p {
+  margin: 0;
+  padding: 0;
+  line-height: 1.25;
+}
+
+/* AUSF page margins: 0.3in top/bottom (header/footer), 1in sides */
+.ausf-doc.print-doc {
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  --ausf-margin-top: 0.3in;
+  --ausf-margin-bottom: 0.3in;
+  --ausf-margin-sides: 1in;
+  box-sizing: border-box;
+  width: 8.5in;
+  max-width: 8.5in;
+  min-height: 13in;
+  margin-left: auto;
+  margin-right: auto;
+  padding: var(--ausf-margin-top) var(--ausf-margin-sides) var(--ausf-margin-bottom);
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 12pt;
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+}
+
+.ausf-doc.print-doc .print-doc-header,
+.ausf-doc.print-doc .ausf-doc-header {
+  flex: 0 0 auto;
+  margin-top: 0;
+}
+
+.ausf-doc.print-doc > .print-doc-body,
+.ausf-doc.print-doc > .ausf-doc-body {
+  flex: 1 1 0%;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.ausf-doc.print-doc > .print-doc-footer-wrap,
+.ausf-doc.print-doc > .ausf-doc-footer {
+  flex: 0 0 auto;
+  margin-top: auto;
+  margin-bottom: 0;
+  width: 100%;
+}
+
+.ausf-doc.print-doc .print-doc-footer {
+  margin-top: 0;
+}
+
+.ausf-only-doc .print-doc-footer,
+.ausf-only-doc .print-doc-footer p {
+  font-size: 12px;
+}
+
+.ausf-doc.print-doc .ausf-doc-header__logo,
+.ausf-doc.print-doc .print-doc-header__logo {
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+/* Hanging numbers 1–7+ aligned with the first line of each sentence */
+.ausf-doc.print-doc ol {
+  list-style: none;
+  counter-reset: ausf-item;
+  margin: 0 0 0.5em;
+  padding: 0;
+}
+
+.ausf-doc.print-doc ol > li {
+  counter-increment: ausf-item;
+  position: relative;
+  display: block;
+  padding-left: 1.85em;
+  margin-top: 0;
+  margin-bottom: 0.35em;
+}
+
+.ausf-doc.print-doc ol > li + li {
+  margin-top: 0;
+}
+
+.ausf-doc.print-doc ol > li::before {
+  content: counter(ausf-item) '.';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1.65em;
+  text-align: right;
+  font-weight: normal;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.5;
+}
+
+.ausf-doc.print-doc ol > li .fill-blank {
+  vertical-align: baseline;
+  padding-left: 0.08em !important;
+  padding-right: 0.08em !important;
+}
+
+/* Body fill-blanks: inline + underline (flows in justified lines — normal word spacing; PDF-safe) */
+.ausf-doc.print-doc .print-doc-body .fill-blank,
+.ausf-doc.print-doc .ausf-doc-body .fill-blank,
+.ausf-doc.print-doc .ausf-subscribed-sworn .fill-blank,
+.ausf-doc.print-doc ol > li .fill-blank {
+  display: inline !important;
+  position: static !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  padding: 0 0.02em !important;
+  margin: 0 !important;
+  border-bottom: none !important;
+  text-decoration: underline !important;
+  text-decoration-thickness: 1px !important;
+  text-underline-offset: 2px !important;
+  text-decoration-skip-ink: none !important;
+  -webkit-text-decoration-skip: none !important;
+  vertical-align: baseline !important;
+  word-spacing: normal !important;
+  letter-spacing: normal !important;
+  line-height: inherit !important;
+  box-sizing: content-box !important;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.ausf-doc.print-doc .print-doc-body .fill-blank::after,
+.ausf-doc.print-doc .ausf-doc-body .fill-blank::after,
+.ausf-doc.print-doc .ausf-subscribed-sworn .fill-blank::after,
+.ausf-doc.print-doc ol > li .fill-blank::after {
+  content: none !important;
+  display: none !important;
+}
+
+.ausf-doc.print-doc .print-doc-body .fill-blank.empty-blank,
+.ausf-doc.print-doc .ausf-doc-body .fill-blank.empty-blank,
+.ausf-doc.print-doc .ausf-subscribed-sworn .fill-blank.empty-blank,
+.ausf-doc.print-doc ol > li .fill-blank.empty-blank {
+  min-width: 0;
+}
+
+.ausf-doc.print-doc .print-doc-body .fill-blank:empty,
+.ausf-doc.print-doc .ausf-doc-body .fill-blank:empty,
+.ausf-doc.print-doc .ausf-subscribed-sworn .fill-blank:empty,
+.ausf-doc.print-doc ol > li .fill-blank:empty {
+  min-width: 2.5em;
+}
+
+.ausf-doc.print-doc .fill-blank.affiant-name-blank:not(:empty) {
+  width: auto !important;
+  min-width: 0 !important;
+}
+
+.ausf-doc.print-doc .fill-blank.affiant-name-blank:empty {
+  min-width: 4rem !important;
+}
+
+.ausf-doc.print-doc .ausf-sworn-attestation-title {
+  margin-top: 1.75rem;
+  margin-bottom: 0.5rem;
+}
+
+/* AUSF 7–17: pull sworn attestation block slightly closer to first affiant signature */
+.ausf-07-17-doc.print-doc .ausf-signature-block:first-of-type {
+  margin-bottom: 0.4rem;
+}
+
+.ausf-07-17-doc.print-doc .ausf-sworn-attestation-title {
+  margin-top: 1.1rem;
+}
+
+.ausf-doc.print-doc .ausf-signature-block {
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.ausf-doc.print-doc .ausf-signature-block__name {
+  display: inline-block;
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-bottom: none;
+  padding: 0 0.15em 0.22em;
+  text-decoration: none;
+  line-height: 1.35;
+  vertical-align: baseline;
+}
+
+.ausf-doc.print-doc .ausf-signature-block__name::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background-color: #000;
+  pointer-events: none;
+}
+
+.ausf-doc.print-doc .ausf-signature-block__label {
+  font-size: 10pt;
+  margin-top: 0;
+}
+
+.ausf-only-doc .registrar-signature-zone,
+.ausf-07-17-doc .registrar-signature-zone,
+.ausf-0-6-doc .registrar-signature-zone {
+  align-items: flex-end;
+}
+
+.ausf-only-doc .registrar-signature-zone .city-registrar-signature,
+.ausf-07-17-doc .registrar-signature-zone .city-registrar-signature,
+.ausf-0-6-doc .registrar-signature-zone .city-registrar-signature {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 0;
+}
+
+.ausf-doc .registrar-signature-zone .city-registrar-signature .ccr-signatory-block__name {
+  margin: 0;
+  text-align: center;
+}
+
+.ausf-doc .registrar-signature-zone .city-registrar-signature .ccr-signatory-block__title {
+  margin: 0;
+  text-align: center;
+}
+
+.witness-doc.print-doc .registrar-signature-zone {
+  align-items: flex-end;
+  margin-top: auto;
+  margin-bottom: 3.25em;
+}
+
+html[data-paper-size='long'] .witness-doc.print-doc .registrar-signature-zone {
+  margin-top: auto !important;
+  margin-bottom: 3.25em !important;
+}
+
+html[data-paper-size='a4'] .witness-doc.print-doc .registrar-signature-zone {
+  margin-top: auto !important;
+  margin-bottom: 4em !important;
+}
+
+/* Out-of-town affidavit: compact vertical rhythm (screen + PDF preview) */
+html[data-paper-size='long'] .out-of-town-doc.print-doc {
+  --ausf-margin-top: 0.15in;
+  padding-top: 0.15in !important;
+}
+
+html[data-paper-size='long'] .out-of-town-doc > .witness-doc-body {
+  margin-top: -0.1in;
+}
+
+html[data-paper-size='long'] .out-of-town-doc .ausf-section-title {
+  margin-top: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+
+html[data-paper-size='long'] .out-of-town-doc .ausf-section-title:first-of-type {
+  margin-top: 0;
+}
+
+html[data-paper-size='long'] .out-of-town-doc.print-doc .ausf-doc-body > p,
+html[data-paper-size='long'] .out-of-town-doc.print-doc .witness-doc-body > p {
+  margin-bottom: 0.2rem;
+}
+
+html[data-paper-size='long'] .out-of-town-doc.print-doc .ausf-signature-block {
+  margin-top: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+html[data-paper-size='long'] .out-of-town-doc .ausf-subscribed-sworn {
+  margin-bottom: 0.12in !important;
+}
+
+html[data-paper-size='long'] .out-of-town-doc.print-doc .registrar-signature-zone {
+  margin-top: 0.15in !important;
+  margin-bottom: 0.08in !important;
+}
+
+html[data-paper-size='a4'] .out-of-town-doc.print-doc {
+  --ausf-margin-top: 0.12in;
+  padding: 0.12in 1in 0.3in !important;
+  line-height: 1.35;
+}
+
+html[data-paper-size='a4'] .out-of-town-doc > .witness-doc-body {
+  margin-top: -0.12in;
+}
+
+html[data-paper-size='a4'] .out-of-town-doc .ausf-section-title {
+  margin-top: 0.25rem;
+  margin-bottom: 0.45rem;
+}
+
+html[data-paper-size='a4'] .out-of-town-doc .ausf-section-title:first-of-type {
+  margin-top: 0;
+}
+
+html[data-paper-size='a4'] .out-of-town-doc.print-doc .ausf-doc-body > p,
+html[data-paper-size='a4'] .out-of-town-doc.print-doc .witness-doc-body > p {
+  margin-bottom: 0.15rem;
+}
+
+html[data-paper-size='a4'] .out-of-town-doc.print-doc .ausf-signature-block {
+  margin-top: 0.3rem;
+  margin-bottom: 0.3rem;
+}
+
+html[data-paper-size='a4'] .out-of-town-doc .ausf-subscribed-sworn {
+  margin-bottom: 0.1in !important;
+}
+
+html[data-paper-size='a4'] .out-of-town-doc.print-doc .registrar-signature-zone {
+  margin-top: 0.12in !important;
+  margin-bottom: 0.06in !important;
+}
+
+html[data-paper-size='long'] .ausf-doc.print-doc,
+html[data-paper-size='a4'] .ausf-doc.print-doc {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+html[data-paper-size='long'] .ausf-0-6-doc.print-doc {
+  min-height: 13in;
+}
+
+html[data-paper-size='long'] .print-doc-footer-wrap,
+html[data-paper-size='a4'] .print-doc-footer-wrap {
+  margin-top: auto;
+  flex-shrink: 0;
+}
+
+html[data-paper-size='a4'] .ausf-doc.print-doc {
+  min-height: 297mm;
+  width: 210mm;
+  max-width: 210mm;
+  padding: var(--ausf-margin-top) var(--ausf-margin-sides) var(--ausf-margin-bottom);
+}
+
+/* City Civil Registrar signatory: spacing from bottom of body (before footer) — adult form only */
+html[data-paper-size='long'] .ausf-only-doc.print-doc .registrar-signature-zone {
+  margin-top: auto !important;
+  margin-bottom: 8em !important;
+}
+
+html[data-paper-size='a4'] .ausf-only-doc.print-doc .registrar-signature-zone {
+  margin-top: auto !important;
+  margin-bottom: 3em !important;
+}
+
+html[data-paper-size='a4'] .ausf-0-6-doc.print-doc .registrar-signature-zone {
+  margin-top: 0.75in !important;
+  margin-bottom: 3em !important;
+}
+
+html[data-paper-size='long'] .ausf-0-6-doc.print-doc .registrar-signature-zone{
+  margin-top: 0.75in !important;
+  margin-bottom: 18em !important;
+}
+
+
+html[data-paper-size='long'] .ausf-0-6-doc .ausf-subscribed-sworn,
+html[data-paper-size='a4'] .ausf-0-6-doc .ausf-subscribed-sworn {
+  margin-bottom: 0.12in !important;
+}
+
+html[data-paper-size='long'] .ausf-print-page .ausf-07-17-doc.print-doc,
+html[data-paper-size='long'] .ausf-07-17-doc.print-doc {
+  --ausf-margin-top: 0.15in;
+  padding-top: 0.15in !important;
+}
+
+html[data-paper-size='long'] .ausf-07-17-doc > .ausf-07-17-doc-body {
+  margin-top: -0.1in;
+}
+
+html[data-paper-size='long'] .ausf-07-17-doc .ausf-section-title {
+  margin-top: 0.35rem;
+  margin-bottom: 0.6rem;
+}
+
+html[data-paper-size='long'] .ausf-07-17-doc .ausf-section-title:first-of-type {
+  margin-top: 0;
+}
+
+html[data-paper-size='long'] .ausf-07-17-doc.print-doc .ausf-sworn-attestation-title {
+  margin-top: 0.5rem;
+}
+
+html[data-paper-size='long'] .ausf-07-17-doc.print-doc .ausf-signature-block {
+  margin-top: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+html[data-paper-size='long'] .ausf-07-17-doc.print-doc ol > li + li {
+  margin-top: 0.2rem !important;
+}
+
+html[data-paper-size='long'] .ausf-07-17-doc.print-doc .registrar-signature-zone {
+  margin-top: 0.15in !important;
+  margin-bottom: 0.08in !important;
+}
+
+/* AUSF 7–17 A4: compact vertical rhythm so footer stays visible (footer position unchanged) */
+html[data-paper-size='a4'] .ausf-print-page .ausf-07-17-doc.print-doc,
+html[data-paper-size='a4'] .ausf-07-17-doc.print-doc,
+body.pdf-capture.ausf-paper-a4 .ausf-print-page .ausf-07-17-doc.print-doc {
+  --ausf-margin-top: 0.12in;
+  --ausf-margin-bottom: 0.3in;
+  padding: 0.12in 1in 0.3in !important;
+}
+
+html[data-paper-size='a4'] .ausf-07-17-doc.print-doc {
+  line-height: 1.35;
+}
+
+html[data-paper-size='a4'] .ausf-07-17-doc > .ausf-07-17-doc-body {
+  margin-top: -0.12in;
+}
+
+html[data-paper-size='a4'] .ausf-07-17-doc .ausf-section-title {
+  margin-top: 0.25rem;
+  margin-bottom: 0.45rem;
+}
+
+html[data-paper-size='a4'] .ausf-07-17-doc .ausf-section-title:first-of-type {
+  margin-top: 0;
+}
+
+html[data-paper-size='a4'] .ausf-07-17-doc.print-doc .ausf-sworn-attestation-title {
+  margin-top: 0.45rem;
+}
+
+html[data-paper-size='a4'] .ausf-07-17-doc.print-doc .ausf-signature-block {
+  margin-top: 0.3rem;
+  margin-bottom: 0.3rem;
+}
+
+html[data-paper-size='a4'] .ausf-07-17-doc.print-doc .ausf-signature-block:first-of-type {
+  margin-bottom: 0.25rem;
+}
+
+html[data-paper-size='a4'] .ausf-07-17-doc.print-doc ol > li + li {
+  margin-top: 0.15rem !important;
+}
+
+html[data-paper-size='a4'] .ausf-07-17-doc.print-doc ol {
+  margin-bottom: 0.35rem !important;
+}
+
+html[data-paper-size='a4'] .ausf-07-17-doc.print-doc .registrar-signature-zone {
+  margin-top: 0.1in !important;
+  margin-bottom: 0.06in !important;
+}
+
+/* AUSF 7–17: drop footer rule below City Civil Registrar title */
+.ausf-07-17-doc.print-doc .print-doc-footer {
+  margin-top: 0.12in !important;
+}
+
+/* A4 only: item 4 (public docs) — justify + normal single-space gaps */
+html[data-paper-size='a4'] .ausf-doc.print-doc ol > li:nth-child(4),
+body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc ol > li:nth-child(4) {
+  margin-top: 0 !important;
+  margin-bottom: 0.35em !important;
+  text-align: justify !important;
+  text-justify: auto !important;
+  text-wrap: pretty !important;
+  word-spacing: normal !important;
+  letter-spacing: normal !important;
+  text-align-last: left !important;
+  hyphens: auto !important;
+  -webkit-hyphens: auto !important;
+}
+
+html[data-paper-size='a4'] .ausf-doc.print-doc ol > li.ausf-place-of-birth-line,
+body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc ol > li.ausf-place-of-birth-line {
+  margin-top: 0 !important;
+  margin-bottom: 0.35em !important;
+  text-align: left !important;
+  text-justify: auto !important;
+  hyphens: none !important;
+  -webkit-hyphens: none !important;
+}
+
+/* PDF capture: never use CSS zoom (html2canvas overlaps text); scale in PDF instead */
+body.pdf-capture .ausf-doc.print-doc,
+body.pdf-capture .ausf-doc.print-doc > .print-doc-body,
+body.pdf-capture .ausf-doc.print-doc > .ausf-doc-body,
+.ausf-doc.print-doc.ausf-pdf-capture,
+.ausf-doc.print-doc.ausf-pdf-capture > .print-doc-body,
+.ausf-doc.print-doc.ausf-pdf-capture > .ausf-doc-body {
+  zoom: 1 !important;
+}
+
+body.pdf-capture .ausf-doc.print-doc > .print-doc-body:not([data-ausf-pdf-fit]),
+body.pdf-capture .ausf-doc.print-doc > .ausf-doc-body:not([data-ausf-pdf-fit]),
+.ausf-doc.print-doc.ausf-pdf-capture > .print-doc-body:not([data-ausf-pdf-fit]),
+.ausf-doc.print-doc.ausf-pdf-capture > .ausf-doc-body:not([data-ausf-pdf-fit]) {
+  transform: none !important;
+}
+
+body.pdf-capture .ausf-doc.print-doc > .print-doc-body,
+body.pdf-capture .ausf-doc.print-doc > .ausf-doc-body {
+  overflow: hidden !important;
+}
+
+body.pdf-capture .ausf-print-page > article,
+body.pdf-capture .ausf-print-page .ausf-doc.print-doc {
+  overflow: visible !important;
+}
+
+/* PDF capture: same AUSF margins (html2canvas) */
+body.pdf-capture .print-doc,
+body.pdf-capture .ausf-doc {
+  font-family: 'Times New Roman', Times, serif !important;
+  padding: var(--ausf-margin-top) var(--ausf-margin-sides) var(--ausf-margin-bottom) !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  max-width: none !important;
+}
+
+body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc {
+  width: 210mm !important;
+}
+
+body.pdf-capture.ausf-paper-long .ausf-doc.print-doc {
+  width: 8.5in !important;
+}
+
+body.pdf-capture .ausf-only-doc.print-doc .registrar-signature-zone {
+  margin-top: auto !important;
+}
+
+body.pdf-capture.ausf-paper-long .ausf-only-doc.print-doc .registrar-signature-zone {
+  margin-bottom: 8em !important;
+}
+
+body.pdf-capture.ausf-paper-a4 .ausf-only-doc.print-doc .registrar-signature-zone {
+  margin-bottom: 3em !important;
+}
+
+body.pdf-capture .ausf-0-6-doc.print-doc .registrar-signature-zone {
+  margin-top: 0.65in !important;
+  margin-bottom: 0 !important;
+}
+
+body.pdf-capture.ausf-paper-long .ausf-print-page .ausf-07-17-doc.print-doc,
+body.pdf-capture.ausf-paper-long .ausf-07-17-doc.print-doc {
+  --ausf-margin-top: 0.15in;
+  padding-top: 0.15in !important;
+}
+
+body.pdf-capture.ausf-paper-long .ausf-07-17-doc > .ausf-07-17-doc-body {
+  margin-top: -0.1in;
+}
+
+body.pdf-capture.ausf-paper-long .ausf-07-17-doc .ausf-section-title {
+  margin-top: 0.35rem;
+  margin-bottom: 0.6rem;
+}
+
+body.pdf-capture.ausf-paper-long .ausf-07-17-doc .ausf-section-title:first-of-type {
+  margin-top: 0;
+}
+
+body.pdf-capture.ausf-paper-long .ausf-07-17-doc.print-doc .ausf-sworn-attestation-title {
+  margin-top: 0.5rem;
+}
+
+body.pdf-capture.ausf-paper-long .ausf-07-17-doc.print-doc .ausf-signature-block {
+  margin-top: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+body.pdf-capture.ausf-paper-long .ausf-07-17-doc.print-doc ol > li + li {
+  margin-top: 0.2rem !important;
+}
+
+body.pdf-capture.ausf-paper-long .ausf-07-17-doc.print-doc .registrar-signature-zone {
+  margin-top: 0.15in !important;
+  margin-bottom: 0.08in !important;
+}
+
+body.pdf-capture.ausf-paper-a4 .ausf-print-page .ausf-07-17-doc.print-doc,
+body.pdf-capture.ausf-paper-a4 .ausf-07-17-doc.print-doc {
+  --ausf-margin-top: 0.12in;
+  padding: 0.12in 1in 0.3in !important;
+}
+
+body.pdf-capture.ausf-paper-a4 .ausf-07-17-doc > .ausf-07-17-doc-body {
+  margin-top: -0.12in;
+}
+
+body.pdf-capture.ausf-paper-a4 .ausf-07-17-doc .ausf-section-title {
+  margin-top: 0.25rem;
+  margin-bottom: 0.45rem;
+}
+
+body.pdf-capture.ausf-paper-a4 .ausf-07-17-doc .ausf-section-title:first-of-type {
+  margin-top: 0;
+}
+
+body.pdf-capture.ausf-paper-a4 .ausf-07-17-doc.print-doc .ausf-sworn-attestation-title {
+  margin-top: 0.45rem;
+}
+
+body.pdf-capture.ausf-paper-a4 .ausf-07-17-doc.print-doc .ausf-signature-block {
+  margin-top: 0.3rem;
+  margin-bottom: 0.3rem;
+}
+
+body.pdf-capture.ausf-paper-a4 .ausf-07-17-doc.print-doc .ausf-signature-block:first-of-type {
+  margin-bottom: 0.25rem;
+}
+
+body.pdf-capture.ausf-paper-a4 .ausf-07-17-doc.print-doc ol > li + li {
+  margin-top: 0.15rem !important;
+}
+
+body.pdf-capture.ausf-paper-a4 .ausf-07-17-doc.print-doc ol {
+  margin-bottom: 0.35rem !important;
+}
+
+body.pdf-capture.ausf-paper-a4 .ausf-07-17-doc.print-doc .registrar-signature-zone {
+  margin-top: 0.1in !important;
+  margin-bottom: 0.06in !important;
+}
+
+body.pdf-capture.ausf-paper-long .out-of-town-doc.print-doc {
+  --ausf-margin-top: 0.15in;
+  padding-top: 0.15in !important;
+}
+
+body.pdf-capture.ausf-paper-long .out-of-town-doc > .witness-doc-body {
+  margin-top: -0.1in;
+}
+
+body.pdf-capture.ausf-paper-long .out-of-town-doc .ausf-section-title {
+  margin-top: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+
+body.pdf-capture.ausf-paper-long .out-of-town-doc .ausf-section-title:first-of-type {
+  margin-top: 0;
+}
+
+body.pdf-capture.ausf-paper-long .out-of-town-doc.print-doc .ausf-doc-body > p,
+body.pdf-capture.ausf-paper-long .out-of-town-doc.print-doc .witness-doc-body > p {
+  margin-bottom: 0.2rem;
+}
+
+body.pdf-capture.ausf-paper-long .out-of-town-doc.print-doc .ausf-signature-block {
+  margin-top: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+body.pdf-capture.ausf-paper-long .out-of-town-doc.print-doc .registrar-signature-zone {
+  margin-top: 0.15in !important;
+  margin-bottom: 0.08in !important;
+}
+
+body.pdf-capture.ausf-paper-a4 .out-of-town-doc.print-doc {
+  --ausf-margin-top: 0.12in;
+  padding: 0.12in 1in 0.3in !important;
+}
+
+body.pdf-capture.ausf-paper-a4 .out-of-town-doc > .witness-doc-body {
+  margin-top: -0.12in;
+}
+
+body.pdf-capture.ausf-paper-a4 .out-of-town-doc .ausf-section-title {
+  margin-top: 0.25rem;
+  margin-bottom: 0.45rem;
+}
+
+body.pdf-capture.ausf-paper-a4 .out-of-town-doc .ausf-section-title:first-of-type {
+  margin-top: 0;
+}
+
+body.pdf-capture.ausf-paper-a4 .out-of-town-doc.print-doc .ausf-doc-body > p,
+body.pdf-capture.ausf-paper-a4 .out-of-town-doc.print-doc .witness-doc-body > p {
+  margin-bottom: 0.15rem;
+}
+
+body.pdf-capture.ausf-paper-a4 .out-of-town-doc.print-doc .ausf-signature-block {
+  margin-top: 0.3rem;
+  margin-bottom: 0.3rem;
+}
+
+body.pdf-capture.ausf-paper-a4 .out-of-town-doc.print-doc .registrar-signature-zone {
+  margin-top: 0.12in !important;
+  margin-bottom: 0.06in !important;
+}
+
+body.pdf-capture .ausf-07-17-doc.print-doc .print-doc-footer {
+  margin-top: 0.12in !important;
+}
+
+body.pdf-capture .ausf-07-17-doc .ausf-subscribed-sworn {
+  margin-bottom: 0.12in !important;
+}
+
+/* AUSF PDF export (A4 + long): underline below descenders — html2canvas-safe */
+body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc,
+body.pdf-capture.ausf-paper-long .ausf-doc.print-doc,
+.ausf-doc.print-doc.ausf-pdf-capture {
+  --ausf-pdf-underline-gap: 0.5em;
+}
+
+body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc .print-doc-body .fill-blank,
+body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc .ausf-doc-body .fill-blank,
+body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc .ausf-subscribed-sworn .fill-blank,
+body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc ol > li .fill-blank,
+body.pdf-capture.ausf-paper-long .ausf-doc.print-doc .print-doc-body .fill-blank,
+body.pdf-capture.ausf-paper-long .ausf-doc.print-doc .ausf-doc-body .fill-blank,
+body.pdf-capture.ausf-paper-long .ausf-doc.print-doc .ausf-subscribed-sworn .fill-blank,
+body.pdf-capture.ausf-paper-long .ausf-doc.print-doc ol > li .fill-blank,
+.ausf-doc.print-doc.ausf-pdf-capture .print-doc-body .fill-blank,
+.ausf-doc.print-doc.ausf-pdf-capture .ausf-doc-body .fill-blank,
+.ausf-doc.print-doc.ausf-pdf-capture .ausf-subscribed-sworn .fill-blank,
+.ausf-doc.print-doc.ausf-pdf-capture ol > li .fill-blank {
+  display: inline-block !important;
+  position: relative !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  padding: 0 0.02em var(--ausf-pdf-underline-gap) !important;
+  margin: 0 !important;
+  border-bottom: 1px solid #000 !important;
+  text-decoration: none !important;
+  vertical-align: baseline !important;
+  word-spacing: normal !important;
+  letter-spacing: normal !important;
+  line-height: 1.15 !important;
+  box-sizing: content-box !important;
+  background: none !important;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+
+body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc .fill-blank.affiant-name-blank,
+body.pdf-capture.ausf-paper-long .ausf-doc.print-doc .fill-blank.affiant-name-blank,
+.ausf-doc.print-doc.ausf-pdf-capture .fill-blank.affiant-name-blank {
+  display: inline-block !important;
+  padding-left: 0.5em !important;
+  padding-right: 0.02em !important;
+}
+
+body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc .print-doc-body .fill-blank:empty,
+body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc .ausf-doc-body .fill-blank:empty,
+body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc .ausf-subscribed-sworn .fill-blank:empty,
+body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc ol > li .fill-blank:empty,
+body.pdf-capture.ausf-paper-long .ausf-doc.print-doc .print-doc-body .fill-blank:empty,
+body.pdf-capture.ausf-paper-long .ausf-doc.print-doc .ausf-doc-body .fill-blank:empty,
+body.pdf-capture.ausf-paper-long .ausf-doc.print-doc .ausf-subscribed-sworn .fill-blank:empty,
+body.pdf-capture.ausf-paper-long .ausf-doc.print-doc ol > li .fill-blank:empty,
+.ausf-doc.print-doc.ausf-pdf-capture .print-doc-body .fill-blank:empty,
+.ausf-doc.print-doc.ausf-pdf-capture .ausf-doc-body .fill-blank:empty,
+.ausf-doc.print-doc.ausf-pdf-capture .ausf-subscribed-sworn .fill-blank:empty,
+.ausf-doc.print-doc.ausf-pdf-capture ol > li .fill-blank:empty {
+  min-width: 2.5em !important;
+}
+
+body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc .print-doc-body .fill-blank::after,
+body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc .ausf-doc-body .fill-blank::after,
+body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc .ausf-subscribed-sworn .fill-blank::after,
+body.pdf-capture.ausf-paper-a4 .ausf-doc.print-doc ol > li .fill-blank::after,
+body.pdf-capture.ausf-paper-long .ausf-doc.print-doc .print-doc-body .fill-blank::after,
+body.pdf-capture.ausf-paper-long .ausf-doc.print-doc .ausf-doc-body .fill-blank::after,
+body.pdf-capture.ausf-paper-long .ausf-doc.print-doc .ausf-subscribed-sworn .fill-blank::after,
+body.pdf-capture.ausf-paper-long .ausf-doc.print-doc ol > li .fill-blank::after,
+.ausf-doc.print-doc.ausf-pdf-capture .print-doc-body .fill-blank::after,
+.ausf-doc.print-doc.ausf-pdf-capture .ausf-doc-body .fill-blank::after,
+.ausf-doc.print-doc.ausf-pdf-capture .ausf-subscribed-sworn .fill-blank::after,
+.ausf-doc.print-doc.ausf-pdf-capture ol > li .fill-blank::after {
+  content: none !important;
+  display: none !important;
+}
+
+body.pdf-capture.ausf-paper-a4 .ausf-doc .ausf-signature-block__name,
+body.pdf-capture.ausf-paper-long .ausf-doc .ausf-signature-block__name,
+.ausf-doc.print-doc.ausf-pdf-capture .ausf-signature-block__name {
+  display: inline-block !important;
+  position: relative !important;
+  width: fit-content !important;
+  min-width: 0 !important;
+  padding: 0 0.15em var(--ausf-pdf-underline-gap) !important;
+  line-height: 1.15 !important;
+  border-bottom: 1px solid #000 !important;
+  text-decoration: none !important;
+  background: none !important;
+}
+
+body.pdf-capture.ausf-paper-a4 .ausf-doc .ausf-signature-block__name::after,
+body.pdf-capture.ausf-paper-long .ausf-doc .ausf-signature-block__name::after,
+.ausf-doc.print-doc.ausf-pdf-capture .ausf-signature-block__name::after {
+  content: none !important;
+  display: none !important;
+}
+
+@media print {
+  @page {
+    margin: 0;
+  }
+
+  html,
+  body {
+    font-family: 'Times New Roman', Times, serif !important;
+    background: white;
+    margin: 0;
+    padding: 0;
+  }
+
+  aside[aria-label='Main navigation'] {
+    display: none !important;
+  }
+
+  .ausf-print-page > header {
+    display: none !important;
+  }
+
+  .print-doc,
+  .ausf-doc {
+    font-family: 'Times New Roman', Times, serif !important;
+    box-shadow: none !important;
+    max-width: 100% !important;
+    padding: var(--ausf-margin-top) var(--ausf-margin-sides) var(--ausf-margin-bottom) !important;
+    page-break-inside: avoid;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .print-doc-header,
+  .ausf-doc-header {
+    flex: 0 0 auto !important;
+    margin-top: 0 !important;
+  }
+
+  .print-doc-body {
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+  }
+
+  .ausf-doc.print-doc .print-doc-body p,
+  .ausf-doc.print-doc .ausf-doc-body p,
+  .ausf-doc.print-doc .ausf-subscribed-sworn,
+  .ausf-doc.print-doc ol > li {
+    text-align: justify !important;
+    text-justify: inter-word !important;
+    text-wrap: pretty !important;
+    word-spacing: normal !important;
+    letter-spacing: normal !important;
+    text-align-last: left !important;
+    hyphens: auto !important;
+    -webkit-hyphens: auto !important;
+  }
+
+  .ausf-doc.print-doc ol > li.ausf-place-of-birth-line {
+    text-align: left !important;
+    text-justify: auto !important;
+    text-align-last: left !important;
+    hyphens: none !important;
+    -webkit-hyphens: none !important;
+  }
+
+  .witness-doc.print-doc .witness-affidavit-subtitle {
+    text-align: center !important;
+    text-align-last: center !important;
+    text-justify: auto !important;
+    hyphens: none !important;
+    -webkit-hyphens: none !important;
+  }
+
+  .ausf-doc.print-doc ol {
+    list-style: none !important;
+  }
+
+  .ausf-doc.print-doc ol > li::before {
+    font-variant-numeric: tabular-nums !important;
+  }
+
+  .ausf-doc.print-doc .ausf-signature-block__name {
+    width: fit-content !important;
+    min-width: 0 !important;
+  }
+
+  .ausf-doc.print-doc .print-doc-body .fill-blank:empty,
+  .ausf-doc.print-doc .ausf-doc-body .fill-blank:empty,
+  .ausf-doc.print-doc .ausf-subscribed-sworn .fill-blank:empty,
+  .ausf-doc.print-doc ol > li .fill-blank:empty {
+    min-width: 2.5em !important;
+  }
+
+  .ausf-doc.print-doc > .print-doc-body,
+  .ausf-doc.print-doc > .ausf-doc-body {
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .ausf-doc.print-doc > .print-doc-footer-wrap,
+  .ausf-doc.print-doc > .ausf-doc-footer {
+    flex: 0 0 auto !important;
+    margin-top: auto !important;
+    margin-bottom: 0 !important;
+    width: 100% !important;
+  }
+
+  .ausf-doc.print-doc .print-doc-footer {
+    margin-top: 0 !important;
+  }
+
+  .ausf-print-page .ausf-doc.print-doc {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .ausf-0-6-doc.print-doc,
+  .ausf-07-17-doc.print-doc,
+  .ausf-only-doc.print-doc {
+    page-break-inside: avoid !important;
+  }
+
+  .ausf-0-6-doc.print-doc h2:first-of-type,
+  .ausf-07-17-doc.print-doc h2:first-of-type,
+  .ausf-only-doc.print-doc h2:first-of-type {
+    margin-top: 0 !important;
+  }
+
+  .ausf-0-6-doc .print-doc-header,
+  .ausf-07-17-doc .print-doc-header,
+  .ausf-only-doc .print-doc-header {
+    margin-bottom: 0 !important;
+  }
+
+  .ausf-doc.print-doc .registrar-signature-zone .city-registrar-signature {
+    display: inline-flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+  }
+
+  .ausf-doc.print-doc .registrar-signature-zone .ccr-signatory-block__title {
+    text-align: center !important;
+  }
+
+  .ausf-0-6-doc.print-doc,
+  html[data-paper-size='a4'] .ausf-0-6-doc.print-doc,
+  html[data-paper-size='long'] .ausf-0-6-doc.print-doc {
+    font-size: 12pt !important;
+  }
+
+  .ausf-0-6-doc .print-doc-footer,
+  .ausf-0-6-doc .print-doc-footer p,
+  .ausf-0-6-doc .print-doc-footer * {
+    font-size: 12px !important;
+  }
+
+  .ausf-0-6-doc.print-doc .registrar-signature-zone {
+    align-items: flex-end !important;
+    margin-top: 0.2in !important;
+  }
+
+  html[data-paper-size='a4'] .ausf-0-6-doc .ausf-0-6-doc-body,
+  html[data-paper-size='a4'] .ausf-0-6-doc .ausf-0-6-doc-body *,
+  html[data-paper-size='long'] .ausf-0-6-doc .ausf-0-6-doc-body,
+  html[data-paper-size='long'] .ausf-0-6-doc .ausf-0-6-doc-body * {
+    font-size: 12pt !important;
+  }
+
+  html[data-paper-size='long'] .ausf-0-6-doc.print-doc .registrar-signature-zone {
+    margin-top: 0.65in !important;
+    flex: 0 0 auto !important;
+    min-height: 0 !important;
+  }
+
+  html[data-paper-size='a4'] .ausf-0-6-doc.print-doc .registrar-signature-zone {
+    margin-top: 0.65in !important;
+    flex: 0 0 auto !important;
+    min-height: 0 !important;
+  }
+
+  html[data-paper-size='a4'] .ausf-07-17-doc {
+    font-size: 12pt !important;
+    line-height: 1.5 !important;
+  }
+
+  html[data-paper-size='a4'] .ausf-07-17-doc p,
+  html[data-paper-size='a4'] .ausf-07-17-doc ol,
+  html[data-paper-size='a4'] .ausf-07-17-doc ol li {
+    font-size: 12pt !important;
+  }
+
+  html[data-paper-size='a4'] .ausf-07-17-doc .print-doc-footer p,
+  html[data-paper-size='a4'] .ausf-07-17-doc .print-doc-footer .text-xs {
+    font-size: 12px !important;
+  }
+
+  html[data-paper-size='long'] .ausf-07-17-doc {
+    font-size: 12pt !important;
+    line-height: 1.5 !important;
+  }
+
+  html[data-paper-size='long'] .ausf-07-17-doc p,
+  html[data-paper-size='long'] .ausf-07-17-doc ol,
+  html[data-paper-size='long'] .ausf-07-17-doc ol li {
+    font-size: 12pt !important;
+  }
+
+  html[data-paper-size='long'] .ausf-07-17-doc .print-doc-footer p,
+  html[data-paper-size='long'] .ausf-07-17-doc .print-doc-footer .text-xs {
+    font-size: 12px !important;
+  }
+
+  .ausf-07-17-doc .ausf-subscribed-sworn {
+    margin-bottom: 0.12in !important;
+  }
+
+  html[data-paper-size='long'] .ausf-print-page .ausf-07-17-doc.print-doc,
+  html[data-paper-size='long'] .ausf-07-17-doc.print-doc {
+    --ausf-margin-top: 0.15in !important;
+    padding-top: 0.15in !important;
+  }
+
+  html[data-paper-size='long'] .ausf-07-17-doc > .ausf-07-17-doc-body {
+    margin-top: -0.1in !important;
+  }
+
+  html[data-paper-size='long'] .ausf-07-17-doc .ausf-section-title {
+    margin-top: 0.35rem !important;
+    margin-bottom: 0.6rem !important;
+  }
+
+  html[data-paper-size='long'] .ausf-07-17-doc .ausf-section-title:first-of-type {
+    margin-top: 0 !important;
+  }
+
+  html[data-paper-size='long'] .ausf-07-17-doc.print-doc .ausf-sworn-attestation-title {
+    margin-top: 0.5rem !important;
+  }
+
+  html[data-paper-size='long'] .ausf-07-17-doc.print-doc .ausf-signature-block {
+    margin-top: 0.35rem !important;
+    margin-bottom: 0.35rem !important;
+  }
+
+  html[data-paper-size='long'] .ausf-07-17-doc.print-doc ol > li + li {
+    margin-top: 0.2rem !important;
+  }
+
+  html[data-paper-size='long'] .ausf-07-17-doc.print-doc .registrar-signature-zone {
+    margin-top: 0.15in !important;
+    margin-bottom: 0.08in !important;
+  }
+
+  html[data-paper-size='a4'] .ausf-print-page .ausf-07-17-doc.print-doc,
+  html[data-paper-size='a4'] .ausf-07-17-doc.print-doc {
+    --ausf-margin-top: 0.12in !important;
+    padding: 0.12in 1in 0.3in !important;
+    line-height: 1.35 !important;
+  }
+
+  html[data-paper-size='a4'] .ausf-07-17-doc > .ausf-07-17-doc-body {
+    margin-top: -0.12in !important;
+  }
+
+  html[data-paper-size='a4'] .ausf-07-17-doc .ausf-section-title {
+    margin-top: 0.25rem !important;
+    margin-bottom: 0.45rem !important;
+  }
+
+  html[data-paper-size='a4'] .ausf-07-17-doc .ausf-section-title:first-of-type {
+    margin-top: 0 !important;
+  }
+
+  html[data-paper-size='a4'] .ausf-07-17-doc.print-doc .ausf-sworn-attestation-title {
+    margin-top: 0.45rem !important;
+  }
+
+  html[data-paper-size='a4'] .ausf-07-17-doc.print-doc .ausf-signature-block {
+    margin-top: 0.3rem !important;
+    margin-bottom: 0.3rem !important;
+  }
+
+  html[data-paper-size='a4'] .ausf-07-17-doc.print-doc .ausf-signature-block:first-of-type {
+    margin-bottom: 0.25rem !important;
+  }
+
+  html[data-paper-size='a4'] .ausf-07-17-doc.print-doc ol > li + li {
+    margin-top: 0.15rem !important;
+  }
+
+  html[data-paper-size='a4'] .ausf-07-17-doc.print-doc ol {
+    margin-bottom: 0.35rem !important;
+  }
+
+  html[data-paper-size='a4'] .ausf-07-17-doc.print-doc .registrar-signature-zone {
+    margin-top: 0.1in !important;
+    margin-bottom: 0.06in !important;
+  }
+
+  html[data-paper-size='long'] .out-of-town-doc.print-doc {
+    --ausf-margin-top: 0.15in !important;
+    padding-top: 0.15in !important;
+  }
+
+  html[data-paper-size='long'] .out-of-town-doc > .witness-doc-body {
+    margin-top: -0.1in !important;
+  }
+
+  html[data-paper-size='long'] .out-of-town-doc .ausf-section-title {
+    margin-top: 0.35rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  html[data-paper-size='long'] .out-of-town-doc .ausf-section-title:first-of-type {
+    margin-top: 0 !important;
+  }
+
+  html[data-paper-size='long'] .out-of-town-doc.print-doc .ausf-doc-body > p,
+  html[data-paper-size='long'] .out-of-town-doc.print-doc .witness-doc-body > p {
+    margin-bottom: 0.2rem !important;
+  }
+
+  html[data-paper-size='long'] .out-of-town-doc.print-doc .ausf-signature-block {
+    margin-top: 0.35rem !important;
+    margin-bottom: 0.35rem !important;
+  }
+
+  html[data-paper-size='long'] .out-of-town-doc.print-doc .registrar-signature-zone {
+    margin-top: 0.15in !important;
+    margin-bottom: 0.08in !important;
+  }
+
+  html[data-paper-size='a4'] .out-of-town-doc.print-doc {
+    --ausf-margin-top: 0.12in !important;
+    padding: 0.12in 1in 0.3in !important;
+    line-height: 1.35 !important;
+  }
+
+  html[data-paper-size='a4'] .out-of-town-doc > .witness-doc-body {
+    margin-top: -0.12in !important;
+  }
+
+  html[data-paper-size='a4'] .out-of-town-doc .ausf-section-title {
+    margin-top: 0.25rem !important;
+    margin-bottom: 0.45rem !important;
+  }
+
+  html[data-paper-size='a4'] .out-of-town-doc .ausf-section-title:first-of-type {
+    margin-top: 0 !important;
+  }
+
+  html[data-paper-size='a4'] .out-of-town-doc.print-doc .ausf-doc-body > p,
+  html[data-paper-size='a4'] .out-of-town-doc.print-doc .witness-doc-body > p {
+    margin-bottom: 0.15rem !important;
+  }
+
+  html[data-paper-size='a4'] .out-of-town-doc.print-doc .ausf-signature-block {
+    margin-top: 0.3rem !important;
+    margin-bottom: 0.3rem !important;
+  }
+
+  html[data-paper-size='a4'] .out-of-town-doc.print-doc .registrar-signature-zone {
+    margin-top: 0.12in !important;
+    margin-bottom: 0.06in !important;
+  }
+
+  .out-of-town-doc .ausf-subscribed-sworn {
+    margin-bottom: 0.12in !important;
+  }
+
+  .ausf-07-17-doc.print-doc .print-doc-footer {
+    margin-top: 0.12in !important;
+  }
+
+  html[data-paper-size='a4'] .ausf-07-17-doc .ausf-07-17-doc-body,
+  html[data-paper-size='a4'] .ausf-07-17-doc .ausf-07-17-doc-body *,
+  html[data-paper-size='long'] .ausf-07-17-doc .ausf-07-17-doc-body,
+  html[data-paper-size='long'] .ausf-07-17-doc .ausf-07-17-doc-body * {
+    font-size: 12pt !important;
+  }
+
+  .ausf-only-doc.print-doc {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .ausf-only-doc .registrar-signature-zone {
+    align-items: flex-end !important;
+  }
+
+  html[data-paper-size='a4'] .ausf-only-doc .ausf-only-doc-body,
+  html[data-paper-size='a4'] .ausf-only-doc .ausf-only-doc-body *,
+  html[data-paper-size='long'] .ausf-only-doc .ausf-only-doc-body,
+  html[data-paper-size='long'] .ausf-only-doc .ausf-only-doc-body * {
+    font-size: 12pt !important;
+  }
+
+  html[data-paper-size='long'] .ausf-only-doc .print-doc-footer p,
+  html[data-paper-size='long'] .ausf-only-doc .print-doc-footer .text-xs,
+  html[data-paper-size='a4'] .ausf-only-doc .print-doc-footer p,
+  html[data-paper-size='a4'] .ausf-only-doc .print-doc-footer .text-xs {
+    font-size: 12px !important;
+  }
+
+  .ausf-doc.print-doc .print-doc-body .fill-blank,
+  .ausf-doc.print-doc .ausf-doc-body .fill-blank,
+  .ausf-doc.print-doc .ausf-subscribed-sworn .fill-blank,
+  .ausf-doc.print-doc ol > li .fill-blank {
+    display: inline !important;
+    position: static !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    padding: 0 0.02em !important;
+    border-bottom: none !important;
+    text-decoration: underline !important;
+    text-decoration-thickness: 1px !important;
+    text-underline-offset: 2px !important;
+    text-decoration-skip-ink: none !important;
+    -webkit-text-decoration-skip: none !important;
+    word-spacing: normal !important;
+    line-height: inherit !important;
+    vertical-align: baseline !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .ausf-doc.print-doc .print-doc-body .fill-blank::after,
+  .ausf-doc.print-doc .ausf-doc-body .fill-blank::after,
+  .ausf-doc.print-doc .ausf-subscribed-sworn .fill-blank::after,
+  .ausf-doc.print-doc ol > li .fill-blank::after {
+    content: none !important;
+    display: none !important;
+  }
+
+  .ausf-doc.print-doc .ausf-signature-block__name {
+    display: inline-block !important;
+    position: relative !important;
+    width: fit-content !important;
+    min-width: 0 !important;
+    border-bottom: none !important;
+    padding-bottom: 0.22em !important;
+    line-height: 1.35 !important;
+    vertical-align: baseline;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .ausf-doc.print-doc .ausf-signature-block__name::after {
+    content: '' !important;
+    position: absolute !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    height: 1px !important;
+    background-color: #000 !important;
+  }
+
+  html[data-paper-size='a4'] .print-doc,
+  html[data-paper-size='a4'] .ausf-doc.print-doc {
+    min-height: 297mm !important;
+    width: 210mm !important;
+    max-width: 210mm !important;
+    padding: var(--ausf-margin-top) var(--ausf-margin-sides) var(--ausf-margin-bottom) !important;
+  }
+
+  html[data-paper-size='long'] .ausf-doc.print-doc .registrar-signature-zone {
+    margin-top: auto !important;
+    margin-bottom: 2em !important;
+  }
+
+  html[data-paper-size='a4'] .ausf-doc.print-doc .registrar-signature-zone {
+    margin-top: auto !important;
+    margin-bottom: 2.5em !important;
+  }
+
+  html[data-paper-size='long'] .ausf-0-6-doc.print-doc .registrar-signature-zone {
+    margin-top: 0.65in !important;
+    margin-bottom: 0 !important;
+  }
+
+  html[data-paper-size='a4'] .ausf-0-6-doc.print-doc .registrar-signature-zone {
+    margin-top: 0.65in !important;
+    margin-bottom: 0 !important;
+  }
+
+  html[data-paper-size='a4'] .ausf-doc.print-doc ol > li:nth-child(4) {
+    margin-top: 0 !important;
+    margin-bottom: 0.35em !important;
+    text-align: justify !important;
+    text-wrap: pretty !important;
+    word-spacing: normal !important;
+    text-align-last: left !important;
+  }
+
+  html[data-paper-size='a4'] .ausf-doc.print-doc ol > li.ausf-place-of-birth-line {
+    margin-top: 0 !important;
+    margin-bottom: 0.35em !important;
+    text-align: left !important;
+    text-justify: auto !important;
+    hyphens: none !important;
+    -webkit-hyphens: none !important;
+  }
+
+  html[data-paper-size='long'] .print-doc,
+  html[data-paper-size='long'] .ausf-doc.print-doc {
+    min-height: 13in !important;
+    height: 13in !important;
+    max-height: 13in !important;
+    width: 8.5in !important;
+    max-width: 8.5in !important;
+    padding: var(--ausf-margin-top) var(--ausf-margin-sides) var(--ausf-margin-bottom) !important;
+  }
+
+}

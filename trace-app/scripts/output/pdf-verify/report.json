@@ -1,0 +1,61 @@
+{
+  "generatedAt": "2026-07-14T03:09:43.005Z",
+  "results": [
+    {
+      "name": "AUSF (ausf-07-17) Long",
+      "pageW": 612,
+      "pageH": 936,
+      "image": {
+        "drawW": 612,
+        "drawH": 936,
+        "x": 0,
+        "y": 0
+      },
+      "issues": [],
+      "ok": true,
+      "dom": {
+        "pad": {
+          "top": "14.4px",
+          "right": "96px",
+          "bottom": "28.8px",
+          "left": "96px"
+        },
+        "docClass": "ausf-doc print-doc ausf-07-17-doc flex flex-col bg-white text-black",
+        "docWidthIn": 8.5,
+        "docHeightIn": 13,
+        "articleWidthIn": 8.5,
+        "articleHeightIn": 13
+      },
+      "bytes": 534013,
+      "path": "C:\\Project\\Trace-App-CCRO\\trace-app\\scripts\\output\\pdf-verify\\ausf-ausf-07-17-long.pdf"
+    },
+    {
+      "name": "Witness Affidavit Long",
+      "pageW": 612,
+      "pageH": 936,
+      "image": {
+        "drawW": 612,
+        "drawH": 936,
+        "x": 0,
+        "y": 0
+      },
+      "issues": [],
+      "ok": true,
+      "dom": {
+        "pad": {
+          "top": "28.8px",
+          "right": "96px",
+          "bottom": "28.8px",
+          "left": "96px"
+        },
+        "docClass": "ausf-doc witness-doc print-doc flex flex-col bg-white text-black",
+        "docWidthIn": 8.5,
+        "docHeightIn": 13,
+        "articleWidthIn": 8.5,
+        "articleHeightIn": 13
+      },
+      "bytes": 334089,
+      "path": "C:\\Project\\Trace-App-CCRO\\trace-app\\scripts\\output\\pdf-verify\\witness-affidavit-long.pdf"
+    }
+  ]
+}

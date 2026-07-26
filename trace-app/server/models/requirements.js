@@ -1,12 +1,20 @@
+const COLB_BRAP_DOCS = [
+  { id: 'national_id', label: 'National I.D' },
+  { id: 'brgy_indigency', label: 'Brgy. indigency' },
+  { id: 'affidavit_two_witnesses', label: 'Affidavit of Two Witnesses (Legal Office)' },
+  { id: 'brgy_facts_birth', label: 'Brgy. Certification (Facts of Birth)' },
+  { id: 'photo_2x2', label: '2x2 Photo I.D. with white background' },
+];
+
 const GENERAL_DOCS = [
   { id: 'national_id', label: 'National I.D' },
   { id: 'psa_negative', label: 'PSA Negative' },
   { id: 'affidavit_two_witnesses', label: 'Affidavit of Two Witnesses (Legal Office)' },
   { id: 'affidavit_abandonment', label: 'Affidavit of Abandonment (Legal Office)' },
   { id: 'affidavit_guardianship', label: 'Affidavit of Guardianship (Legal Office)' },
-  { id: 'affidavit_corroboration', label: 'Affidavit w/ Corroboration for Out-of-Town Applicant (Legal Office)' },
   { id: 'brgy_facts_birth', label: 'Brgy. Certification (Facts of Birth)' },
   { id: 'brgy_residency', label: 'Brgy. Residency' },
+  { id: 'parents_id_birth', label: 'Valid I.D. & birth cert of parents' },
   { id: 'photo_2x2', label: '2x2 Photo I.D. with white background (studio copy: 1, out-of-town: 2)' },
 ];
 
@@ -16,16 +24,13 @@ const AGE_1M_TO_6 = [
   { id: 'form_137', label: 'Form 137/school records or certification' },
   { id: 'ausf', label: 'AUSF (Affidavit to Use Surname of Father) / Appearance of both parents (married/not married)' },
   { id: 'marriage_contract', label: 'Marriage contract of parents (if married)' },
-  { id: 'parents_id_birth', label: 'Valid I.D. & birth cert of parents' },
 ];
 
 const AGE_7_TO_17 = [
   { id: 'baptismal', label: 'Baptismal certificate / siblings\' COLB (esp. if born at home)' },
   { id: 'form_137_sf10', label: 'Form 137 SF10-ES and/or school cert' },
-  { id: 'appearance_parents_applicant', label: 'Appearance of both parents and applicant' },
   { id: 'ausf', label: 'AUSF (Affidavit to Use Surname of Father)' },
   { id: 'marriage_contract', label: 'Marriage contract of parents' },
-  { id: 'parents_id_birth', label: 'Valid I.D. & birth cert of parents' },
 ];
 
 const AGE_18_TO_59 = [
@@ -36,9 +41,7 @@ const AGE_18_TO_59 = [
   { id: 'service_record', label: 'Service record' },
   { id: 'marriage_cert', label: 'Marriage certificate (applicant or parents) with place of birth' },
   { id: 'sss_gsis_philhealth', label: 'SSS-E4, GSIS, or MDR-PhilHealth' },
-  { id: 'applicant_appearance', label: 'Applicant\'s appearance' },
   { id: 'siblings_birth', label: 'Siblings\' birth certificate, etc.' },
-  { id: 'parents_id_birth', label: 'Valid I.D.s & birth cert of parents' },
 ];
 
 const AGE_60_PLUS = [
@@ -50,7 +53,6 @@ const AGE_60_PLUS = [
   { id: 'police_nbi', label: 'Police or NBI clearance' },
   { id: 'sss_gsis_philhealth', label: 'SSS-E4, GSIS, or MDR-PhilHealth' },
   { id: 'siblings_docs', label: 'Siblings\' birth, COM, baptismal or death certificate' },
-  { id: 'applicant_appearance', label: 'Applicant\'s appearance' },
   { id: 'parents_docs', label: 'Parent\'s birth/ID/death certificate (if deceased)' },
 ];
 
@@ -58,6 +60,14 @@ const CONDITIONAL_DOCS = {
   death_cert_registrant: { id: 'death_cert_registrant', label: 'Death certificate (registrant)' },
   death_cert_hilot: { id: 'death_cert_hilot', label: 'Death certificate (HILOT)' },
   foreign_parent_id: { id: 'foreign_parent_id', label: 'Passport or Bureau of Immigration cert. (foreign parent)' },
+  affidavit_corroboration_out_of_town: { id: 'out_of_town_affidavit_legal_office', label: 'Affidavit w/ Corroboration for Out-of-Town Applicant (Legal Office)' },
+  marriage_certificate: { id: 'marriage_certificate', label: 'Marriage Certificate' },
+  colb_parent_id: { id: 'colb_parent_id', label: 'Valid I.D. of parent/s or guardian' },
+  muslim_attachment: { id: 'muslim_attachment', label: 'Muslim attachment' },
+  verification_results: { id: 'verification_results', label: 'Verification Results' },
+  affidavit_discrepancy: { id: 'affidavit_discrepancy', label: 'Affidavit of Discrepancy' },
+  affidavit_one_same_person: { id: 'affidavit_one_same_person', label: 'Affidavit of One and the Same Person' },
+  affidavit_discrep_one_same_person: { id: 'affidavit_discrep_one_same_person', label: 'Affidavit of Discrep (One and the Same Person)' },
 };
 
 const PHOTO_ID_SCANNER_CAPTURE_SIZE = { width: 600, height: 600, label: '2 x 2 in' };
@@ -91,7 +101,50 @@ function getRequirementsForAgeGroup(ageGroup) {
 }
 
 function getRequirementsForChild(child) {
+  const applicationType = String(child?.application_type || 'applicant').trim().toLowerCase();
+  if (applicationType === 'colb_brap') {
+    const general = COLB_BRAP_DOCS.map((d) => ({ ...withScannerCaptureSize(d), category: 'general' }));
+    const conditional = [];
+    if (child.has_marriage_certificate) {
+      conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.marriage_certificate), category: 'conditional' });
+    }
+    if (child.colb_requires_parent_id) {
+      conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.colb_parent_id), category: 'conditional' });
+    }
+    if (child.has_muslim_attachment) {
+      conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.muslim_attachment), category: 'conditional' });
+    }
+    /* Affidavit documents (always available, not required) */
+    conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.affidavit_discrepancy), category: 'conditional' });
+    conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.affidavit_one_same_person), category: 'conditional' });
+    conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.affidavit_discrep_one_same_person), category: 'conditional' });
+    /* Age 80+ → Verification Results */
+    const brapAge = typeof child.age === 'number'
+      ? child.age
+      : (child.date_of_birth ? require('./child').calculateAge(child.date_of_birth) : 0);
+    if (brapAge >= 80) {
+      conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.verification_results), category: 'conditional' });
+    }
+    return {
+      general,
+      ageSpecific: [],
+      conditional,
+      all: [...general, ...conditional],
+    };
+  }
+
   const base = getRequirementsForAgeGroup(child.age_group || '1m1d_to_6');
+  const parentsMarried = Boolean(child.has_marriage_certificate);
+  const ageSpecific = base.ageSpecific.filter((doc) => {
+    if (doc.id === 'ausf') return !parentsMarried;
+    if (doc.id === 'marriage_contract') return parentsMarried;
+    return true;
+  });
+  const general = base.general;
+  const filteredAll = [
+    ...general,
+    ...ageSpecific,
+  ];
   const conditional = [];
   if (child.registrant_deceased) {
     conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.death_cert_registrant), category: 'conditional' });
@@ -103,12 +156,33 @@ function getRequirementsForChild(child) {
   if (child.parent_foreigner) {
     conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.foreign_parent_id), category: 'conditional' });
   }
-  const all = [...base.all, ...conditional];
+  if (child.out_of_town) {
+    conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.affidavit_corroboration_out_of_town), category: 'conditional' });
+  }
+  /* Affidavit documents (always available, not required) */
+  conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.affidavit_discrepancy), category: 'conditional' });
+  conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.affidavit_one_same_person), category: 'conditional' });
+  conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.affidavit_discrep_one_same_person), category: 'conditional' });
+  /* Age 80+ → Verification Results */
+  if (age >= 80) {
+    conditional.push({ ...withScannerCaptureSize(CONDITIONAL_DOCS.verification_results), category: 'conditional' });
+  }
+  const all = [...filteredAll, ...conditional];
   return {
-    ...base,
+    general,
+    ageSpecific,
     conditional,
     all,
   };
 }
 
-module.exports = { getRequirementsForAgeGroup, getRequirementsForChild, GENERAL_DOCS, AGE_1M_TO_6, AGE_7_TO_17, AGE_18_TO_59, AGE_60_PLUS };
+module.exports = {
+  getRequirementsForAgeGroup,
+  getRequirementsForChild,
+  COLB_BRAP_DOCS,
+  GENERAL_DOCS,
+  AGE_1M_TO_6,
+  AGE_7_TO_17,
+  AGE_18_TO_59,
+  AGE_60_PLUS,
+};

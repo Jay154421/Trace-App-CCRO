@@ -1,7 +1,8 @@
 {
   "name": "trace-app",
-  "version": "1.0.0",
-  "description": "TRACE System - Document requirements tracking for birth certificate applications",
+  "version": "4.3.2",
+  "description": "B-TRACE System - Document requirements tracking for birth certificate applications",
+  "author": "City Civil Registrar's Office — Iligan",
   "main": "electron/main.js",
   "scripts": {
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:vite\"",
@@ -10,10 +11,13 @@
     "build": "vite build",
     "preview": "vite preview",
     "start": "npm run dev",
-    "electron:dev": "cross-env PORT=3001 ELECTRON_STRICT_PORTS=1 concurrently \"npm run dev:server\" \"npm run dev:vite\" \"wait-on tcp:5174 tcp:3001 && cross-env ELECTRON_DEV=1 electron .\"",
-    "electron:build": "vite build --mode electron && electron-builder",
+    "electron:dev": "cross-env PORT=3001 ELECTRON_STRICT_PORTS=1 concurrently \"npm run dev:server\" \"npm run dev:vite\" \"wait-on tcp:5174 tcp:3001 && node electron/dev-runner.js\"",
+    "electron:build": "node scripts/electron-build.mjs",
+    "electron:build:package": "vite build --mode electron && electron-builder",
+    "verify:ausf-pdf": "node scripts/verify-ausf-witness-pdf.mjs",
     "electron:start": "electron .",
-    "seed:applicants": "node server/factory/seeder.js"
+    "seed:applicants": "node server/factory/seeder.js",
+    "export:user-guide-pdf": "node scripts/export-user-guide-pdf.mjs"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -39,39 +43,44 @@
     "cross-env": "^10.1.0",
     "electron": "^41.0.2",
     "electron-builder": "^26.8.1",
+    "png2icons": "^2.0.1",
     "postcss": "^8.4.32",
+    "rcedit": "^5.0.2",
     "tailwindcss": "^3.3.6",
     "vite": "^5.0.0",
-    "wait-on": "^9.0.4"
+    "wait-on": "^9.0.4",
+    "playwright": "^1.58.2"
   },
   "build": {
     "appId": "com.trace.app",
-    "productName": "TRACE System",
+    "productName": "B-TRACE System",
+    "icon": "public/ccro-logo.png",
     "directories": {
-      "output": "release"
+      "output": "electron-release"
     },
     "extraResources": [
-      {
-        "from": "server",
-        "to": "server"
-      },
       {
         "from": "dist",
         "to": "dist"
       }
     ],
+    "afterPack": "./electron/after-pack-win-icon.cjs",
     "files": [
       "electron/**/*",
+      "server/**/*",
+      "public/ccro-logo.png",
       "package.json"
     ],
     "win": {
       "target": [
         "nsis"
-      ]
+      ],
+      "signAndEditExecutable": false
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": true
     }
   }
 }

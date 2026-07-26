@@ -39,6 +39,33 @@ export const ATTENDANT_RADIO_CHECK_MARK = {
 /** Extent factors for the two-segment check shape (matches line endpoint offsets). */
 export const RADIO_CHECK_SHAPE_EXTENT = { horizontal: 0.95, vertical: 0.7 };
 
+/** "TO BE FILLED-UP AT THE OFFICE OF THE CIVIL REGISTRAR" digit boxes (must match FieldPosition.jsx / CertificateOfLiveBirth). */
+const REGISTRAR_BOX_Y = 3947;
+const REGISTRAR_BOX_COORDINATES = [
+  { label: '8', valueKey: 'registrarBox8', xs: [306, 375] },
+  { label: '9', valueKey: 'registrarBox9', xs: [435, 495] },
+  { label: '11', valueKey: 'registrarBox11', xs: [576, 636, 708] },
+  { label: '13', valueKey: 'registrarBox13', xs: [789, 849, 921, 978, 1050, 1110, 1179, 1239] },
+  { label: '15', valueKey: 'registrarBox15', xs: [1320, 1380] },
+  { label: '16', valueKey: 'registrarBox16', xs: [1464, 1533] },
+  { label: '17', valueKey: 'registrarBox17', xs: [1641, 1686, 1770] },
+  { label: '19', valueKey: 'registrarBox19', xs: [1854, 1911, 1971, 2043, 2112, 2172, 2244, 2301] },
+];
+
+const REGISTRAR_BOX_FIELD_POSITIONS = REGISTRAR_BOX_COORDINATES.reduce((acc, group) => {
+  group.xs.forEach((x, idx) => {
+    acc[`registrar_${group.label}_${idx}`] = { x, y: REGISTRAR_BOX_Y };
+  });
+  return acc;
+}, {});
+
+const REGISTRAR_BOX_VALUE_MAP = REGISTRAR_BOX_COORDINATES.flatMap((group) =>
+  group.xs.map((_, idx) => ({
+    key: `registrar_${group.label}_${idx}`,
+    getValue: (getVal) => String(getVal(group.valueKey) ?? '').charAt(idx),
+  })),
+);
+
 // Field position coordinates (layout pixels)
 export const FIELD_POSITIONS = {
   province: { x: 600, y: 447 },
@@ -83,14 +110,14 @@ export const FIELD_POSITIONS = {
   father_residence_city: { x: 1215, y: 1959, width: 330 },
   father_residence_province: { x: 1605, y: 1959, width: 375},
   father_country: { x: 2070, y: 1959, width: 315 },
-  marriage_date_month: { x: 507, y: 2148 },
+  marriage_date_month: { x: 407, y: 2148, width: 389 },
   marriage_date_day: { x: 696, y: 2148 },
   marriage_date_year: { x: 873, y: 2148 },
   marriage_place_city: { x: 1239, y: 2148, width: 378 },
   marriage_place_province: { x: 1667, y: 2148 , width: 397},
   marriage_place_country: { x: 2112, y: 2148, width: 342 },
   // Attendant type radio button positions
-  attendant_radio_physician: { x: 282, y: 2227 },
+  attendant_radio_physician: { x: 282, y: 2277 },
   attendant_radio_nurse: { x: 600, y: 2277 },
   attendant_radio_midwife: { x: 875, y: 2277 },
   attendant_radio_hilot: { x: 1179, y: 2277 },
@@ -101,6 +128,7 @@ export const FIELD_POSITIONS = {
   attendant_address: { x: 1500, y: 2505, width: 905},
   attendant_date: { x: 1512, y: 2643 },
   attendant_time: { x: 1533, y: 2409 },
+  attendant_signature: { x: 471, y: 2490, width: 982 },
   informant_signature: { x: 483, y: 2916, width: 768},
   informant_relation: { x: 612, y: 3000 },
   informant_address: { x: 399, y: 3057, width: 864},
@@ -111,10 +139,11 @@ export const FIELD_POSITIONS = {
   prepared_by: { x: 1665, y: 2928 },
   prepared_by_title: { x: 1665, y: 3000 },
   prepared_by_date: { x: 1665, y: 3069 },
-  registered_by: { x: 1665, y: 3306 },
+  registered_by: { x: 1665, y: 3306, width: 680 },
   registered_by_title: { x: 1665, y: 3375 },
   registered_by_date: { x: 1665, y: 3447 },
-  remarks: { x: 246, y: 3600, width: 2292, height: 210 },
+  remarks: { x: 234, y: 3588, width: 2292, height: 210 },
+  ...REGISTRAR_BOX_FIELD_POSITIONS,
 };
 
 /** Space between form columns to prevent text bleeding into next box */
@@ -196,6 +225,13 @@ export const ATTENDANT_ADDRESS_SHRINK_MIN_CHARS_PDF = 35;
 export const ATTENDANT_ADDRESS_SHRINK_MAX_CHARS_PDF = 60;
 export const ATTENDANT_ADDRESS_MIN_FONT_PT = 9;
 
+/** Attendant signature compact character threshold (like informant_address) */
+export const ATTENDANT_SIGNATURE_COMPACT_LENGTH = 40;
+export const ATTENDANT_SIGNATURE_COMPACT_PDF_PT = 8;
+export const ATTENDANT_SIGNATURE_MIN_FONT_PT = 8;
+export const ATTENDANT_SIGNATURE_COMPACT_OVERLAY_PX =
+  (ATTENDANT_SIGNATURE_COMPACT_PDF_PT / 10) * PDF_LAYOUT.fieldFontSize;
+
 // ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
@@ -272,6 +308,22 @@ export function abbreviateAddressText(value) {
     .replace(/\bLot\b/gi, 'Lt.');
 }
 
+/** Uppercase month names indexed by 1-based month number. */
+const MONTH_NAMES = [
+  '', 'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
+  'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER',
+];
+
+/**
+ * Convert a numeric month string (1-12) to its full uppercase month name.
+ * Returns the original value if it is not a valid month number.
+ */
+export function monthNumberToName(value) {
+  if (!value) return '';
+  const idx = parseInt(String(value).trim(), 10);
+  return idx >= 1 && idx <= 12 ? MONTH_NAMES[idx] : String(value).toUpperCase();
+}
+
 /**
  * Convert value to Certificate of Live Birth display format (uppercase)
  */
@@ -309,14 +361,15 @@ export function parseDateOfBirth(dateStr) {
 export function countryDisplayFromCodeOrText(codeOrText) {
   if (!codeOrText || typeof codeOrText !== 'string') return '';
   const text = codeOrText.trim();
+  let out = text;
   if (text.length === 2 && /^[A-Za-z]{2}$/.test(text)) {
     try {
       const displayNames = new Intl.DisplayNames(['en'], { type: 'region' });
       const name = displayNames.of(text.toUpperCase());
-      if (name && name !== text.toUpperCase()) return name;
-    } catch (_) { /* ignore */ }  
+      if (name && name !== text.toUpperCase()) out = name;
+    } catch (_) { /* ignore */ }
   }
-  return text;
+  return String(out).toUpperCase();
 }
 
 /**
@@ -373,7 +426,7 @@ export const FIELD_VALUE_MAP = [
   { key: 'child_name_last', valueKey: 'childLast' },
   { key: 'sex', valueKey: 'sex' },
   { key: 'date_of_birth_day', valueKey: 'birthDay' },
-  { key: 'date_of_birth_month', valueKey: 'birthMonth' },
+  { key: 'date_of_birth_month', getValue: (getVal) => monthNumberToName(getVal('birthMonth')) },
   { key: 'date_of_birth_year', valueKey: 'birthYear' },
   { key: 'place_of_birth_hospital', valueKey: 'placeOfBirthName' },
   { key: 'place_of_birth_city', valueKey: 'placeOfBirthCity' },
@@ -407,7 +460,7 @@ export const FIELD_VALUE_MAP = [
   { key: 'father_residence_city', valueKey: 'fatherResidenceCity' },
   { key: 'father_residence_province', valueKey: 'fatherResidenceProvince' },
   { key: 'father_country', valueKey: 'fatherCountry' },
-  { key: 'marriage_date_month', valueKey: 'marriageMonth' },
+  { key: 'marriage_date_month', getValue: (getVal) => monthNumberToName(getVal('marriageMonth')) },
   { key: 'marriage_date_day', valueKey: 'marriageDay' },
   { key: 'marriage_date_year', valueKey: 'marriageYear' },
   { key: 'marriage_place_city', valueKey: 'marriagePlaceCity' },
@@ -416,7 +469,7 @@ export const FIELD_VALUE_MAP = [
   { key: 'attendant_type_specify', getValue: (getVal) => getVal('attendantTypeSpecify') ?? getVal('attendantOthersSpecify') ?? '' },
   { key: 'attendant_title', valueKey: 'attendantTitle' },
   { key: 'attendant_name', valueKey: 'attendantName' },
-  { key: 'attendant_signature', getValue: (getVal) => getSignatureOrName(getVal('attendantSignature'), getVal('attendantName')) },
+  { key: 'attendant_signature', getValue: (getVal) => getSignatureOrName(getVal('attendantSignature')) },
   { key: 'attendant_address', valueKey: 'attendantAddress' },
   { key: 'attendant_date', valueKey: 'attendantDate' },
   { key: 'attendant_time', getValue: (getVal) => joinTimeParts(getVal('attendantTime'), getVal('attendantAmpm')) },
@@ -434,6 +487,7 @@ export const FIELD_VALUE_MAP = [
   { key: 'registered_by_title', valueKey: 'registeredByTitle' },
   { key: 'registered_by_date', valueKey: 'registeredByDate' },
   { key: 'remarks', valueKey: 'remarks' },
+  ...REGISTRAR_BOX_VALUE_MAP,
 ];
 
 // ============================================================================
@@ -461,6 +515,11 @@ export function buildMergedCertData(child, cert) {
     (cert.father_country && String(cert.father_country).trim()) ||
     countryDisplayFromCodeOrText(resFather);
 
+  const marriageCountry =
+    (cert.marriagePlaceCountry && String(cert.marriagePlaceCountry).trim()) ||
+    (cert.marriage_place_country && String(cert.marriage_place_country).trim()) ||
+    '';
+
   return {
     ...cert,
     childFirst: cert.childFirst ?? cert.child_first ?? child?.first_name ?? '',
@@ -469,8 +528,9 @@ export function buildMergedCertData(child, cert) {
     birthDay: cert.birthDay ?? cert.birth_day ?? birth.day ?? '',
     birthMonth: cert.birthMonth ?? cert.birth_month ?? birth.month ?? '',
     birthYear: cert.birthYear ?? cert.birth_year ?? birth.year ?? '',
-    motherCountry: mc,
-    fatherCountry: fc,
+    motherCountry: String(mc || '').trim().toUpperCase(),
+    fatherCountry: String(fc || '').trim().toUpperCase(),
+    marriagePlaceCountry: String(marriageCountry || '').trim().toUpperCase(),
   };
 }
 
@@ -585,6 +645,8 @@ export function buildFieldPositionPdfBase64(merged) {
       fontPt = 9;
     } else if (item.key === 'attendant_address') {
       fontPt = getAttendantAddressFontPt(rawTrimLen);
+    } else if (item.key === 'attendant_signature' && rawTrimLen >= ATTENDANT_SIGNATURE_COMPACT_LENGTH) {
+      fontPt = ATTENDANT_SIGNATURE_COMPACT_PDF_PT;
     }
     doc.setFontSize(fontPt);
     const defaultLineHeightIn = (fontPt * PDF_LAYOUT.lineHeightRatio) / 72;
@@ -625,7 +687,7 @@ export function buildFieldPositionPdfBase64(merged) {
 
   // Draw attendant type radio button marks
   const radioPositions = {
-    physician: { x: 282, y: 2227 },
+    physician: { x: 282, y: 2277 },
     nurse: { x: 600, y: 2277 },
     midwife: { x: 875, y: 2277 },
     hilot: { x: 1179, y: 2277 },
@@ -721,6 +783,8 @@ export function buildCombinedPdfBase64(merged) {
       fontPt = 9;
     } else if (item.key === 'attendant_address') {
       fontPt = getAttendantAddressFontPt(rawTrimLen);
+    } else if (item.key === 'attendant_signature' && rawTrimLen >= ATTENDANT_SIGNATURE_COMPACT_LENGTH) {
+      fontPt = ATTENDANT_SIGNATURE_COMPACT_PDF_PT;
     }
     doc.setFontSize(fontPt);
     const defaultLineHeightIn = (fontPt * PDF_LAYOUT.lineHeightRatio) / 72;
@@ -761,7 +825,7 @@ export function buildCombinedPdfBase64(merged) {
 
   // Draw attendant type radio button marks
   const radioPositions = {
-    physician: { x: 282, y: 2227 },
+    physician: { x: 282, y: 2277 },
     nurse: { x: 600, y: 2277 },
     midwife: { x: 875, y: 2277 },
     hilot: { x: 1179, y: 2277 },
@@ -801,7 +865,7 @@ export function buildCombinedPdfBase64(merged) {
   doc.setFontSize(10);
   const childName = `${merged.childFirst || ''} ${merged.childMiddle || ''} ${merged.childLast || ''}`.trim();
   doc.text(`Applicant: ${childName}`, 0.5, checklistStartY + 0.3);
-  doc.text(`Date of Birth: ${merged.birthMonth || ''}/${merged.birthDay || ''}/${merged.birthYear || ''}`, 0.5, checklistStartY + 0.5);
+  doc.text(`Date of Birth: ${monthNumberToName(merged.birthMonth) || ''}/${merged.birthDay || ''}/${merged.birthYear || ''}`, 0.5, checklistStartY + 0.5);
 
   // Sample requirements data with checkmarks
   const requirementsData = [

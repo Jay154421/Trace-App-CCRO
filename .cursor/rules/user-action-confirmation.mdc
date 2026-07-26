@@ -1,0 +1,45 @@
+---
+description: User-triggered actions require explicit y/Y text confirmation; reusable confirm helpers; default cancel
+globs: "**/*.{js,jsx,ts,tsx,mjs,cjs}"
+alwaysApply: true
+---
+
+# User-Triggered Action Confirmation
+
+When implementing **interactive** flows (CLI, `readline`, Electron main-process prompts, scripts that act on user input), require a confirmation step before side effects or irreversible work.
+
+## Contract
+
+- After the user enters input or triggers an action that will proceed, **pause** and show: `Do you want to proceed? (y/n)` (or a message passed into the helper).
+- **Proceed only** if the user types exactly `y` or `Y`. Anything else **cancels** (including empty input).
+- **Default is cancel** unless explicitly confirmed; do not treat Enter alone as confirm unless the prompt explicitly documents that (this rule does not).
+- Centralize logic in a **reusable** helper (e.g. `confirmAction`, `confirmAndProceed`, or `readYesNo` used by both).
+
+## Optional: invalid input
+
+If you re-prompt on invalid input: loop until the user enters `y`, `Y`, `n`, or `N`; then `y`/`Y` proceeds and `n`/`N` cancels. Do not proceed on any other token.
+
+## GUI (React / dialogs)
+
+Same semantics: primary action runs only after an explicit confirm control; dismiss or secondary action = cancel. Do not auto-submit destructive actions on open.
+
+## Examples
+
+```javascript
+// ❌ BAD – proceeds immediately after input
+const name = await ask('Name?');
+await deleteUser(name);
+
+// ✅ GOOD – reusable confirmation; only y/Y proceeds
+async function confirmAction(message = 'Do you want to proceed? (y/n)') {
+  const answer = await readLine(message + ' ');
+  return answer === 'y' || answer === 'Y';
+}
+
+async function confirmAndProceed(message, fn) {
+  if (!(await confirmAction(message))) return { ok: false, reason: 'cancelled' };
+  return { ok: true, result: await fn() };
+}
+```
+
+Keep helpers **pure** where possible: inject `readLine` (or `stdin`) for tests so confirmation does not require a real TTY in unit tests.

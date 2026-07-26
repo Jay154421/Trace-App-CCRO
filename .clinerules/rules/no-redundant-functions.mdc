@@ -1,0 +1,94 @@
+---
+description: Prevent redundant functions — audit, reuse, or extend before creating new functions. Do not create duplicate functions if similar functionality already exists.
+alwaysApply: true
+globs: "**/*.{js,jsx,ts,tsx,mjs,cjs}"
+---
+
+# No Redundant Functions
+
+Before writing any new function, you **MUST** audit the codebase and exhaust existing alternatives first. Do not create duplicate functions when similar functionality already exists or can be reused.
+
+## Four-Step Enforcement
+
+### 1. Audit Before Creating
+
+Search the codebase for existing functions with similar purpose, signature, or logic before writing a new one.
+
+```
+# ❌ BAD – creating a new function without checking
+function formatDate(str) { ... }
+
+# ✅ GOOD – finding and reusing the existing function
+import { formatDateDDMMYYYY } from '../utils/date';
+```
+
+**Always run a search first** when you are about to introduce a utility/helper function.
+
+### 2. Reuse Over Rewrite
+
+Import and call existing functions instead of reimplementing their behavior.
+
+```javascript
+// ❌ BAD – reimplementing HTML escaping
+function escape(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+}
+
+// ✅ GOOD – reusing the existing utility
+import { escapeHtml } from '../utils/escape';
+```
+
+### 3. Extend Over Duplicate
+
+When an existing function is *almost* right, **extend it with optional parameters** rather than creating a parallel version.
+
+```javascript
+// ❌ BAD – parallel function duplicating logic
+export function buildWitnessPdfBase64() { /* copy of buildAusfPdfBase64 */ }
+export function buildOutOfTownPdfBase64() { /* copy of buildAusfPdfBase64 */ }
+
+// ✅ GOOD – reuse the existing function (as witnessPdf.js does)
+export { buildAusfPdfBase64 as buildWitnessPdfBase64 };
+```
+
+### 4. Consolidation Signal
+
+If you find **3 or more functions** doing substantially similar work, **propose extracting a shared utility** instead of adding a fourth.
+
+```javascript
+// ❌ BAD – three nearly identical PDF-builders, and you add a fourth
+// proposal: extract buildPdfBase64(element, pageFormat, variantConfig)
+
+// ✅ GOOD – consolidate into one shared function with a config parameter
+```
+
+## When a New Function is Unavoidable
+
+If — after auditing, searching, and evaluating reuse — a genuinely distinct function is still needed, you must:
+
+1. **Add a JSDoc comment** explaining what it does and **why existing functions couldn't be reused**
+2. **Name it distinctively** — avoid names that shadow or resemble existing functions
+3. **Add a note** in the calling code referencing why reuse wasn't possible, so future readers don't attempt to "simplify" by replacing it with an existing function
+
+```javascript
+/**
+ * [NEW] Formats date in MMMM-DD-YYYY format.
+ * WHY: Existing formatDateDDMMYYYY uses DD-MM-YYYY. Adding a
+ * second parameter to it would break 20+ call sites.
+ */
+export function formatDateMMMMDDYYYY(isoDateStr) { ... }
+```
+
+## Examples from This Codebase
+
+| ❌ Don't | ✅ Do |
+|----------|-------|
+| Re-implement `formatDateDDMMYYYY` in a new file | `import { formatDateDDMMYYYY } from '../utils/date'` |
+| Re-implement `escapeHtml` in a component | `import { escapeHtml } from '../utils/escape'` |
+| Create a new PDF builder from scratch | Reuse `buildAusfPdfBase64` (as `witnessPdf.js` does) |
+| Duplicate `camelToSnake` logic | `import { camelToSnake } from '../utils/pdfUtils'` |
+
+## Exceptions
+
+- **Framework entry points** (e.g., `App.jsx`, route handlers) are exempt — they are composition points, not utilities.
+- **Wrapper/delegation functions** that exist for API compatibility (e.g., a renamed re-export) are not "redundant" — they are explicit adapters. Document the adapter role in a comment.

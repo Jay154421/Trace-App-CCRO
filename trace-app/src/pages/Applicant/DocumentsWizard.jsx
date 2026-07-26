@@ -1,0 +1,1819 @@
+import { useParams, Link, useNavigate, useBlocker, useLocation } from 'react-router-dom';
+import {
+  applicantDetailPath,
+  applicantPathAfterId,
+  getApplicantBasePath,
+  getApplicantBasePathForRecord,
+} from '../../utils/applicantRoutes';
+import { useState, useEffect, useRef, useLayoutEffect, useCallback, useMemo } from 'react';
+import toast from 'react-hot-toast';
+import { childrenApi } from '../../services/api';
+import { apiUrl } from '../../config/api';
+import { ApplicantStaffStatusPanel } from '../../components/ApplicantStaffStatusPanel';
+import { isTruthyFlag, hasMinimumAgeSpecificAttachments } from '../../utils/applicantForm';
+
+const PHOTO_ID_REQUIREMENT_ID = 'photo_2x2';
+const OUT_OF_TOWN_AFFIDAVIT_REQUIREMENT = {
+  id: 'out_of_town_affidavit_legal_office',
+  category: 'conditional',
+  label: 'Affidavit w/ Corroboration for Out-of-Town Applicant (Legal Office)',
+};
+const FALLBACK_CAPTURE_SIZE = { width: 1200, height: 1200, label: '2 x 2 in' };
+const FALLBACK_DOCUMENT_SCAN_SIZE = { width: 1275, height: 1800, label: 'Document scan' };
+const DOCUMENT_PORTRAIT_ASPECT = 3 / 4;
+const DOCUMENT_LANDSCAPE_ASPECT = 16 / 10;
+
+/** How long the red loading toast stays visible before auto-dismiss. */
+const REMOVE_ATTACHMENT_LOADING_MS = 5000;
+
+/** Pause (ms) after the last checklist edit before auto-save runs. */
+const AUTO_SAVE_DEBOUNCE_MS = 1500;
+
+/** Custom red loading toast with animated spinner (auto-dismisses). */
+function showRemoveAttachmentLoadingToast() {
+  return toast.custom(
+    (t) => (
+      <div
+        className={`flex max-w-md items-center gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-900 shadow-lg transition-opacity duration-300 ease-out ${t.visible ? 'opacity-100' : 'opacity-0'
+          }`}
+        role="status"
+        aria-live="polite"
+      >
+        <span
+          className="inline-block h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-red-600 border-t-transparent"
+          aria-hidden
+        />
+        <span>Removing attachment…</span>
+      </div>
+    ),
+    { duration: REMOVE_ATTACHMENT_LOADING_MS }
+  );
+}
+
+function parseAttachments(attachment) {
+  if (!attachment) return [];
+  if (typeof attachment === 'string' && attachment.startsWith('[')) {
+    try {
+      return JSON.parse(attachment);
+    } catch {
+      return [attachment];
+    }
+  }
+  return [attachment];
+}
+
+function hasAnyAttachments(item) {
+  return (item.attachmentFiles?.length ?? 0) > 0 || (item.attachmentFilenames?.length ?? 0) > 0;
+}
+
+/**
+ * After a save, re-apply edits made while the request was in flight.
+ * `uploadedFromSnapshot` is the checklist state at save start: same File references must not be
+ * re-staged (React state still holds them until setState), or auto-save would stay "dirty" forever.
+ */
+function mergeServerRebuiltWithLocalEdits(rebuilt, local, uploadedFromSnapshot) {
+  const snapByKey = new Map(
+    (uploadedFromSnapshot || []).map((c) => [`${c.category}:${c.label}`, c])
+  );
+  const localByKey = new Map((local || []).map((c) => [`${c.category}:${c.label}`, c]));
+  return rebuilt.map((item) => {
+    const key = `${item.category}:${item.label}`;
+    const loc = localByKey.get(key);
+    if (!loc) return item;
+    const snapFiles = snapByKey.get(key)?.attachmentFiles || [];
+    const staged = (loc.attachmentFiles || []).filter((file) => !snapFiles.includes(file));
+    const notes =
+      loc.notes !== undefined && String(loc.notes) !== String(item.notes ?? '')
+        ? loc.notes
+        : item.notes;
+    if (staged.length === 0 && notes === item.notes) return item;
+    const next = { ...item, notes };
+    if (staged.length > 0) {
+      next.attachmentFiles = staged;
+      next.checked = hasAnyAttachments(next) ? 1 : 0;
+    }
+    return next;
+  });
+}
+
+function toSafeFilenamePart(value) {
+  return String(value || '')
+    .trim()
+    .replace(/\s+/g, '_')
+    .replace(/[^a-zA-Z0-9_-]/g, '');
+}
+
+function isOutOfTownAffidavitRequirement(requirement) {
+  const label = String(requirement?.label || '').toLowerCase();
+  return requirement?.id === OUT_OF_TOWN_AFFIDAVIT_REQUIREMENT.id
+    || (label.includes('affidavit') && label.includes('corroboration') && label.includes('out-of-town'));
+}
+
+function isMarriageCertificateRequirement(requirement) {
+  const label = String(requirement?.label || '').toLowerCase();
+  return requirement?.id === 'marriage_certificate' || label === 'marriage certificate';
+}
+
+function isAusfRequirement(requirement) {
+  return requirement?.id === 'ausf';
+}
+
+function isParentsMarriageContractRequirement(requirement) {
+  return requirement?.id === 'marriage_contract';
+}
+
+function isColbParentIdRequirement(requirement) {
+  return requirement?.id === 'colb_parent_id';
+}
+
+function isMuslimAttachmentRequirement(requirement) {
+  return requirement?.id === 'muslim_attachment';
+}
+
+/** Out-of-town affidavit is print-only for COLB BRAP; never on the document checklist. */
+function isColbBrapExcludedChecklistItem(requirement, isColbBrap) {
+  if (!isColbBrap) return false;
+  return isOutOfTownAffidavitRequirement(requirement);
+}
+
+function buildPhotoFilename(child) {
+  const firstName = toSafeFilenamePart(child?.first_name);
+  const middleName = toSafeFilenamePart(child?.middle_name);
+  const lastName = toSafeFilenamePart(child?.last_name);
+  const ownerName = [firstName, middleName, lastName].filter(Boolean).join('_') || 'owner';
+  const now = new Date();
+  const month = now.toLocaleString('en-US', { month: 'long' });
+  const day = String(now.getDate()).padStart(2, '0');
+  const year = now.getFullYear();
+  return `${ownerName}_${month}-${day}-${year}.jpg`;
+}
+
+function buildRequirementPhotoFilename(child, requirement) {
+  if (requirement?.id === PHOTO_ID_REQUIREMENT_ID) {
+    return buildPhotoFilename(child);
+  }
+  const owner = buildOwnerDisplayName(child)
+    .trim()
+    .replace(/\s+/g, '_')
+    .replace(/[^a-zA-Z0-9_-]/g, '') || 'owner';
+  const requirementId = toSafeFilenamePart(requirement?.id) || 'requirement';
+  return `${requirementId}_${owner}_${Date.now()}.jpg`;
+}
+
+function buildOwnerDisplayName(child) {
+  const parts = [child?.first_name, child?.middle_name, child?.last_name]
+    .map((p) => String(p || '').trim())
+    .filter(Boolean);
+  return parts.join(' ') || 'Owner';
+}
+
+function buildPhotoOutputLabel(child, filename) {
+  const owner = buildOwnerDisplayName(child);
+  const now = new Date();
+  let month = now.toLocaleString('en-US', { month: 'long' });
+  let day = String(now.getDate()).padStart(2, '0');
+  let year = String(now.getFullYear());
+
+  const namedDateMatch = filename.match(/_(January|February|March|April|May|June|July|August|September|October|November|December)-(\d{2})-(\d{4})(?:_\d+)?\.[^.]+$/i);
+  if (namedDateMatch) {
+    [, month, day, year] = namedDateMatch;
+  } else {
+    const timestampMatch = filename.match(/_(\d{13})_\d+\.[^.]+$/);
+    if (timestampMatch) {
+      const dt = new Date(Number(timestampMatch[1]));
+      if (!Number.isNaN(dt.getTime())) {
+        month = dt.toLocaleString('en-US', { month: 'long' });
+        day = String(dt.getDate()).padStart(2, '0');
+        year = String(dt.getFullYear());
+      }
+    }
+  }
+
+  return `${owner} ${month} ${day}, ${year}`;
+}
+
+function buildChecklist(requirements, existing = [], child = null) {
+  const byKey = new Map(existing.map((e) => [`${e.category}:${e.label}`, e]));
+  const allRequirements = Array.isArray(requirements?.all) ? requirements.all : [];
+  const isColbBrap = String(child?.application_type || '').toLowerCase() === 'colb_brap';
+  const normalizedOutOfTown = isTruthyFlag(child?.out_of_town);
+  const normalizedHasMarriageCertificate = isTruthyFlag(child?.has_marriage_certificate);
+  const normalizedColbParentId = isTruthyFlag(child?.colb_requires_parent_id);
+  const normalizedMuslimAttachment = isTruthyFlag(child?.has_muslim_attachment);
+  const hasOutOfTownAffidavit = allRequirements.some((requirement) => isOutOfTownAffidavitRequirement(requirement));
+  const filteredRequirements = allRequirements.filter((requirement) => {
+    if (isColbBrapExcludedChecklistItem(requirement, isColbBrap)) {
+      return false;
+    }
+    if (isOutOfTownAffidavitRequirement(requirement)) {
+      return normalizedOutOfTown;
+    }
+    if (isMarriageCertificateRequirement(requirement)) {
+      return normalizedHasMarriageCertificate;
+    }
+    if (isAusfRequirement(requirement)) {
+      if (isColbBrap) return false;
+      return !normalizedHasMarriageCertificate;
+    }
+    if (isParentsMarriageContractRequirement(requirement)) {
+      return normalizedHasMarriageCertificate;
+    }
+    if (isColbParentIdRequirement(requirement)) {
+      return normalizedColbParentId;
+    }
+    if (isMuslimAttachmentRequirement(requirement)) {
+      return normalizedMuslimAttachment;
+    }
+    return true;
+  });
+  const missingExistingRequirements = existing.filter((item) => {
+    if (!item?.label || !item?.category) return false;
+    if (isColbBrapExcludedChecklistItem(item, isColbBrap)) return false;
+    if (isColbBrap && isAusfRequirement(item)) return false;
+    if (!normalizedOutOfTown && isOutOfTownAffidavitRequirement(item)) return false;
+    if (!normalizedHasMarriageCertificate && isMarriageCertificateRequirement(item)) return false;
+    if (normalizedHasMarriageCertificate && isAusfRequirement(item)) return false;
+    if (!normalizedHasMarriageCertificate && isParentsMarriageContractRequirement(item)) return false;
+    if (!normalizedColbParentId && isColbParentIdRequirement(item)) return false;
+    if (!normalizedMuslimAttachment && isMuslimAttachmentRequirement(item)) return false;
+    return !filteredRequirements.some((requirement) => (
+      requirement?.label === item.label && requirement?.category === item.category
+    ));
+  });
+  const shouldRequireOutOfTownAffidavit = !isColbBrap && normalizedOutOfTown && !hasOutOfTownAffidavit;
+  const requirementsList = shouldRequireOutOfTownAffidavit
+    ? [...filteredRequirements, OUT_OF_TOWN_AFFIDAVIT_REQUIREMENT]
+    : filteredRequirements;
+  const mergedRequirements = [...requirementsList, ...missingExistingRequirements];
+
+  return mergedRequirements.map((r) => {
+    const existingItem = byKey.get(`${r.category}:${r.label}`);
+    const attachmentList = parseAttachments(existingItem?.attachment);
+    return {
+      category: r.category,
+      label: r.label,
+      id: r.id,
+      required: true,
+      checked: attachmentList.length > 0 ? 1 : 0,
+      notes: existingItem?.notes ?? '',
+      attachmentFilenames: attachmentList,
+      attachmentFiles: [],
+      scannerCaptureSize: r.scannerCaptureSize || null,
+    };
+  });
+}
+
+function getNormalizedCaptureSize(item) {
+  const width = Number(item?.scannerCaptureSize?.width);
+  const height = Number(item?.scannerCaptureSize?.height);
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+    return item?.id === PHOTO_ID_REQUIREMENT_ID ? FALLBACK_CAPTURE_SIZE : FALLBACK_DOCUMENT_SCAN_SIZE;
+  }
+  return {
+    width: Math.round(width),
+    height: Math.round(height),
+    label: item?.scannerCaptureSize?.label || `${Math.round(width)} x ${Math.round(height)} px`,
+  };
+}
+
+function getMinimumHdSize(aspectRatio) {
+  if (!Number.isFinite(aspectRatio) || aspectRatio <= 0) {
+    return { width: 1280, height: 720 };
+  }
+  if (aspectRatio >= 1) {
+    let width = 1280;
+    let height = Math.round(width / aspectRatio);
+    if (height < 720) {
+      height = 720;
+      width = Math.round(height * aspectRatio);
+    }
+    return { width, height };
+  }
+  let height = 1280;
+  let width = Math.round(height * aspectRatio);
+  if (width < 720) {
+    width = 720;
+    height = Math.round(width / aspectRatio);
+  }
+  return { width, height };
+}
+
+function getPreferredCaptureSize(item) {
+  const normalized = getNormalizedCaptureSize(item);
+  const hdMinimum = getMinimumHdSize(normalized.width / normalized.height);
+  return {
+    width: Math.max(normalized.width, hdMinimum.width),
+    height: Math.max(normalized.height, hdMinimum.height),
+  };
+}
+
+function getCurrentDeviceOrientation() {
+  if (typeof window === 'undefined') return 'portrait';
+  const orientationType = window.screen?.orientation?.type;
+  if (typeof orientationType === 'string') {
+    return orientationType.includes('landscape') ? 'landscape' : 'portrait';
+  }
+  return window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
+}
+
+function getTargetCropAspect(item, orientation = 'portrait') {
+  if (item?.id === PHOTO_ID_REQUIREMENT_ID) {
+    const s = getNormalizedCaptureSize(item);
+    return s.width / s.height;
+  }
+  return orientation === 'landscape' ? DOCUMENT_LANDSCAPE_ASPECT : DOCUMENT_PORTRAIT_ASPECT;
+}
+
+function getPreferredCaptureSizeForAspect(item, targetAspect) {
+  const basePreferred = getPreferredCaptureSize(item);
+  const hdMinimum = getMinimumHdSize(targetAspect);
+  const baseArea = basePreferred.width * basePreferred.height;
+  let width = Math.round(Math.sqrt(baseArea * targetAspect));
+  let height = Math.round(width / targetAspect);
+  width = Math.max(width, hdMinimum.width);
+  height = Math.max(height, hdMinimum.height);
+  return { width, height };
+}
+
+function buildVideoConstraintPresets(item) {
+  const preferredSize = getPreferredCaptureSize(item);
+  const isPhotoTarget = item?.id === PHOTO_ID_REQUIREMENT_ID;
+  const preferredFacingMode = isPhotoTarget ? 'user' : 'environment';
+  const softMinimum = getMinimumHdSize(preferredSize.width / preferredSize.height);
+  const minWidth = Math.min(softMinimum.width, preferredSize.width);
+  const minHeight = Math.min(softMinimum.height, preferredSize.height);
+
+  return [
+    {
+      facingMode: { ideal: preferredFacingMode },
+      width: { ideal: preferredSize.width, min: minWidth },
+      height: { ideal: preferredSize.height, min: minHeight },
+      frameRate: { ideal: 30, min: 24 },
+    },
+    {
+      facingMode: { ideal: preferredFacingMode },
+      width: { ideal: 1280 },
+      height: { ideal: 720 },
+      frameRate: { ideal: 30, min: 24 },
+    },
+    {
+      facingMode: preferredFacingMode,
+    },
+    {
+      facingMode: 'user',
+    },
+  ];
+}
+
+const MIN_CROP_NATURAL = 48;
+
+function computeMaxCenteredCrop(iw, ih) {
+  const sw = Math.max(MIN_CROP_NATURAL, iw * 0.9);
+  const sh = Math.max(MIN_CROP_NATURAL, ih * 0.9);
+  const sx = (iw - sw) / 2;
+  const sy = (ih - sh) / 2;
+  return { sx, sy, sw, sh };
+}
+
+function naturalRectToCropOverlayPx(rect, natural, layout) {
+  const { sx, sy, sw, sh } = rect;
+  const { w: iw, h: ih } = natural;
+  return {
+    left: layout.left + (sx / iw) * layout.width,
+    top: layout.top + (sy / ih) * layout.height,
+    width: (sw / iw) * layout.width,
+    height: (sh / ih) * layout.height,
+  };
+}
+
+function clampCropRect({ sx, sy, sw, sh }, iw, ih) {
+  let w = Math.min(iw, Math.max(MIN_CROP_NATURAL, sw));
+  let h = Math.min(ih, Math.max(MIN_CROP_NATURAL, sh));
+  let x = Math.min(Math.max(0, sx), iw - w);
+  let y = Math.min(Math.max(0, sy), ih - h);
+  if (x + w > iw) x = iw - w;
+  if (y + h > ih) y = ih - h;
+  return { sx: x, sy: y, sw: w, sh: h };
+}
+
+/**
+ * Freeform resize from pointer (natural image coords). mode: nw | ne | sw | se | n | s | e | w
+ */
+function cropRectFromResize(mode, mx, my, rect, iw, ih) {
+  const mxC = Math.min(Math.max(0, mx), iw);
+  const myC = Math.min(Math.max(0, my), ih);
+  const { sx, sy, sw, sh } = rect;
+  const brx = sx + sw;
+  const bry = sy + sh;
+  let next = { ...rect };
+
+  switch (mode) {
+    case 'move':
+      return rect;
+    case 'se': {
+      next = { sx, sy, sw: mxC - sx, sh: myC - sy };
+      break;
+    }
+    case 'nw': {
+      next = { sx: mxC, sy: myC, sw: brx - mxC, sh: bry - myC };
+      break;
+    }
+    case 'ne': {
+      next = { sx, sy: myC, sw: mxC - sx, sh: bry - myC };
+      break;
+    }
+    case 'sw': {
+      next = { sx: mxC, sy, sw: brx - mxC, sh: myC - sy };
+      break;
+    }
+    case 'n': {
+      next = { sx, sy: myC, sw, sh: bry - myC };
+      break;
+    }
+    case 's': {
+      next = { sx, sy, sw, sh: myC - sy };
+      break;
+    }
+    case 'e': {
+      next = { sx, sy, sw: mxC - sx, sh };
+      break;
+    }
+    case 'w': {
+      next = { sx: mxC, sy, sw: brx - mxC, sh };
+      break;
+    }
+    default:
+      return rect;
+  }
+  return clampCropRect(next, iw, ih);
+}
+
+export function DocumentsWizard() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const basePath = getApplicantBasePath(location.pathname);
+  const [child, setChild] = useState(null);
+  const [checklist, setChecklist] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [staffStatusUpdating, setStaffStatusUpdating] = useState(false);
+  const [error, setError] = useState(null);
+  const [step, setStep] = useState(0);
+  /** Pending confirmation before removing an attachment (pending upload or saved file). */
+  const [removeAttachmentModal, setRemoveAttachmentModal] = useState(null);
+  const [initialChecklist, setInitialChecklist] = useState(null);
+  const checklistRef = useRef(checklist);
+  checklistRef.current = checklist;
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraBusy, setCameraBusy] = useState(false);
+  const [cameraError, setCameraError] = useState('');
+  const [cameraTargetIndex, setCameraTargetIndex] = useState(null);
+  const [rawCapturedFile, setRawCapturedFile] = useState(null);
+  const [rawCapturedUrl, setRawCapturedUrl] = useState('');
+  const [capturedPhotoFile, setCapturedPhotoFile] = useState(null);
+  const [capturedPhotoUrl, setCapturedPhotoUrl] = useState('');
+  const [deviceOrientation, setDeviceOrientation] = useState(getCurrentDeviceOrientation);
+  const [cropModeActive, setCropModeActive] = useState(false);
+  const [cropRectNatural, setCropRectNatural] = useState(null);
+  const [naturalImageSize, setNaturalImageSize] = useState(null);
+  const [cropImageLayout, setCropImageLayout] = useState(null);
+  const [photoPreviewOpen, setPhotoPreviewOpen] = useState(false);
+  const [photoPreviewSrc, setPhotoPreviewSrc] = useState('');
+  const [photoPreviewLocalUrl, setPhotoPreviewLocalUrl] = useState('');
+  const [photoPreviewName, setPhotoPreviewName] = useState('');
+  const [photoPreviewZoom, setPhotoPreviewZoom] = useState(1);
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+  const cropStageRef = useRef(null);
+  const cropImageRef = useRef(null);
+  const cropDragRef = useRef(null);
+
+  const loadImageElement = useCallback((src) => new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('Failed to load captured image.'));
+    img.src = src;
+  }), []);
+
+  useEffect(() => {
+    childrenApi
+      .get(id)
+      .then((data) => {
+        setChild(data);
+        const built = buildChecklist(data.requirements || { all: [] }, data.checklist || [], data);
+        setChecklist(built);
+        setInitialChecklist(built);
+      })
+      .catch(setError)
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  useEffect(() => {
+    if (!child || !id) return;
+    const recordBase = getApplicantBasePathForRecord(child.application_type);
+    if (recordBase !== basePath) {
+      navigate(`${recordBase}/${id}${applicantPathAfterId(location.pathname)}`, { replace: true });
+    }
+  }, [child, id, basePath, location.pathname, navigate]);
+
+  useEffect(() => {
+    const updateOrientation = () => setDeviceOrientation(getCurrentDeviceOrientation());
+    updateOrientation();
+    window.addEventListener('orientationchange', updateOrientation);
+    window.addEventListener('resize', updateOrientation);
+    return () => {
+      window.removeEventListener('orientationchange', updateOrientation);
+      window.removeEventListener('resize', updateOrientation);
+    };
+  }, []);
+
+  const hasUnsavedChanges = initialChecklist && checklist.some((curr, i) => {
+    const init = initialChecklist[i];
+    if (!init) return true;
+    const notesChanged = (curr.notes ?? '') !== (init.notes ?? '');
+    const checkedChanged = !!curr.checked !== !!init.checked;
+    const hasNewFiles = (curr.attachmentFiles?.length ?? 0) > 0;
+    return notesChanged || checkedChanged || hasNewFiles;
+  });
+
+  const blocker = useBlocker(
+    useCallback(
+      ({ currentLocation, nextLocation }) =>
+        Boolean(hasUnsavedChanges) &&
+        (currentLocation.pathname !== nextLocation.pathname ||
+          currentLocation.search !== nextLocation.search ||
+          currentLocation.hash !== nextLocation.hash),
+      [hasUnsavedChanges]
+    )
+  );
+
+  const handleBackClick = () => {
+    navigate(applicantDetailPath(basePath, id));
+  };
+
+  const handleStaffProcessStatus = async (status) => {
+    setStaffStatusUpdating(true);
+    try {
+      const res = await childrenApi.updateStaffProcessStatus(id, status);
+      setChild((prev) =>
+        prev ? { ...prev, staff_process_status: res.staff_process_status } : prev
+      );
+      toast.success(status === 'verified' ? 'Marked verified.' : 'Marked under process.');
+    } catch (err) {
+      toast.error(err?.message || 'Could not update status.');
+    } finally {
+      setStaffStatusUpdating(false);
+    }
+  };
+
+  const updateNotes = (index, notes) => {
+    const normalized = String(notes ?? '').toUpperCase();
+    setChecklist((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], notes: normalized };
+      return next;
+    });
+  };
+
+  const addAttachmentFiles = (index, files) => {
+    const fileList = files ? Array.from(files) : [];
+    if (fileList.length === 0) return;
+    setChecklist((prev) => {
+      const next = [...prev];
+      next[index] = {
+        ...next[index],
+        attachmentFiles: [...(next[index].attachmentFiles || []), ...fileList],
+        checked: 1,
+      };
+      return next;
+    });
+  };
+
+  const removeAttachmentFile = (index, fileIndex) => {
+    setChecklist((prev) => {
+      const next = [...prev];
+      const currentItem = next[index];
+      const current = currentItem.attachmentFiles || [];
+      const updatedFiles = current.filter((_, i) => i !== fileIndex);
+      const hasAnyAttachment = updatedFiles.length > 0 || (currentItem.attachmentFilenames?.length ?? 0) > 0;
+      next[index] = {
+        ...currentItem,
+        attachmentFiles: updatedFiles,
+        checked: hasAnyAttachment ? 1 : 0,
+      };
+      return next;
+    });
+  };
+
+  const removeSavedAttachmentFilename = (index, filename) => {
+    setChecklist((prev) => {
+      const next = [...prev];
+      const currentItem = next[index];
+      const names = (currentItem.attachmentFilenames || []).filter((f) => f !== filename);
+      const hasAnyAttachment =
+        (currentItem.attachmentFiles?.length ?? 0) > 0 || names.length > 0;
+      next[index] = {
+        ...currentItem,
+        attachmentFilenames: names,
+        checked: hasAnyAttachment ? 1 : 0,
+      };
+      return next;
+    });
+  };
+
+  const confirmRemoveAttachment = () => {
+    const m = removeAttachmentModal;
+    if (!m) return;
+    // Ensure old success/error toasts are not lingering on repeated deletes.
+    toast.dismiss();
+    showRemoveAttachmentLoadingToast();
+    setRemoveAttachmentModal(null);
+    if (m.kind === 'pending' && m.fileIndex !== undefined) {
+      removeAttachmentFile(m.index, m.fileIndex);
+    } else if (m.kind === 'saved' && m.filename) {
+      removeSavedAttachmentFilename(m.index, m.filename);
+    }
+  };
+
+  const persistChecklist = useCallback(
+    async ({ silent = false } = {}) => {
+      if (!id) {
+        if (!silent) toast.error('Missing applicant ID.');
+        return;
+      }
+      const snapshot = checklistRef.current;
+      setSaving(true);
+      try {
+        const items = await Promise.all(
+          snapshot.map(async (c) => {
+            const item = {
+              category: c.category || 'general',
+              label: c.label || '',
+              required: Boolean(c.required),
+              checked: hasAnyAttachments(c),
+              notes: c.notes ?? '',
+              attachmentFilenames: c.attachmentFilenames || [],
+            };
+            const newFiles = c.attachmentFiles || [];
+            if (newFiles.length > 0) {
+              item.attachments = await Promise.all(
+                newFiles.map(async (file) => ({
+                  attachmentBase64: await fileToBase64(file),
+                  attachmentFilename: file.name,
+                }))
+              );
+            }
+            return item;
+          })
+        );
+        await childrenApi.updateChecklist(id, items);
+        const refreshed = await childrenApi.get(id);
+        setChild(refreshed);
+        const rebuilt = buildChecklist(
+          refreshed.requirements || { all: [] },
+          refreshed.checklist || [],
+          refreshed
+        );
+        const merged = mergeServerRebuiltWithLocalEdits(rebuilt, checklistRef.current, snapshot);
+        setChecklist(merged);
+        setInitialChecklist(rebuilt);
+        if (!silent) toast.success('Checklist saved.');
+      } catch (err) {
+        toast.error(err?.message || 'Failed to save checklist.');
+        throw err;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [id]
+  );
+
+  useEffect(() => {
+    if (loading || !id || !initialChecklist || saving) return undefined;
+    if (!hasUnsavedChanges) return undefined;
+    const timer = window.setTimeout(() => {
+      void persistChecklist({ silent: true }).catch(() => {});
+    }, AUTO_SAVE_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [checklist, loading, id, initialChecklist, hasUnsavedChanges, persistChecklist, saving]);
+
+  const saveAndLeave = () => {
+    persistChecklist({ silent: false }).then(() => {
+      if (blocker.state === 'blocked') {
+        blocker.proceed();
+      }
+    });
+  };
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  };
+
+  const startCamera = async (targetIndex = cameraTargetIndex) => {
+    setCameraBusy(true);
+    setCameraError('');
+    setCropModeActive(false);
+    setCropRectNatural(null);
+    setNaturalImageSize(null);
+    setCropImageLayout(null);
+    if (rawCapturedUrl) {
+      URL.revokeObjectURL(rawCapturedUrl);
+      setRawCapturedUrl('');
+      setRawCapturedFile(null);
+    }
+    if (capturedPhotoUrl) {
+      URL.revokeObjectURL(capturedPhotoUrl);
+      setCapturedPhotoUrl('');
+      setCapturedPhotoFile(null);
+    }
+    try {
+      stopCamera();
+      const targetItem = targetIndex !== null ? checklist[targetIndex] : null;
+      const videoPresets = buildVideoConstraintPresets(targetItem);
+      let stream = null;
+      for (const videoConstraint of videoPresets) {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: videoConstraint,
+            audio: false,
+          });
+          break;
+        } catch {
+          // Try next less strict preset.
+        }
+      }
+      if (!stream) {
+        throw new Error('Unable to access a high-quality camera stream.');
+      }
+      streamRef.current = stream;
+
+      const [videoTrack] = stream.getVideoTracks();
+      if (videoTrack?.getCapabilities && videoTrack?.applyConstraints) {
+        const capabilities = videoTrack.getCapabilities();
+        const advanced = {};
+        if (Array.isArray(capabilities.focusMode) && capabilities.focusMode.includes('continuous')) {
+          advanced.focusMode = 'continuous';
+        }
+        if (Array.isArray(capabilities.exposureMode) && capabilities.exposureMode.includes('continuous')) {
+          advanced.exposureMode = 'continuous';
+        }
+        if (Array.isArray(capabilities.whiteBalanceMode) && capabilities.whiteBalanceMode.includes('continuous')) {
+          advanced.whiteBalanceMode = 'continuous';
+        }
+        if (Object.keys(advanced).length > 0) {
+          try {
+            await videoTrack.applyConstraints({ advanced: [advanced] });
+          } catch {
+            // Ignore unsupported advanced track controls.
+          }
+        }
+      }
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+    } catch (err) {
+      setCameraError(err?.message || 'Unable to access camera.');
+    } finally {
+      setCameraBusy(false);
+    }
+  };
+
+  const openCameraForItem = async (index) => {
+    setCameraTargetIndex(index);
+    setCameraOpen(true);
+    await startCamera(index);
+  };
+
+  const closeCamera = () => {
+    stopCamera();
+    if (rawCapturedUrl) {
+      URL.revokeObjectURL(rawCapturedUrl);
+    }
+    if (capturedPhotoUrl) {
+      URL.revokeObjectURL(capturedPhotoUrl);
+    }
+    setCameraOpen(false);
+    setCameraBusy(false);
+    setCameraError('');
+    setCameraTargetIndex(null);
+    setRawCapturedFile(null);
+    setRawCapturedUrl('');
+    setCapturedPhotoFile(null);
+    setCapturedPhotoUrl('');
+    setCropModeActive(false);
+    setCropRectNatural(null);
+    setNaturalImageSize(null);
+    setCropImageLayout(null);
+  };
+
+  const capturePhoto = async () => {
+    if (cameraTargetIndex === null || !videoRef.current) return;
+    const video = videoRef.current;
+    const width = video.videoWidth;
+    const height = video.videoHeight;
+    if (!width || !height) {
+      setCameraError('Camera not ready. Please retry.');
+      return;
+    }
+    const sourceCanvas = document.createElement('canvas');
+    sourceCanvas.width = width;
+    sourceCanvas.height = height;
+    const ctx = sourceCanvas.getContext('2d');
+    if (!ctx) {
+      setCameraError('Unable to process captured image.');
+      return;
+    }
+    ctx.drawImage(video, 0, 0, width, height);
+    const blob = await new Promise((resolve) => sourceCanvas.toBlob(resolve, 'image/jpeg', 0.92));
+    if (!blob) {
+      setCameraError('Unable to process captured image.');
+      return;
+    }
+    const file = new File([blob], `raw_capture_${Date.now()}.jpg`, { type: 'image/jpeg' });
+    if (rawCapturedUrl) URL.revokeObjectURL(rawCapturedUrl);
+    if (capturedPhotoUrl) URL.revokeObjectURL(capturedPhotoUrl);
+    setRawCapturedFile(file);
+    setRawCapturedUrl(URL.createObjectURL(file));
+    setCapturedPhotoFile(null);
+    setCapturedPhotoUrl('');
+    setCropModeActive(false);
+    setCropRectNatural(null);
+    setNaturalImageSize(null);
+    setCropImageLayout(null);
+    setCameraError('');
+    stopCamera();
+  };
+
+  const saveCroppedPhoto = async () => {
+    if (!rawCapturedFile || !rawCapturedUrl || cameraTargetIndex === null) return;
+    const targetItem = checklist[cameraTargetIndex];
+    const image = await loadImageElement(rawCapturedUrl);
+
+    const imageWidth = image.naturalWidth || image.width;
+    const imageHeight = image.naturalHeight || image.height;
+    const fullImageRect = { sx: 0, sy: 0, sw: imageWidth, sh: imageHeight };
+    const fallbackRect = computeMaxCenteredCrop(imageWidth, imageHeight);
+    const shouldApplyCrop = cropModeActive || Boolean(cropRectNatural);
+    const activeRect = shouldApplyCrop
+      ? (cropRectNatural || fallbackRect)
+      : fullImageRect;
+    const r = clampCropRect(activeRect, imageWidth, imageHeight);
+    const sx = Math.floor(r.sx);
+    const sy = Math.floor(r.sy);
+    const cropWidth = Math.max(1, Math.floor(r.sw));
+    const cropHeight = Math.max(1, Math.floor(r.sh));
+
+    const selectedAspect = cropWidth / cropHeight;
+    const outputSize = getPreferredCaptureSizeForAspect(targetItem, selectedAspect);
+    const canvas = document.createElement('canvas');
+    canvas.width = outputSize.width;
+    canvas.height = outputSize.height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      setCameraError('Unable to process cropped image.');
+      return;
+    }
+
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(image, sx, sy, cropWidth, cropHeight, 0, 0, outputSize.width, outputSize.height);
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92));
+    if (!blob) {
+      setCameraError('Failed to save cropped image.');
+      return;
+    }
+
+    const file = new File([blob], buildRequirementPhotoFilename(child, targetItem), { type: 'image/jpeg' });
+    if (capturedPhotoUrl) URL.revokeObjectURL(capturedPhotoUrl);
+    setCapturedPhotoFile(file);
+    setCapturedPhotoUrl(URL.createObjectURL(file));
+    setCropModeActive(false);
+    setCameraError('');
+  };
+
+  const attachCapturedPhoto = () => {
+    if (cameraTargetIndex === null || !capturedPhotoFile) return;
+    addAttachmentFiles(cameraTargetIndex, [capturedPhotoFile]);
+    toast.success('Photo attached.');
+    closeCamera();
+  };
+
+  const retakePhoto = async () => {
+    await startCamera();
+  };
+
+  const cameraTargetAspect = useMemo(() => {
+    if (cameraTargetIndex === null || !checklist[cameraTargetIndex]) return 1;
+    return getTargetCropAspect(checklist[cameraTargetIndex], deviceOrientation);
+  }, [cameraTargetIndex, checklist, deviceOrientation]);
+
+  const updateCropLayout = useCallback(() => {
+    const stage = cropStageRef.current;
+    const img = cropImageRef.current;
+    if (!stage || !img || !naturalImageSize) return;
+    const sr = stage.getBoundingClientRect();
+    const ir = img.getBoundingClientRect();
+    setCropImageLayout({
+      left: ir.left - sr.left,
+      top: ir.top - sr.top,
+      width: ir.width,
+      height: ir.height,
+    });
+  }, [naturalImageSize]);
+
+  useEffect(() => {
+    if (!rawCapturedUrl || cameraTargetIndex === null || !cropModeActive) {
+      setNaturalImageSize(null);
+      setCropRectNatural(null);
+      return;
+    }
+    const img = new Image();
+    img.onload = () => {
+      const iw = img.naturalWidth;
+      const ih = img.naturalHeight;
+      setNaturalImageSize({ w: iw, h: ih });
+      setCropRectNatural(computeMaxCenteredCrop(iw, ih));
+    };
+    img.src = rawCapturedUrl;
+    return () => {
+      img.onload = null;
+    };
+  }, [rawCapturedUrl, cameraTargetIndex, cropModeActive]);
+
+  useLayoutEffect(() => {
+    updateCropLayout();
+  }, [rawCapturedUrl, naturalImageSize, cropRectNatural, updateCropLayout]);
+
+  useEffect(() => {
+    const stage = cropStageRef.current;
+    if (!stage) return;
+    const ro = new ResizeObserver(() => updateCropLayout());
+    ro.observe(stage);
+    return () => ro.disconnect();
+  }, [updateCropLayout]);
+
+  const clientToNatural = useCallback(
+    (clientX, clientY) => {
+      const stage = cropStageRef.current;
+      if (!stage || !naturalImageSize || !cropImageLayout) return { nx: 0, ny: 0 };
+      const { width: lw, height: lh } = cropImageLayout;
+      if (lw <= 0 || lh <= 0) return { nx: 0, ny: 0 };
+      const sr = stage.getBoundingClientRect();
+      const relX = Math.min(Math.max(0, clientX - sr.left - cropImageLayout.left), lw);
+      const relY = Math.min(Math.max(0, clientY - sr.top - cropImageLayout.top), lh);
+      const { w: iw, h: ih } = naturalImageSize;
+      return {
+        nx: (relX / lw) * iw,
+        ny: (relY / lh) * ih,
+      };
+    },
+    [naturalImageSize, cropImageLayout]
+  );
+
+  const endCropDrag = useCallback(() => {
+    const d = cropDragRef.current;
+    if (d?.captureEl && d.pointerId != null) {
+      try {
+        d.captureEl.releasePointerCapture(d.pointerId);
+      } catch {
+        /* ignore */
+      }
+    }
+    cropDragRef.current = null;
+  }, []);
+
+  const onCropPointerMove = useCallback(
+    (e) => {
+      const d = cropDragRef.current;
+      if (!d || !naturalImageSize || !cropImageLayout) return;
+      const { w: iw, h: ih } = naturalImageSize;
+      const { nx, ny } = clientToNatural(e.clientX, e.clientY);
+
+      if (d.mode === 'move') {
+        const dx = (e.clientX - d.startClientX) * (iw / cropImageLayout.width);
+        const dy = (e.clientY - d.startClientY) * (ih / cropImageLayout.height);
+        setCropRectNatural(
+          clampCropRect(
+            {
+              sx: d.startRect.sx + dx,
+              sy: d.startRect.sy + dy,
+              sw: d.startRect.sw,
+              sh: d.startRect.sh,
+            },
+            iw,
+            ih
+          )
+        );
+        return;
+      }
+
+      setCropRectNatural(cropRectFromResize(d.mode, nx, ny, d.startRect, iw, ih));
+    },
+    [naturalImageSize, cropImageLayout, clientToNatural]
+  );
+
+  const onCropPointerUp = useCallback(
+    (e) => {
+      if (cropDragRef.current?.pointerId === e.pointerId) {
+        endCropDrag();
+      }
+    },
+    [endCropDrag]
+  );
+
+  useEffect(() => {
+    const onMove = (e) => onCropPointerMove(e);
+    const onUp = (e) => onCropPointerUp(e);
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+    };
+  }, [onCropPointerMove, onCropPointerUp]);
+
+  const cropOverlayPx = useMemo(() => {
+    if (!cropRectNatural || !naturalImageSize || !cropImageLayout) return null;
+    return naturalRectToCropOverlayPx(cropRectNatural, naturalImageSize, cropImageLayout);
+  }, [cropRectNatural, naturalImageSize, cropImageLayout]);
+
+  const startCropDrag = (mode, e) => {
+    if (!cropRectNatural || e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    cropDragRef.current = {
+      mode,
+      pointerId: e.pointerId,
+      startClientX: e.clientX,
+      startClientY: e.clientY,
+      startRect: { ...cropRectNatural },
+      captureEl: e.currentTarget,
+    };
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const handleCropAction = async () => {
+    if (!cropModeActive) {
+      setCropModeActive(true);
+      return;
+    }
+    await saveCroppedPhoto();
+  };
+
+  const isImageFilename = (filename = '') => /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(filename);
+
+  const open2x2Preview = (src, isLocal = false, name = '') => {
+    if (photoPreviewLocalUrl) {
+      URL.revokeObjectURL(photoPreviewLocalUrl);
+      setPhotoPreviewLocalUrl('');
+    }
+    if (isLocal) {
+      setPhotoPreviewLocalUrl(src);
+    }
+    setPhotoPreviewName(name);
+    setPhotoPreviewZoom(1);
+    setPhotoPreviewSrc(src);
+    setPhotoPreviewOpen(true);
+  };
+
+  const closePhotoPreview = () => {
+    setPhotoPreviewOpen(false);
+    setPhotoPreviewSrc('');
+    setPhotoPreviewName('');
+    setPhotoPreviewZoom(1);
+    if (photoPreviewLocalUrl) {
+      URL.revokeObjectURL(photoPreviewLocalUrl);
+      setPhotoPreviewLocalUrl('');
+    }
+  };
+
+  const openLocalAttachment = (file) => {
+    const objectUrl = URL.createObjectURL(file);
+    if (file.type.startsWith('image/')) open2x2Preview(objectUrl, true, file.name);
+    else {
+      window.open(objectUrl, '_blank', 'noopener,noreferrer');
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 30000);
+    }
+  };
+
+  const openSavedAttachment = async (filename) => {
+    const fileUrl = apiUrl(`/children/${id}/attachments/${encodeURIComponent(filename)}`);
+    if (isImageFilename(filename)) {
+      try {
+        const res = await fetch(fileUrl);
+        if (!res.ok) throw new Error('Failed to load image');
+        const blob = await res.blob();
+        const localUrl = URL.createObjectURL(blob);
+        open2x2Preview(localUrl, true, filename);
+      } catch {
+        open2x2Preview(fileUrl, false, filename);
+      }
+      return;
+    }
+    window.open(fileUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  useEffect(() => {
+    if (!photoPreviewOpen) return undefined;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') closePhotoPreview();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [photoPreviewOpen, photoPreviewLocalUrl]);
+
+  useEffect(() => () => {
+    stopCamera();
+    if (rawCapturedUrl) URL.revokeObjectURL(rawCapturedUrl);
+    if (capturedPhotoUrl) URL.revokeObjectURL(capturedPhotoUrl);
+    if (photoPreviewLocalUrl) URL.revokeObjectURL(photoPreviewLocalUrl);
+  }, [rawCapturedUrl, capturedPhotoUrl, photoPreviewLocalUrl]);
+
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result;
+        const base64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  if (loading) return <p className="text-slate-500">Loading…</p>;
+  if (error) return <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">{error.message}</div>;
+  if (!child) return null;
+
+  const steps = [
+    { name: 'General documents', items: checklist.filter((c) => c.category === 'general') },
+    { name: ' 2 Documentary evidence', items: checklist.filter((c) => c.category === 'age_specific') },
+    { name: 'Conditional documents', items: checklist.filter((c) => c.category === 'conditional') },
+  ].filter((s) => s.items.length > 0);
+
+  const currentStep = steps[step];
+  const checkedCount = checklist.filter((c) => c.checked).length;
+  const ageSpecificMinimumMet = hasMinimumAgeSpecificAttachments(checklist);
+  // The checklist is considered "not fully complete" if age-specific items have
+  // fewer than 2 total attachments.
+  const adjustedChecked = ageSpecificMinimumMet
+    ? checkedCount
+    : Math.min(checkedCount, Math.max(0, checklist.length - 1));
+  const progress = checklist.length ? adjustedChecked / checklist.length : 0;
+  const cameraTargetItem = cameraTargetIndex !== null ? checklist[cameraTargetIndex] : null;
+  const activeCaptureSize = getNormalizedCaptureSize(cameraTargetItem);
+  const activeCaptureAspect = String(cameraTargetAspect || 1);
+  const isPhotoCameraTarget = cameraTargetItem?.id === PHOTO_ID_REQUIREMENT_ID;
+  const isColbBrapChild = String(child.application_type || '').toLowerCase() === 'colb_brap';
+
+  return (
+    <div>
+      <div className="mb-6">
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={handleBackClick}
+            className="text-sm text-slate-500 hover:text-slate-700"
+          >
+            {isColbBrapChild ? '← Back to Late Registration (BRAP)' : '← Back to late registration'}
+          </button>
+          <Link to={`${basePath}/${id}/certificate-of-live-birth`} className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">Certificate of Live Birth</Link>
+        </div>
+        <h1 className="text-2xl font-semibold text-slate-800 mt-2">
+          Document checklist: {child.first_name} {child.last_name}
+        </h1>
+        <p className="text-slate-600 mt-1">
+          {isColbBrapChild ? (
+            <>{Math.round(progress * 100)}% complete</>
+          ) : (
+            <>
+              Age group: {child.age_group?.replace(/_/g, ' ')} · {Math.round(progress * 100)}% complete
+            </>
+          )}
+        </p>
+      </div>
+
+      <ApplicantStaffStatusPanel
+        checklistTotal={checklist.length}
+        checklistChecked={checklist.filter((item) => !!item.checked).length}
+        staffProcessStatus={child.staff_process_status}
+        updating={staffStatusUpdating}
+        blockStaffActions={Boolean(hasUnsavedChanges)}
+        onUpdateStaffStatus={handleStaffProcessStatus}
+      />
+
+      <div className="mb-4 h-2 w-full rounded-full bg-slate-200 overflow-hidden" role="progressbar" aria-valuenow={Math.round(progress * 100)} aria-valuemin={0} aria-valuemax={100}>
+        <div className="h-full bg-emerald-600 transition-all" style={{ width: `${progress * 100}%` }} />
+      </div>
+
+      {steps.length > 1 && (
+        <nav className="flex gap-2 mb-6" aria-label="Checklist steps">
+          {steps.map((s, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setStep(i)}
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium ${step === i ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+            >
+              {s.name}
+            </button>
+          ))}
+        </nav>
+      )}
+
+      <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <h2 className="sr-only">{currentStep?.name}</h2>
+        <ul className="divide-y divide-slate-200">
+          {(currentStep?.items || []).map((item) => {
+            const globalIndex = checklist.findIndex((c) => c.label === item.label && c.category === item.category);
+            const allowCameraCapture = item.id === PHOTO_ID_REQUIREMENT_ID;
+            return (
+              <li key={`${item.category}-${item.id}`} className="px-5 py-4">
+                <div className="flex gap-3">
+                  <input
+                    type="checkbox"
+                    id={`check-${globalIndex}`}
+                    checked={hasAnyAttachments(item)}
+                    onChange={() => { }}
+                    readOnly
+                    tabIndex={-1}
+                    aria-disabled="true"
+                    style={{ accentColor: '#2563eb' }}
+                    className="mt-1 h-4 w-4 rounded border-slate-300 accent-blue-600 pointer-events-none"
+                    aria-label={`Mark ${item.label} as provided`}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <label htmlFor={`check-${globalIndex}`} className="font-medium text-slate-800 cursor-pointer">
+                      {item.label}
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Notes (optional)"
+                      value={item.notes}
+                      onChange={(e) => updateNotes(globalIndex, e.target.value)}
+                      className="mt-1 block w-full rounded border border-slate-300 px-2 py-1 text-sm"
+                    />
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <label className="inline-flex items-center gap-1 rounded border border-slate-300 bg-slate-50 px-2 py-1.5 text-sm text-slate-700 hover:bg-slate-100 cursor-pointer">
+                        <span className="sr-only">Attach files for {item.label}</span>
+                        <input
+                          type="file"
+                          className="sr-only"
+                          multiple
+                          onChange={(e) => {
+                            addAttachmentFiles(globalIndex, e.target.files);
+                            e.target.value = '';
+                          }}
+                        />
+                        Attach file(s)
+                      </label>
+                      {allowCameraCapture ? (
+                        <button
+                          type="button"
+                          onClick={() => openCameraForItem(globalIndex)}
+                          className="inline-flex items-center gap-1 rounded border border-blue-300 bg-blue-50 px-2 py-1.5 text-sm text-blue-700 hover:bg-blue-100"
+                        >
+                          Take Picture
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => openCameraForItem(globalIndex)}
+                          className="inline-flex items-center gap-1 rounded border border-sky-300 bg-sky-50 px-2 py-1.5 text-sm text-sky-700 hover:bg-sky-100"
+                        >
+                          Scan Document
+                        </button>
+                      )}
+                      {(item.attachmentFiles || []).map((file, fi) => (
+                        <span
+                          key={`${file.name}-${fi}`}
+                          className="inline-flex items-center gap-2 rounded border border-slate-200 bg-slate-50 px-2 py-1 text-sm"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => openLocalAttachment(file)}
+                            className="max-w-[12rem] truncate text-left text-blue-700 hover:underline"
+                            aria-label={`Open ${file.name}`}
+                          >
+                            {file.name}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setRemoveAttachmentModal({
+                                kind: 'pending',
+                                index: globalIndex,
+                                fileIndex: fi,
+                                displayName: file.name,
+                              })
+                            }
+                            className="shrink-0 rounded border border-red-200 bg-white px-2 py-0.5 text-xs font-medium text-red-700 hover:bg-red-50"
+                            aria-label={`Remove ${file.name}`}
+                          >
+                            Remove
+                          </button>
+                        </span>
+                      ))}
+                      {(item.attachmentFilenames || []).map((filename, fi) => (
+                        <span
+                          key={`${filename}-${fi}`}
+                          className="inline-flex items-center gap-2 rounded border border-slate-200 bg-slate-50 px-2 py-1 text-sm"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => openSavedAttachment(filename)}
+                            className="max-w-[12rem] truncate text-left text-emerald-700 hover:underline"
+                          >
+                            View{' '}
+                            {item.id === PHOTO_ID_REQUIREMENT_ID ? buildPhotoOutputLabel(child, filename) : filename}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setRemoveAttachmentModal({
+                                kind: 'saved',
+                                index: globalIndex,
+                                filename,
+                                displayName:
+                                  item.id === PHOTO_ID_REQUIREMENT_ID
+                                    ? buildPhotoOutputLabel(child, filename)
+                                    : filename,
+                              })
+                            }
+                            className="shrink-0 rounded border border-red-200 bg-white px-2 py-0.5 text-xs font-medium text-red-700 hover:bg-red-50"
+                            aria-label={`Remove attachment ${filename}`}
+                          >
+                            Remove
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+
+      <div className="mt-6 flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          onClick={handleBackClick}
+          className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+        >
+          Back to late registration
+        </button>
+        {saving ? (
+          <span className="text-sm text-slate-500" role="status" aria-live="polite">
+            Saving…
+          </span>
+        ) : null}
+      </div>
+      <p className="mt-2 text-sm text-slate-500 max-w-xl">
+        Edits save automatically about {AUTO_SAVE_DEBOUNCE_MS / 1000} seconds after you stop changing the checklist.
+      </p>
+
+      {removeAttachmentModal && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50"
+          onClick={() => setRemoveAttachmentModal(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="remove-attachment-modal-title"
+        >
+          <div
+            className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-5 shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 id="remove-attachment-modal-title" className="text-lg font-semibold text-slate-800">
+              Remove attachment?
+            </h2>
+            <p className="mt-2 text-sm text-slate-600">
+              <span className="font-medium text-slate-800">{removeAttachmentModal.displayName}</span>
+              {removeAttachmentModal.kind === 'pending'
+                ? ' will be removed from this requirement. Changes apply on the next save (including automatic save after you pause editing).'
+                : ' will be removed from this requirement on the next save (including automatic save after you pause editing).'}
+            </p>
+            <div className="mt-5 flex flex-wrap justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setRemoveAttachmentModal(null)}
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmRemoveAttachment}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {blocker.state === 'blocked' && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50"
+          onClick={() => blocker.reset()}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="leave-modal-title"
+        >
+          <div
+            className="bg-white rounded-xl border border-slate-200 shadow-lg w-full max-w-sm p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 id="leave-modal-title" className="text-lg font-semibold text-slate-800">
+              Save changes?
+            </h2>
+            <p className="mt-2 text-sm text-slate-600">
+              You are leaving while the checklist still has changes that have not finished saving. Wait a moment for saving to finish, or choose whether to discard.
+            </p>
+            <div className="flex flex-col gap-3 mt-5">
+              <button
+                type="button"
+                onClick={() => saveAndLeave()}
+                className="w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+              >
+                Save and leave
+              </button>
+              <button
+                type="button"
+                onClick={() => blocker.reset()}
+                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+              >
+                Stay on Page
+              </button>
+              <button
+                type="button"
+                onClick={() => blocker.proceed()}
+                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+              >
+                Discard Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {cameraOpen && (
+        <div
+          className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 ${isPhotoCameraTarget ? 'overflow-y-auto' : 'overflow-hidden'
+            }`}
+          onClick={closeCamera}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="camera-modal-title"
+        >
+          <div
+            className={`my-4 w-full rounded-xl border border-slate-200 bg-white p-5 shadow-lg ${isPhotoCameraTarget
+                ? 'max-h-[90vh] max-w-xl overflow-y-auto'
+                : 'flex h-[min(90vh,780px)] max-w-4xl flex-col'
+              }`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 id="camera-modal-title" className="text-lg font-semibold text-slate-800">
+              Capture {cameraTargetItem?.label || 'Requirement Photo'}
+            </h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Scanner capture size: {activeCaptureSize.label} ({activeCaptureSize.width} x {activeCaptureSize.height} px)
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              Crop mode: {deviceOrientation} device orientation
+            </p>
+            <div
+              className={`mt-3 overflow-hidden rounded-lg border border-slate-200 bg-black ${isPhotoCameraTarget ? '' : 'h-[min(62vh,560px)] min-h-[300px]'
+                }`}
+            >
+              {capturedPhotoUrl ? (
+                <img
+                  src={capturedPhotoUrl}
+                  alt="Captured preview"
+                  className="h-full w-full object-contain"
+                  style={{ aspectRatio: activeCaptureAspect }}
+                />
+              ) : rawCapturedUrl ? (
+                <div
+                  ref={cropStageRef}
+                  className={`relative flex w-full items-center justify-center bg-neutral-900 ${isPhotoCameraTarget ? 'min-h-[280px] max-h-[min(60vh,520px)]' : 'h-full'
+                    }`}
+                >
+                  <img
+                    ref={cropImageRef}
+                    src={rawCapturedUrl}
+                    alt="Crop source"
+                    draggable={false}
+                    className={`w-full select-none object-contain pointer-events-none ${isPhotoCameraTarget ? 'max-h-[min(60vh,520px)]' : 'h-full'
+                      }`}
+                    onLoad={updateCropLayout}
+                  />
+                  {cropModeActive && cropOverlayPx && (
+                    <div className="absolute inset-0 z-10 pointer-events-none">
+                      <div
+                        role="presentation"
+                        className="absolute z-20 touch-none border-2 border-white shadow-[0_0_0_9999px_rgba(0,0,0,0.55)] pointer-events-auto cursor-move"
+                        style={{
+                          left: cropOverlayPx.left,
+                          top: cropOverlayPx.top,
+                          width: cropOverlayPx.width,
+                          height: cropOverlayPx.height,
+                        }}
+                        onPointerDown={(e) => startCropDrag('move', e)}
+                      >
+                        <svg
+                          className="pointer-events-none absolute inset-0 h-full w-full"
+                          aria-hidden
+                        >
+                          <line x1="33.33%" y1="0" x2="33.33%" y2="100%" stroke="rgba(255,255,255,0.85)" strokeWidth="1" />
+                          <line x1="66.67%" y1="0" x2="66.67%" y2="100%" stroke="rgba(255,255,255,0.85)" strokeWidth="1" />
+                          <line x1="0" y1="33.33%" x2="100%" y2="33.33%" stroke="rgba(255,255,255,0.85)" strokeWidth="1" />
+                          <line x1="0" y1="66.67%" x2="100%" y2="66.67%" stroke="rgba(255,255,255,0.85)" strokeWidth="1" />
+                        </svg>
+                        <div
+                          className="pointer-events-none absolute left-1/2 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2"
+                          aria-hidden
+                        >
+                          <div className="absolute left-1/2 top-0 h-2 w-px -translate-x-1/2 bg-white/90" />
+                          <div className="absolute left-0 top-1/2 h-px w-2 -translate-y-1/2 bg-white/90" />
+                          <div className="absolute bottom-0 left-1/2 h-2 w-px -translate-x-1/2 bg-white/90" />
+                          <div className="absolute right-0 top-1/2 h-px w-2 -translate-y-1/2 bg-white/90" />
+                        </div>
+                        {/* Corner L-handles */}
+                        <button
+                          type="button"
+                          aria-label="Resize crop north-west"
+                          className="absolute -left-1 -top-1 z-30 h-8 w-8 cursor-nwse-resize border-l-[3px] border-t-[3px] border-white bg-transparent p-0 pointer-events-auto"
+                          onPointerDown={(e) => {
+                            e.stopPropagation();
+                            startCropDrag('nw', e);
+                          }}
+                        />
+                        <button
+                          type="button"
+                          aria-label="Resize crop north-east"
+                          className="absolute -right-1 -top-1 z-30 h-8 w-8 cursor-nesw-resize border-r-[3px] border-t-[3px] border-white bg-transparent p-0 pointer-events-auto"
+                          onPointerDown={(e) => {
+                            e.stopPropagation();
+                            startCropDrag('ne', e);
+                          }}
+                        />
+                        <button
+                          type="button"
+                          aria-label="Resize crop south-west"
+                          className="absolute -bottom-1 -left-1 z-30 h-8 w-8 cursor-nesw-resize border-b-[3px] border-l-[3px] border-white bg-transparent p-0 pointer-events-auto"
+                          onPointerDown={(e) => {
+                            e.stopPropagation();
+                            startCropDrag('sw', e);
+                          }}
+                        />
+                        <button
+                          type="button"
+                          aria-label="Resize crop south-east"
+                          className="absolute -bottom-1 -right-1 z-30 h-8 w-8 cursor-nwse-resize border-b-[3px] border-r-[3px] border-white bg-transparent p-0 pointer-events-auto"
+                          onPointerDown={(e) => {
+                            e.stopPropagation();
+                            startCropDrag('se', e);
+                          }}
+                        />
+                        {/* Edge handles */}
+                        <button
+                          type="button"
+                          aria-label="Resize crop top edge"
+                          className="absolute -top-1.5 left-1/2 z-30 h-4 w-10 -translate-x-1/2 cursor-ns-resize border-2 border-white bg-white/20 pointer-events-auto"
+                          onPointerDown={(e) => {
+                            e.stopPropagation();
+                            startCropDrag('n', e);
+                          }}
+                        />
+                        <button
+                          type="button"
+                          aria-label="Resize crop bottom edge"
+                          className="absolute -bottom-1.5 left-1/2 z-30 h-4 w-10 -translate-x-1/2 cursor-ns-resize border-2 border-white bg-white/20 pointer-events-auto"
+                          onPointerDown={(e) => {
+                            e.stopPropagation();
+                            startCropDrag('s', e);
+                          }}
+                        />
+                        <button
+                          type="button"
+                          aria-label="Resize crop left edge"
+                          className="absolute -left-1.5 top-1/2 z-30 h-10 w-4 -translate-y-1/2 cursor-ew-resize border-2 border-white bg-white/20 pointer-events-auto"
+                          onPointerDown={(e) => {
+                            e.stopPropagation();
+                            startCropDrag('w', e);
+                          }}
+                        />
+                        <button
+                          type="button"
+                          aria-label="Resize crop right edge"
+                          className="absolute -right-1.5 top-1/2 z-30 h-10 w-4 -translate-y-1/2 cursor-ew-resize border-2 border-white bg-white/20 pointer-events-auto"
+                          onPointerDown={(e) => {
+                            e.stopPropagation();
+                            startCropDrag('e', e);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <video
+                  ref={videoRef}
+                  className="h-full w-full object-contain"
+                  style={{ aspectRatio: activeCaptureAspect }}
+                  playsInline
+                  muted
+                />
+              )}
+            </div>
+            {rawCapturedUrl && !capturedPhotoUrl && cropModeActive && (
+              <p className="mt-2 text-xs text-slate-600">
+                Drag the frame to move, or drag corners and edges to resize freely. Your selected crop shape is preserved on save.
+                Guide lines show framing. Then tap <strong>Crop</strong>.
+              </p>
+            )}
+            {cameraError && <p className="mt-2 text-sm text-red-600">{cameraError}</p>}
+            <div className="mt-4 flex flex-wrap gap-2">
+              {capturedPhotoUrl ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={attachCapturedPhoto}
+                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                  >
+                    Attach Photo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={retakePhoto}
+                    disabled={cameraBusy}
+                    className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    Retake Photo
+                  </button>
+                </>
+              ) : rawCapturedUrl ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleCropAction}
+                    disabled={cameraBusy || (cropModeActive && (!cropRectNatural || !naturalImageSize))}
+                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {cropModeActive ? 'Apply Crop' : 'Crop'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={saveCroppedPhoto}
+                    className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+                  >
+                    Save
+                  </button>
+                  <button
+                    type="button"
+                    onClick={retakePhoto}
+                    disabled={cameraBusy}
+                    className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    Retake Photo
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={capturePhoto}
+                    disabled={cameraBusy}
+                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    Capture Preview
+                  </button>
+                  <button
+                    type="button"
+                    onClick={startCamera}
+                    disabled={cameraBusy}
+                    className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    Retry Camera
+                  </button>
+                </>
+              )}
+              <button
+                type="button"
+                onClick={closeCamera}
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {photoPreviewOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-[1px]"
+          onClick={closePhotoPreview}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="photo-preview-title"
+        >
+          <div className="flex min-h-full items-center justify-center p-3 sm:p-5">
+            <div
+              className="my-auto flex h-[min(92vh,880px)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 sm:px-6">
+                <div>
+                  <h2 id="photo-preview-title" className="text-base font-semibold text-slate-800 sm:text-lg">
+                    Document Preview
+                  </h2>
+                  <p className="max-w-[48ch] truncate text-xs text-slate-500 sm:text-sm">
+                    {photoPreviewName || 'Review the uploaded image before closing.'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPhotoPreviewZoom((prev) => Math.max(0.5, prev - 0.1))}
+                    className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                    aria-label="Zoom out"
+                  >
+                    -
+                  </button>
+                  <p className="min-w-12 text-center text-xs font-medium text-slate-600 sm:text-sm">
+                    {Math.round(photoPreviewZoom * 100)}%
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setPhotoPreviewZoom((prev) => Math.min(3, prev + 0.1))}
+                    className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                    aria-label="Zoom in"
+                  >
+                    +
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPhotoPreviewZoom(1)}
+                    className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 sm:text-sm"
+                  >
+                    Reset
+                  </button>
+                  <button
+                    type="button"
+                    onClick={closePhotoPreview}
+                    className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-auto bg-slate-100/70 p-4 sm:p-6">
+                <div className="flex min-h-full items-center justify-center rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:p-5">
+                  <img
+                    src={photoPreviewSrc}
+                    alt="2x2 uploaded preview"
+                    style={{ transform: `scale(${photoPreviewZoom})`, transformOrigin: 'center center' }}
+                    className="max-h-[72vh] w-auto max-w-full rounded-md border border-slate-200 bg-white object-contain shadow-sm transition-transform"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 border-t border-slate-200 bg-white px-4 py-3 sm:px-6">
+                <button
+                  type="button"
+                  onClick={closePhotoPreview}
+                  className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

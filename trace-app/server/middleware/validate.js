@@ -15,6 +15,19 @@ const childCreate = [
   body('date_of_birth').isISO8601(),
   body('place_of_birth').optional({ values: 'falsy' }).trim().isLength({ max: 500 }).escape(),
   body('contact_no').optional({ values: 'falsy' }).trim().isLength({ max: 50 }).escape(),
+  body('gender')
+    .optional()
+    .custom((v) => v === '' || v === null || v === undefined || ['male', 'female'].includes(String(v).trim().toLowerCase())),
+  body('application_type').optional().isIn(['applicant', 'colb_brap']),
+  body('applicationType').optional().isIn(['applicant', 'colb_brap']),
+  body('registrant_deceased').optional().isBoolean().toBoolean(),
+  body('hilot_deceased').optional().isBoolean().toBoolean(),
+  body('parent_foreigner').optional().isBoolean().toBoolean(),
+  body('out_of_town').optional().isBoolean().toBoolean(),
+  body('out_of_town_informant_is_owner').optional().isBoolean().toBoolean(),
+  body('has_marriage_certificate').optional().isBoolean().toBoolean(),
+  body('colb_requires_parent_id').optional().isBoolean().toBoolean(),
+  body('has_muslim_attachment').optional().isBoolean().toBoolean(),
 ];
 
 const childUpdate = [
@@ -25,8 +38,24 @@ const childUpdate = [
   body('date_of_birth').optional().isISO8601(),
   body('place_of_birth').optional({ values: 'falsy' }).trim().isLength({ max: 500 }).escape(),
   body('contact_no').optional({ values: 'falsy' }).trim().isLength({ max: 50 }).escape(),
+  body('gender')
+    .optional()
+    .custom((v) => v === '' || v === null || v === undefined || ['male', 'female'].includes(String(v).trim().toLowerCase())),
+  body('registrant_deceased').optional().isBoolean().toBoolean(),
+  body('hilot_deceased').optional().isBoolean().toBoolean(),
+  body('parent_foreigner').optional().isBoolean().toBoolean(),
+  body('out_of_town').optional().isBoolean().toBoolean(),
+  body('out_of_town_informant_is_owner').optional().isBoolean().toBoolean(),
+  body('has_marriage_certificate').optional().isBoolean().toBoolean(),
+  body('colb_requires_parent_id').optional().isBoolean().toBoolean(),
+  body('has_muslim_attachment').optional().isBoolean().toBoolean(),
 ];
 
 const idParam = [param('id').isInt({ min: 1 })];
 
-module.exports = { handleValidationErrors, childCreate, childUpdate, idParam };
+const staffProcessStatusUpdate = [
+  param('id').isInt({ min: 1 }),
+  body('staff_process_status').isIn(['under_process', 'verified']),
+];
+
+module.exports = { handleValidationErrors, childCreate, childUpdate, idParam, staffProcessStatusUpdate };

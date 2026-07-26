@@ -101,47 +101,60 @@ function updateChecklist(req, res) {
     const attachmentsDir = getAttachmentsDir();
     if (!fs.existsSync(attachmentsDir)) fs.mkdirSync(attachmentsDir, { recursive: true });
     const db = getDb();
-    db.prepare('DELETE FROM checklist_items WHERE child_id = ?').run(childId);
-    const insertSql = 'INSERT INTO checklist_items (child_id, category, label, required, checked, notes, attachment) VALUES (?, ?, ?, ?, ?, ?, ?)';
-    for (const it of items) {
-      const existingFilenames = Array.isArray(it.attachmentFilenames)
-        ? it.attachmentFilenames.filter((f) => typeof f === 'string' && /^[a-zA-Z0-9._-]+$/.test(f))
-        : typeof it.attachment === 'string' && /^[a-zA-Z0-9._-]+$/.test(it.attachment)
-          ? [it.attachment]
-          : [];
-      const newFiles = Array.isArray(it.attachments) ? it.attachments : [];
-      if (it.attachmentBase64 && it.attachmentFilename) {
-        newFiles.push({ attachmentBase64: it.attachmentBase64, attachmentFilename: it.attachmentFilename });
-      }
-      const fallbackBase = `${childId}_${safeAttachmentFilename(it.category || 'general')}_${safeAttachmentFilename(it.label || 'doc')}`;
-      const savedFilenames = [];
-      for (let i = 0; i < newFiles.length; i++) {
-        const f = newFiles[i];
-        if (!f.attachmentBase64 || !f.attachmentFilename) continue;
-        let duplicateIndex = 0;
-        let filename = buildStoredAttachmentFilename(f.attachmentFilename, fallbackBase, duplicateIndex);
-        let filePath = path.join(attachmentsDir, filename);
-        while (fs.existsSync(filePath)) {
-          duplicateIndex += 1;
-          filename = buildStoredAttachmentFilename(f.attachmentFilename, fallbackBase, duplicateIndex);
-          filePath = path.join(attachmentsDir, filename);
+    db.transaction(() => {
+      db.prepare('DELETE FROM checklist_items WHERE child_id = ?').run(childId);
+      const insertSql = 'INSERT INTO checklist_items (child_id, category, label, required, checked, notes, attachment) VALUES (?, ?, ?, ?, ?, ?, ?)';
+      for (const it of items) {
+        const existingFilenames = Array.isArray(it.attachmentFilenames)
+          ? it.attachmentFilenames.filter((f) => typeof f === 'string' && /^[a-zA-Z0-9._-]+$/.test(f))
+          : typeof it.attachment === 'string' && /^[a-zA-Z0-9._-]+$/.test(it.attachment)
+            ? [it.attachment]
+            : [];
+        const newFiles = Array.isArray(it.attachments) ? it.attachments : [];
+        if (it.attachmentBase64 && it.attachmentFilename) {
+          newFiles.push({ attachmentBase64: it.attachmentBase64, attachmentFilename: it.attachmentFilename });
         }
-        const buf = Buffer.from(f.attachmentBase64, 'base64');
-        fs.writeFileSync(filePath, buf);
-        savedFilenames.push(filename);
+        const fallbackBase = `${childId}_${safeAttachmentFilename(it.category || 'general')}_${safeAttachmentFilename(it.label || 'doc')}`;
+        const savedFilenames = [];
+        for (let i = 0; i < newFiles.length; i++) {
+          const f = newFiles[i];
+          if (!f.attachmentBase64 || !f.attachmentFilename) continue;
+          let duplicateIndex = 0;
+          let filename = buildStoredAttachmentFilename(f.attachmentFilename, fallbackBase, duplicateIndex);
+          let filePath = path.join(attachmentsDir, filename);
+          while (fs.existsSync(filePath)) {
+            duplicateIndex += 1;
+            filename = buildStoredAttachmentFilename(f.attachmentFilename, fallbackBase, duplicateIndex);
+            filePath = path.join(attachmentsDir, filename);
+          }
+          const buf = Buffer.from(f.attachmentBase64, 'base64');
+          fs.writeFileSync(filePath, buf);
+          savedFilenames.push(filename);
+        }
+        const allFilenames = [...existingFilenames, ...savedFilenames];
+        const attachmentPath = allFilenames.length === 0 ? null : allFilenames.length === 1 ? allFilenames[0] : JSON.stringify(allFilenames);
+        db.prepare(insertSql).run(
+          childId,
+          it.category || 'general',
+          it.label || '',
+          it.required ? 1 : 0,
+          it.checked ? 1 : 0,
+          it.notes ?? null,
+          attachmentPath
+        );
       }
-      const allFilenames = [...existingFilenames, ...savedFilenames];
-      const attachmentPath = allFilenames.length === 0 ? null : allFilenames.length === 1 ? allFilenames[0] : JSON.stringify(allFilenames);
-      db.prepare(insertSql).run(
-        childId,
-        it.category || 'general',
-        it.label || '',
-        it.required ? 1 : 0,
-        it.checked ? 1 : 0,
-        it.notes ?? null,
-        attachmentPath
-      );
-    }
+      const progress = db
+        .prepare('SELECT COUNT(*) AS n, COALESCE(SUM(checked), 0) AS s FROM checklist_items WHERE child_id = ?')
+        .get(childId);
+      const n = Number(progress?.n || 0);
+      const s = Number(progress?.s || 0);
+      const checklistComplete = n > 0 && s === n;
+      if (!checklistComplete) {
+        db.prepare(`UPDATE children SET staff_process_status = NULL, updated_at = datetime('now') WHERE id = ?`).run(
+          childId
+        );
+      }
+    });
     res.json({ ok: true });
   } catch (err) {
     console.error('updateChecklist error:', err);
@@ -189,4 +202,82 @@ function updateCertificateOfLiveBirth(req, res) {
   res.json({ ok: true });
 }
 
-module.exports = { list, get, create, update, remove, bulkRemove, updateChecklist, getChecklistAttachment, updateCertificateOfLiveBirth };
+function updatePaternityAffidavit(req, res) {
+  const id = Number(req.params.id);
+  const child = childModel.findById(id);
+  if (!child) return res.status(404).json({ error: 'Not found' });
+  const data = req.body && typeof req.body === 'object' ? req.body : {};
+  const ok = childModel.updatePaternityAffidavit(id, data);
+  if (!ok) return res.status(500).json({ error: 'Failed to save paternity affidavit' });
+  res.json({ ok: true });
+}
+
+function updateDelayedRegistrationAffidavit(req, res) {
+  const id = Number(req.params.id);
+  const child = childModel.findById(id);
+  if (!child) return res.status(404).json({ error: 'Not found' });
+  const data = req.body && typeof req.body === 'object' ? req.body : {};
+  const ok = childModel.updateDelayedRegistrationAffidavit(id, data);
+  if (!ok) return res.status(500).json({ error: 'Failed to save delayed registration affidavit' });
+  res.json({ ok: true });
+}
+
+function updateWitnessAffidavit(req, res) {
+  const id = Number(req.params.id);
+  const child = childModel.findById(id);
+  if (!child) return res.status(404).json({ error: 'Not found' });
+  const data = req.body && typeof req.body === 'object' ? req.body : {};
+  const ok = childModel.updateWitnessAffidavit(id, data);
+  if (!ok) return res.status(500).json({ error: 'Failed to save witness affidavit' });
+  res.json({ ok: true });
+}
+
+function updateOutOfTownAffidavit(req, res) {
+  const id = Number(req.params.id);
+  const child = childModel.findById(id);
+  if (!child) return res.status(404).json({ error: 'Not found' });
+  const data = req.body && typeof req.body === 'object' ? req.body : {};
+  const ok = childModel.updateOutOfTownAffidavit(id, data);
+  if (!ok) return res.status(500).json({ error: 'Failed to save out-of-town affidavit' });
+  res.json({ ok: true });
+}
+
+function updateMuslimAttachment(req, res) {
+  const id = Number(req.params.id);
+  const child = childModel.findById(id);
+  if (!child) return res.status(404).json({ error: 'Not found' });
+  const data = req.body && typeof req.body === 'object' ? req.body : {};
+  const ok = childModel.updateMuslimAttachment(id, data);
+  if (!ok) return res.status(500).json({ error: 'Failed to save Muslim attachment' });
+  res.json({ ok: true });
+}
+
+function updateStaffProcessStatus(req, res) {
+  const id = Number(req.params.id);
+  const status = req.body?.staff_process_status;
+  const result = childModel.updateStaffProcessStatus(id, status);
+  if (result.reason === 'not_found') return res.status(404).json({ error: 'Not found' });
+  if (result.reason === 'checklist_incomplete') {
+    return res.status(400).json({ error: 'Complete the document checklist before setting status.' });
+  }
+  if (!result.ok) return res.status(400).json({ error: 'Invalid status' });
+  res.json({ ok: true, staff_process_status: result.staff_process_status });
+}
+
+module.exports = {
+  list,
+  get,
+  create,
+  update,
+  remove,
+  bulkRemove,
+  updateChecklist,
+  getChecklistAttachment,
+  updateCertificateOfLiveBirth,
+  updatePaternityAffidavit,
+  updateDelayedRegistrationAffidavit,
+  updateWitnessAffidavit,
+  updateOutOfTownAffidavit,
+  updateMuslimAttachment,
+  updateStaffProcessStatus,
+};

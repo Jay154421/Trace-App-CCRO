@@ -1,5 +1,17 @@
 const { getDb } = require('../db');
 
+const APPLICATION_APPLICANT = 'applicant';
+const APPLICATION_COLB_BRAP = 'colb_brap';
+
+function normalizeApplicationType(value) {
+  const v = String(value || '').trim().toLowerCase();
+  return v === APPLICATION_COLB_BRAP ? APPLICATION_COLB_BRAP : APPLICATION_APPLICANT;
+}
+
+function isColbBrapRow(row) {
+  return normalizeApplicationType(row?.application_type) === APPLICATION_COLB_BRAP;
+}
+
 function getAgeGroup(ageYears) {
   if (ageYears <= 6) return '1m1d_to_6';
   if (ageYears <= 17) return '7_to_17';
@@ -16,6 +28,12 @@ function calculateAge(dob) {
   return age;
 }
 
+function normalizeGender(value) {
+  if (value == null || value === '') return null;
+  const g = String(value).trim().toLowerCase();
+  return g === 'male' || g === 'female' ? g : null;
+}
+
 function all() {
   const db = getDb();
   const rows = db.prepare('SELECT * FROM children ORDER BY updated_at DESC').all();
@@ -28,10 +46,14 @@ function all() {
   );
   return rows.map((r) => {
     const progress = progressByChild[r.id] || { checklist_total: 0, checklist_checked: 0 };
+    const application_type = normalizeApplicationType(r.application_type);
+    const age = calculateAge(r.date_of_birth);
+    const age_group = isColbBrapRow({ application_type }) ? null : (r.age_group || getAgeGroup(age));
     return {
       ...r,
-      age: calculateAge(r.date_of_birth),
-      age_group: r.age_group || getAgeGroup(calculateAge(r.date_of_birth)),
+      application_type,
+      age,
+      age_group,
       checklist_total: progress.checklist_total,
       checklist_checked: progress.checklist_checked,
     };
@@ -51,11 +73,61 @@ function findById(id) {
       certificate_of_live_birth = {};
     }
   }
+  let paternity_affidavit = {};
+  if (row.paternity_affidavit) {
+    try {
+      paternity_affidavit = JSON.parse(row.paternity_affidavit);
+    } catch (e) {
+      paternity_affidavit = {};
+    }
+  }
+  let delayed_registration_affidavit = {};
+  if (row.delayed_registration_affidavit) {
+    try {
+      delayed_registration_affidavit = JSON.parse(row.delayed_registration_affidavit);
+    } catch (e) {
+      delayed_registration_affidavit = {};
+    }
+  }
+  let witness_affidavit = {};
+  if (row.witness_affidavit) {
+    try {
+      witness_affidavit = JSON.parse(row.witness_affidavit);
+    } catch (e) {
+      witness_affidavit = {};
+    }
+  }
+  let out_of_town_affidavit = {};
+  if (row.out_of_town_affidavit) {
+    try {
+      out_of_town_affidavit = JSON.parse(row.out_of_town_affidavit);
+    } catch (e) {
+      out_of_town_affidavit = {};
+    }
+  }
+  let muslim_attachment = {};
+  if (row.muslim_attachment) {
+    try {
+      muslim_attachment = JSON.parse(row.muslim_attachment);
+    } catch (e) {
+      muslim_attachment = {};
+    }
+  }
+  const application_type = normalizeApplicationType(row.application_type);
+  const age = calculateAge(row.date_of_birth);
+  const age_group = isColbBrapRow({ application_type }) ? null : (row.age_group || getAgeGroup(age));
   return {
     ...row,
+    application_type,
     certificate_of_live_birth,
-    age: calculateAge(row.date_of_birth),
-    age_group: row.age_group || getAgeGroup(calculateAge(row.date_of_birth)),
+    paternity_affidavit,
+    delayed_registration_affidavit,
+    witness_affidavit,
+    out_of_town_affidavit,
+    out_of_town_informant_is_owner: row.out_of_town_informant_is_owner,
+    muslim_attachment,
+    age,
+    age_group,
   };
 }
 
@@ -72,13 +144,113 @@ function updateCertificateOfLiveBirth(id, data) {
   return true;
 }
 
-function create(data) {
-  const age = calculateAge(data.date_of_birth);
-  const age_group = getAgeGroup(age);
+function updatePaternityAffidavit(id, data) {
   const db = getDb();
+  const existing = db.prepare('SELECT id FROM children WHERE id = ?').get(id);
+  if (!existing) {
+    db.close();
+    return false;
+  }
+  const json = JSON.stringify(data || {});
+  db.prepare('UPDATE children SET paternity_affidavit = ?, updated_at = datetime(\'now\') WHERE id = ?').run(json, id);
+  db.close();
+  return true;
+}
+
+function updateDelayedRegistrationAffidavit(id, data) {
+  const db = getDb();
+  const existing = db.prepare('SELECT id FROM children WHERE id = ?').get(id);
+  if (!existing) {
+    db.close();
+    return false;
+  }
+  const json = JSON.stringify(data || {});
+  db.prepare('UPDATE children SET delayed_registration_affidavit = ?, updated_at = datetime(\'now\') WHERE id = ?').run(json, id);
+  db.close();
+  return true;
+}
+
+function updateWitnessAffidavit(id, data) {
+  const db = getDb();
+  const existing = db.prepare('SELECT id FROM children WHERE id = ?').get(id);
+  if (!existing) {
+    db.close();
+    return false;
+  }
+  const json = JSON.stringify(data || {});
+  db.prepare('UPDATE children SET witness_affidavit = ?, updated_at = datetime(\'now\') WHERE id = ?').run(json, id);
+  db.close();
+  return true;
+}
+
+function updateOutOfTownAffidavit(id, data) {
+  const db = getDb();
+  const existing = db.prepare('SELECT id FROM children WHERE id = ?').get(id);
+  if (!existing) {
+    db.close();
+    return false;
+  }
+  const json = JSON.stringify(data || {});
+  db.prepare('UPDATE children SET out_of_town_affidavit = ?, updated_at = datetime(\'now\') WHERE id = ?').run(json, id);
+  db.close();
+  return true;
+}
+
+function updateMuslimAttachment(id, data) {
+  const db = getDb();
+  const existing = db.prepare('SELECT id FROM children WHERE id = ?').get(id);
+  if (!existing) {
+    db.close();
+    return false;
+  }
+  const json = JSON.stringify(data || {});
+  db.prepare('UPDATE children SET muslim_attachment = ?, updated_at = datetime(\'now\') WHERE id = ?').run(json, id);
+  db.close();
+  return true;
+}
+
+function normalizeOutOfTownInformantIsOwner(outOfTown, informantIsOwner) {
+  if (!outOfTown) return null;
+  return informantIsOwner ? 1 : 0;
+}
+
+/** @param {number} id @param {'under_process' | 'verified'} status */
+function updateStaffProcessStatus(id, status) {
+  if (status !== 'under_process' && status !== 'verified') return { ok: false, reason: 'invalid_status' };
+  const db = getDb();
+  const existing = db.prepare('SELECT id FROM children WHERE id = ?').get(id);
+  if (!existing) {
+    db.close();
+    return { ok: false, reason: 'not_found' };
+  }
+  const row = db
+    .prepare('SELECT COUNT(*) AS n, COALESCE(SUM(checked), 0) AS s FROM checklist_items WHERE child_id = ?')
+    .get(id);
+  const n = Number(row?.n || 0);
+  const s = Number(row?.s || 0);
+  if (!(n > 0 && s === n)) {
+    db.close();
+    return { ok: false, reason: 'checklist_incomplete' };
+  }
+  db.prepare(`UPDATE children SET staff_process_status = ?, updated_at = datetime('now') WHERE id = ?`).run(status, id);
+  db.close();
+  return { ok: true, staff_process_status: status };
+}
+
+function create(data) {
+  const rawType = data?.application_type ?? data?.applicationType;
+  const application_type = normalizeApplicationType(rawType);
+  const age = calculateAge(data.date_of_birth);
+  const age_group = application_type === APPLICATION_COLB_BRAP ? null : getAgeGroup(age);
+  const db = getDb();
+  const outOfTown = data.out_of_town ? 1 : 0;
+  const outOfTownInformantIsOwner = normalizeOutOfTownInformantIsOwner(
+    outOfTown,
+    data.out_of_town_informant_is_owner,
+  );
   const stmt = db.prepare(`
-    INSERT INTO children (first_name, middle_name, last_name, date_of_birth, place_of_birth, contact_no, age_group, registrant_deceased, hilot_deceased, parent_foreigner)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO children (first_name, middle_name, last_name, date_of_birth, place_of_birth, contact_no, gender, age_group, registrant_deceased, hilot_deceased, parent_foreigner, out_of_town, out_of_town_informant_is_owner, has_marriage_certificate, colb_requires_parent_id, has_muslim_attachment, application_type)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const result = stmt.run(
     data.first_name,
@@ -87,30 +259,74 @@ function create(data) {
     data.date_of_birth,
     data.place_of_birth || null,
     data.contact_no || null,
+    normalizeGender(data.gender),
     age_group,
     data.registrant_deceased ? 1 : 0,
     data.hilot_deceased ? 1 : 0,
-    data.parent_foreigner ? 1 : 0
+    data.parent_foreigner ? 1 : 0,
+    outOfTown,
+    outOfTownInformantIsOwner,
+    data.has_marriage_certificate ? 1 : 0,
+    data.colb_requires_parent_id ? 1 : 0,
+    data.has_muslim_attachment ? 1 : 0,
+    application_type
   );
   db.close();
   return result.lastInsertRowid;
 }
 
 function update(id, data) {
-  const age = data.date_of_birth ? calculateAge(data.date_of_birth) : null;
-  const age_group = age != null ? getAgeGroup(age) : null;
   const db = getDb();
   const existing = db.prepare('SELECT * FROM children WHERE id = ?').get(id);
   if (!existing) { db.close(); return false; }
+  const existingType = normalizeApplicationType(existing.application_type);
+  const age = data.date_of_birth ? calculateAge(data.date_of_birth) : null;
+  let age_group;
+  if (existingType === APPLICATION_COLB_BRAP) {
+    age_group = null;
+  } else if (age != null) {
+    age_group = getAgeGroup(age);
+  } else {
+    age_group =
+      existing.age_group || getAgeGroup(calculateAge(data.date_of_birth ?? existing.date_of_birth));
+  }
   const registrantDeceased = data.registrant_deceased !== undefined ? (data.registrant_deceased ? 1 : 0) : (existing.registrant_deceased ? 1 : 0);
   const hilotDeceased = data.hilot_deceased !== undefined ? (data.hilot_deceased ? 1 : 0) : (existing.hilot_deceased ? 1 : 0);
   const parentForeigner = data.parent_foreigner !== undefined ? (data.parent_foreigner ? 1 : 0) : (existing.parent_foreigner ? 1 : 0);
+  const outOfTown = data.out_of_town !== undefined ? (data.out_of_town ? 1 : 0) : (existing.out_of_town ? 1 : 0);
+  let outOfTownInformantIsOwner;
+  if (outOfTown) {
+    if (data.out_of_town_informant_is_owner !== undefined) {
+      outOfTownInformantIsOwner = data.out_of_town_informant_is_owner ? 1 : 0;
+    } else if (existing.out_of_town_informant_is_owner != null) {
+      outOfTownInformantIsOwner = existing.out_of_town_informant_is_owner ? 1 : 0;
+    } else {
+      outOfTownInformantIsOwner = 1;
+    }
+  } else {
+    outOfTownInformantIsOwner = null;
+  }
+  const hasMarriageCertificate =
+    data.has_marriage_certificate !== undefined
+      ? (data.has_marriage_certificate ? 1 : 0)
+      : (existing.has_marriage_certificate ? 1 : 0);
+  const colbRequiresParentId =
+    data.colb_requires_parent_id !== undefined
+      ? (data.colb_requires_parent_id ? 1 : 0)
+      : (existing.colb_requires_parent_id ? 1 : 0);
+  const hasMuslimAttachment =
+    data.has_muslim_attachment !== undefined
+      ? (data.has_muslim_attachment ? 1 : 0)
+      : (existing.has_muslim_attachment ? 1 : 0);
+  const gender =
+    data.gender !== undefined ? normalizeGender(data.gender) : existing.gender ?? null;
   const stmt = db.prepare(`
     UPDATE children SET
       first_name = ?, middle_name = ?, last_name = ?,
-      date_of_birth = ?, place_of_birth = ?, contact_no = ?,
-      age_group = COALESCE(?, age_group),
-      registrant_deceased = ?, hilot_deceased = ?, parent_foreigner = ?,
+      date_of_birth = ?, place_of_birth = ?, contact_no = ?, gender = ?,
+      age_group = ?,
+      registrant_deceased = ?, hilot_deceased = ?, parent_foreigner = ?, out_of_town = ?, out_of_town_informant_is_owner = ?, has_marriage_certificate = ?,
+      colb_requires_parent_id = ?, has_muslim_attachment = ?,
       updated_at = datetime('now')
     WHERE id = ?
   `);
@@ -121,10 +337,16 @@ function update(id, data) {
     data.date_of_birth ?? existing.date_of_birth,
     data.place_of_birth !== undefined ? data.place_of_birth : existing.place_of_birth,
     data.contact_no !== undefined ? data.contact_no : existing.contact_no,
+    gender,
     age_group,
     registrantDeceased,
     hilotDeceased,
     parentForeigner,
+    outOfTown,
+    outOfTownInformantIsOwner,
+    hasMarriageCertificate,
+    colbRequiresParentId,
+    hasMuslimAttachment,
     id
   );
   db.close();
@@ -144,8 +366,8 @@ function remove(id) {
 function bulkRemove(ids) {
   if (!Array.isArray(ids) || ids.length === 0) return 0;
   const db = getDb();
-  let deleted = 0;
-  try {
+  return db.transaction(() => {
+    let deleted = 0;
     for (const id of ids) {
       db.prepare('DELETE FROM documents WHERE child_id = ?').run(id);
       db.prepare('DELETE FROM checklist_items WHERE child_id = ?').run(id);
@@ -153,9 +375,26 @@ function bulkRemove(ids) {
       deleted += result.changes;
     }
     return deleted;
-  } finally {
-    db.close();
-  }
+  });
 }
 
-module.exports = { all, findById, create, update, remove, bulkRemove, getAgeGroup, calculateAge, updateCertificateOfLiveBirth };
+module.exports = {
+  all,
+  findById,
+  create,
+  update,
+  remove,
+  bulkRemove,
+  getAgeGroup,
+  calculateAge,
+  normalizeApplicationType,
+  APPLICATION_APPLICANT,
+  APPLICATION_COLB_BRAP,
+  updateCertificateOfLiveBirth,
+  updatePaternityAffidavit,
+  updateDelayedRegistrationAffidavit,
+  updateWitnessAffidavit,
+  updateOutOfTownAffidavit,
+  updateMuslimAttachment,
+  updateStaffProcessStatus,
+};

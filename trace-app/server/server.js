@@ -6,6 +6,7 @@ const helmet = require('helmet');
 const { initDb } = require('./db');
 const childrenRoutes = require('./routes/children');
 const databaseRoutes = require('./routes/database');
+const authRoutes = require('./routes/auth');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -18,6 +19,7 @@ app.use(express.json({ limit: '10mb' }));
 
 app.use('/api/children', childrenRoutes);
 app.use('/api/database', databaseRoutes);
+app.use('/api/auth', authRoutes);
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
@@ -50,7 +52,7 @@ initDb()
   .then(() => tryListen(requestedPort))
   .then((server) => {
     const port = server.address().port;
-    console.log(`TRACE server running on http://localhost:${port}`);
+    console.log(`B-TRACE server running on http://localhost:${port}`);
     if (port !== requestedPort) console.log(`If using Vite, set VITE_API_URL=http://localhost:${port}/api`);
   })
   .catch((err) => {
