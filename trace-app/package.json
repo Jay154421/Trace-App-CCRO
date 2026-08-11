@@ -1,6 +1,6 @@
 {
   "name": "trace-app",
-  "version": "4.3.2",
+  "version": "4.3.3",
   "description": "B-TRACE System - Document requirements tracking for birth certificate applications",
   "author": "City Civil Registrar's Office — Iligan",
   "main": "electron/main.js",

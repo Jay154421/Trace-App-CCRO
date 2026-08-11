@@ -97,7 +97,7 @@ const FIELD_POSITIONS = {
     dra_affiant_signature: { x: 1428, y: 3399, width: 825 },
     dra_affixed_day: { x: 1251, y: 3192 },
     dra_affixed_month: { x: 1521, y: 3192, width: 675 },
-    dra_affixed_year: { x: 1641, y: 3192, width: 189 },
+    dra_affixed_year: { x: 1841, y: 3192, width: 189 },
     dra_affixed_at: { x: 1139, y: 3266, width: 840 },
     dra_sworn_day: { x: 1179, y: 3588 },
     dra_sworn_month: { x: 1488, y: 3588, width: 483 },
